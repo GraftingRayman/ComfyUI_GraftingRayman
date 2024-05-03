@@ -17,7 +17,7 @@ class GRPromptSelector:
             "always_a1": ("STRING", {"multiline": True, "dynamicPrompts": True}), "clip": ("CLIP", ), 
             "negative_a1": ("STRING", {"multiline": True, "dynamicPrompts": True}), "clip": ("CLIP", ), 
             "select_prompt": ("INT", {"default": 1, "min": 1, "max": 6}),
-        }
+        }}
 
     RETURN_TYPES = ("CONDITIONING","CONDITIONING","STRING",)
     RETURN_NAMES = ("positive","negative","prompts",)
@@ -41,10 +41,10 @@ class GRPromptSelector:
         elif select_prompt == 6:
             clipa = positive_a6
         positive = clipa + ", " + always_a1
-        prompts = positive
+        prompts = "positive:\n" + positive + "\n\nnegative: \n" + negative_a1
         tokensP = clip.tokenize(positive)
         tokensN = clip.tokenize(negative_a1)
         condP, pooledP = clip.encode_from_tokens(tokensP, return_pooled=True)
         condN, pooledN = clip.encode_from_tokens(tokensN, return_pooled=True)
-        return ([[condP, {"pooled_output": pooledP}]],[[condN, {"pooled_output": pooledP}]], positive )
+        return ([[condP, {"pooled_output": pooledP}]],[[condN, {"pooled_output": pooledP}]], prompts )
 
