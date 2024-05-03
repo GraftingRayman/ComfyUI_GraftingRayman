@@ -1,1 +1,1 @@
-# ComfyUI-GR
+# ComfyUI_GR_PromptSelector
