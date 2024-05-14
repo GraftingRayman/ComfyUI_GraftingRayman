@@ -17,6 +17,6 @@ Credit to simeonovich
 
 # Installation:
 
-Install in your custom directory:
+Install in your custom_nodes directory:
 
 Git clone https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector
