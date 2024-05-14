@@ -53,7 +53,6 @@ class GRPromptSelector:
 
 
 
-
 class GRImageResize:
     def __init__(self):
         pass
@@ -63,8 +62,8 @@ class GRImageResize:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "height": ("INT", {"min": 1}),
                 "width": ("INT", {"min": 1}),
+                "height": ("INT", {"min": 1}),
             },
         }
 
@@ -77,6 +76,33 @@ class GRImageResize:
         resized_image = TF.resize(input_image, (height, width))
         resized_image = resized_image.permute((0, 2, 3, 1))
         return (resized_image,)
+        
+class GRMaskResize:
+    def __init__(self):
+        pass
 
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mask": ("MASK",),
+                "width": ("INT", {"min": 1}),
+                "height": ("INT", {"min": 1}),
+            },
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "resize_mask"
+    CATEGORY = "ImageProcessing"
+
+    def resize_mask(self, mask, height, width):
+        input_image = mask.permute((0, 1, 2))
+        resized_image = TF.resize(input_image, (height, width))
+
+        # Check if the input image has an alpha channel
+        if mask.shape[-1] == 3:
+            # If alpha channel exists, retain transparency
+            resized_image = resized_image.permute((0, 1, 2))
+        return (resized_image,)
 
 
