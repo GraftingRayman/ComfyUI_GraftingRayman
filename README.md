@@ -15,7 +15,7 @@ Resizes image by height and size
 
 Credit to simeonovich
 
-Installation:
+# Installation:
 
 Install in your custom directory:
 
