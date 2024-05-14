@@ -14,3 +14,9 @@ Negative prompt included
 Resizes image by height and size
 
 Credit to simeonovich
+
+Installation:
+
+Install in your custom directory:
+
+Git clone https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector
