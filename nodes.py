@@ -1,4 +1,7 @@
 import os
+import torch
+import torchvision.transforms.functional as TF
+from PIL import Image
 
 class GRPromptSelector:
     def __init__(self):
@@ -47,4 +50,33 @@ class GRPromptSelector:
         condP, pooledP = clip.encode_from_tokens(tokensP, return_pooled=True)
         condN, pooledN = clip.encode_from_tokens(tokensN, return_pooled=True)
         return ([[condP, {"pooled_output": pooledP}]],[[condN, {"pooled_output": pooledP}]], prompts )
+
+
+
+
+class GRImageResize:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "height": ("INT", {"min": 1}),
+                "width": ("INT", {"min": 1}),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "resize_image"
+    CATEGORY = "ImageProcessing"
+
+    def resize_image(self, image, height, width):
+        input_image = image.permute((0, 3, 1, 2))
+        resized_image = TF.resize(input_image, (height, width))
+        resized_image = resized_image.permute((0, 2, 3, 1))
+        return (resized_image,)
+
+
 
