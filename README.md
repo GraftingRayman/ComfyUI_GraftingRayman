@@ -15,6 +15,16 @@ Resizes image by height and size
 
 Credit to simeonovich
 
+![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/da0c6a13-4b08-4798-9333-b7d2e34d6515)
+
+# GR Mask Create
+
+This node creates a single mask that you can use
+
+![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/cd82a7d5-1c4e-458c-bdf1-c61b0ec85fad)
+
+
+
 # GR Multi Mask Create
 
 If you need multiple mask in one node, you can use this
