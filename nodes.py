@@ -70,7 +70,7 @@ class GRImageResize:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "resize_image"
-    CATEGORY = "ImageProcessing"
+    CATEGORY = "GraftingRayman"
 
     def resize_image(self, image, height, width):
         input_image = image.permute((0, 3, 1, 2))
@@ -96,10 +96,9 @@ class GRMaskResize:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "resize_mask"
-    CATEGORY = "ImageProcessing"
+    CATEGORY = "GraftingRayman"
 
     def resize_mask(self, mask, height, width):
-        # Resize the mask tensor
         resized_mask = TF.resize(mask, (height, width))
         return resized_mask,
 
@@ -115,39 +114,22 @@ class GRMaskCreate:
             "required": {
                 "height": ("INT", {"min": 1}),
                 "width": ("INT", {"min": 1}),
-                "transparent_width_percentage": ("FLOAT", {"min": 0, "max": 1}),
+                "mask_width": ("FLOAT", {"min": 0, "max": 1}),
                 "position_percentage": ("FLOAT", {"min": 0, "max": 1}),
             },
         }
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "create_mask"
-    CATEGORY = "ImageProcessing"
+    CATEGORY = "GraftingRayman"
 
-    def create_mask(self, height, width, transparent_width_percentage, position_percentage):
-        # Calculate the width of the transparent area
-        transparent_width = int(width * transparent_width_percentage)
-
-        # Calculate the position of the transparent area
+    def create_mask(self, height, width, mask_width, position_percentage):
+        transparent_width = int(width * mask_width)
         position = int(width * position_percentage)
-
-        # Create a blank mask tensor with the specified height and width
         mask = torch.zeros((1, 1, height, width), dtype=torch.float32)
-
-        # Determine the starting x-coordinate for the transparent area based on the position
         x_start = max(0, min(width - transparent_width, position))
-
-        # Fill the specified area with transparency
         mask[:, :, :, x_start:x_start + transparent_width] = 1.
-
         return mask
-
-
-
-
-
-
-
 
 
 class GRMultiMaskCreate:
@@ -164,28 +146,18 @@ class GRMultiMaskCreate:
             },
         }
 
-    RETURN_TYPES = ("MASK",) * 8  # Assuming a maximum of 8 masks
+    RETURN_TYPES = ("MASK",) * 8  
     RETURN_NAMES = ("mask1", "mask2", "mask3", "mask4", "mask5", "mask6", "mask7", "mask8")
     FUNCTION = "create_masks"
-    CATEGORY = "ImageProcessing"
+    CATEGORY = "GraftingRayman"
 
     def create_masks(self, height, width, num_masks):
         masks = []
-
-        # Calculate the width of the transparent area for each mask
         transparent_width = width // num_masks
-
         for i in range(num_masks):
-            # Create a blank mask tensor with the specified height and width
             mask = torch.zeros((1, height, width), dtype=torch.float32)
-
-            # Calculate the starting and ending x-coordinates for the transparent area
             start_x = i * transparent_width
             end_x = (i + 1) * transparent_width if i < num_masks - 1 else width
-
-            # Fill the specified area with transparency
             mask[:, :, start_x:end_x] = 1.
-
             masks.append(mask)
-
         return tuple(masks)
