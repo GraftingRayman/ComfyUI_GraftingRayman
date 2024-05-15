@@ -1,7 +1,8 @@
 import os
+import numpy as np
 import torch
 import torchvision.transforms.functional as TF
-from PIL import Image
+from PIL import Image, ImageDraw
 
 class GRPromptSelector:
     def __init__(self):
@@ -77,6 +78,8 @@ class GRImageResize:
         resized_image = resized_image.permute((0, 2, 3, 1))
         return (resized_image,)
         
+
+
 class GRMaskResize:
     def __init__(self):
         pass
@@ -96,13 +99,105 @@ class GRMaskResize:
     CATEGORY = "ImageProcessing"
 
     def resize_mask(self, mask, height, width):
-        input_image = mask.permute((0, 1, 2))
-        resized_image = TF.resize(input_image, (height, width))
-
-        # Check if the input image has an alpha channel
-        if mask.shape[-1] == 3:
-            # If alpha channel exists, retain transparency
-            resized_image = resized_image.permute((0, 1, 2))
-        return (resized_image,)
+        # Resize the mask tensor
+        resized_mask = TF.resize(mask, (height, width))
+        return resized_mask,
 
 
+
+class GRMaskCreate:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "height": ("INT", {"min": 1}),
+                "width": ("INT", {"min": 1}),
+                "transparent_width_percentage": ("FLOAT", {"min": 0, "max": 1}),
+                "position_percentage": ("FLOAT", {"min": 0, "max": 1}),
+            },
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "create_mask"
+    CATEGORY = "ImageProcessing"
+
+    def create_mask(self, height, width, transparent_width_percentage, position_percentage):
+        # Calculate the width of the transparent area
+        transparent_width = int(width * transparent_width_percentage)
+
+        # Calculate the position of the transparent area
+        position = int(width * position_percentage)
+
+        # Create a blank mask tensor with the specified height and width
+        mask = torch.zeros((1, 1, height, width), dtype=torch.float32)
+
+        # Determine the starting x-coordinate for the transparent area based on the position
+        x_start = max(0, min(width - transparent_width, position))
+
+        # Fill the specified area with transparency
+        mask[:, :, :, x_start:x_start + transparent_width] = 1.
+
+        return mask
+
+
+
+
+
+
+
+
+
+
+class GRMultiMaskCreate:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "height": ("INT", {"min": 1}),
+                "width": ("INT", {"min": 1}),
+                "num_masks": ("INT", {"min": 1, "max": 8}),
+            },
+        }
+
+    RETURN_TYPES = ("MASK",) * 8
+    RETURN_NAMES = tuple(f"MASK{i+1}" for i in range(8))
+    FUNCTION = "create_multi_masks"
+    CATEGORY = "ImageProcessing"
+
+    def create_multi_masks(self, height, width, num_masks):
+        masks = []
+
+        for i in range(num_masks):
+            # Calculate the width of the transparent area (example calculation)
+            transparent_width_percentage = (i + 1) / 10
+            transparent_width = int(width * transparent_width_percentage)
+
+            # Calculate the position of the transparent area (example calculation)
+            position_percentage = (i + 1) / 10
+            position = int(width * position_percentage)
+
+            # Create a blank mask image with the specified height and width
+            mask = Image.new("L", (width, height), 0)
+
+            # Calculate the coordinates for the transparent area
+            x1 = max(0, min(width - transparent_width, position))
+            x2 = min(width, x1 + transparent_width)
+
+            # Fill the transparent area with white (255)
+            draw = ImageDraw.Draw(mask)
+            draw.rectangle([x1, 0, x2, height], fill=255)
+            del draw
+
+            # Convert the mask image to a tensor
+            mask_np = np.array(mask, dtype=np.float32)
+            mask_tensor = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0)
+
+            masks.append(mask_tensor)
+
+        return tuple(masks)
