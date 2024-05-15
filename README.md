@@ -31,6 +31,13 @@ If you need multiple mask in one node, you can use this
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/0b5f684c-40c7-476b-9048-651638f09f83)
 
+# GR Mask Resize
+
+When you need to resize your mask image to fit your latent image
+
+![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/26bab87d-add3-43f4-81c3-a64e4e326c0a)
+
+
 
 # Installation:
 
