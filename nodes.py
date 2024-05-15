@@ -150,7 +150,6 @@ class GRMaskCreate:
 
 
 
-
 class GRMultiMaskCreate:
     def __init__(self):
         pass
@@ -161,43 +160,32 @@ class GRMultiMaskCreate:
             "required": {
                 "height": ("INT", {"min": 1}),
                 "width": ("INT", {"min": 1}),
-                "num_masks": ("INT", {"min": 1, "max": 8}),
+                "num_masks": ("INT", {"min": 1}),
             },
         }
 
-    RETURN_TYPES = ("MASK",) * 8
-    RETURN_NAMES = tuple(f"MASK{i+1}" for i in range(8))
-    FUNCTION = "create_multi_masks"
+    RETURN_TYPES = ("MASK",) * 8  # Assuming a maximum of 8 masks
+    RETURN_NAMES = ("mask1", "mask2", "mask3", "mask4", "mask5", "mask6", "mask7", "mask8")
+    FUNCTION = "create_masks"
     CATEGORY = "ImageProcessing"
 
-    def create_multi_masks(self, height, width, num_masks):
+    def create_masks(self, height, width, num_masks):
         masks = []
 
+        # Calculate the width of the transparent area for each mask
+        transparent_width = width // num_masks
+
         for i in range(num_masks):
-            # Calculate the width of the transparent area (example calculation)
-            transparent_width_percentage = (i + 1) / 10
-            transparent_width = int(width * transparent_width_percentage)
+            # Create a blank mask tensor with the specified height and width
+            mask = torch.zeros((1, height, width), dtype=torch.float32)
 
-            # Calculate the position of the transparent area (example calculation)
-            position_percentage = (i + 1) / 10
-            position = int(width * position_percentage)
+            # Calculate the starting and ending x-coordinates for the transparent area
+            start_x = i * transparent_width
+            end_x = (i + 1) * transparent_width if i < num_masks - 1 else width
 
-            # Create a blank mask image with the specified height and width
-            mask = Image.new("L", (width, height), 0)
+            # Fill the specified area with transparency
+            mask[:, :, start_x:end_x] = 1.
 
-            # Calculate the coordinates for the transparent area
-            x1 = max(0, min(width - transparent_width, position))
-            x2 = min(width, x1 + transparent_width)
-
-            # Fill the transparent area with white (255)
-            draw = ImageDraw.Draw(mask)
-            draw.rectangle([x1, 0, x2, height], fill=255)
-            del draw
-
-            # Convert the mask image to a tensor
-            mask_np = np.array(mask, dtype=np.float32)
-            mask_tensor = torch.from_numpy(mask_np).unsqueeze(0).unsqueeze(0)
-
-            masks.append(mask_tensor)
+            masks.append(mask)
 
         return tuple(masks)
