@@ -39,9 +39,10 @@ When you need to resize your mask image to fit your latent image
 
 # GR Image Size
 
-A node with preselected image sizes or custom, outputs height and width only
+A node with preselected image sizes or custom, outputs height and width, can also be used for empty latent image via the latent output
 
-![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/8512eb0e-5037-4a41-95a8-7ef642526fe2)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c64b42d9-4b28-4c25-95a3-b39fc28911d8)
+
 
 
 # Installation:
