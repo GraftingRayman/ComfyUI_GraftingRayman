@@ -27,7 +27,7 @@ This node creates a single mask that you can use
 
 # GR Multi Mask Create
 
-If you need multiple mask in one node, you can use this
+If you need multiple mask in one node, you can use this. This node creates upto 8 equal size masks.
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/0b5f684c-40c7-476b-9048-651638f09f83)
 
