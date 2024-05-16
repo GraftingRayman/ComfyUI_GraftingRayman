@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import torchvision.transforms.functional as TF
+import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 
 class GRPromptSelector:
@@ -161,3 +162,63 @@ class GRMultiMaskCreate:
             mask[:, :, start_x:end_x] = 1.
             masks.append(mask)
         return tuple(masks)
+
+
+class GRImageSize:
+    def __init__(self):
+        pass
+                
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "height": ("INT", {"default": 544, "min": 1}),
+            "width": ("INT", {"default": 960, "min": 1}),
+            "standard": (["custom", "640x480 (VGA)", "800x600 (SVGA)", "1024x768 (XGA)", "1280x720 (HD)", "1366x768 (HD)","1600x900 (HD+)","1920x1080 (Full HD or 1080p)","2560x1440 (Quad HD or 1440p)","3840x2160 (Ultra HD, 4K, or 2160p)","5120x2880 (5K)","7680x4320 (8K)"],),
+        }}
+
+    RETURN_TYPES = ("INT","INT",)
+    RETURN_NAMES = ("height","width",)
+    FUNCTION = "image_size"
+    CATEGORY = "GraftingRayman"
+        
+
+
+    def image_size(self, height, width, standard):
+        if standard == "custom":
+            height = height
+            width = width
+        elif standard == "640x480 (VGA)":
+            width = 640
+            height = 480
+        elif standard == "800x600 (SVGA)":
+            width = 800
+            height = 600
+        elif standard == "1024x768 (XGA)":
+            width = 1027
+            height = 768
+        elif standard == "1280x720 (HD)":
+            width = 1280
+            height = 720
+        elif standard == "1366x768 (HD)":
+            width = 1366
+            height = 768
+        elif standard == "1600x900 (HD+)":
+            width = 1600
+            height = 900
+        elif standard == "1920x1080 (Full HD or 1080p)":
+            width = 1920
+            height = 1080
+        elif standard == "2560x1440 (Quad HD or 1440p)":
+            width = 2560
+            height = 1440
+        elif standard == "3840x2160 (Ultra HD, 4K, or 2160p)":
+            width = 3840
+            height = 2160
+        elif standard == "5120x2880 (5K)":
+            width = 5120
+            height = 2880
+        elif standard == "7680x4320 (8K)":
+            width = 7680
+            height = 4320            
+    
+        return (height,width,)
