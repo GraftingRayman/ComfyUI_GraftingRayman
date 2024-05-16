@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
+from clip import tokenize, model
 from PIL import Image, ImageDraw
 
 class GRPromptSelector:
@@ -173,7 +174,7 @@ class GRImageSize:
         return {"required": {
             "height": ("INT", {"default": 544, "min": 1}),
             "width": ("INT", {"default": 960, "min": 1}),
-            "standard": (["custom", "640x480 (VGA)", "800x600 (SVGA)", "1024x768 (XGA)", "1280x720 (HD)", "1366x768 (HD)","1600x900 (HD+)","1920x1080 (Full HD or 1080p)","2560x1440 (Quad HD or 1440p)","3840x2160 (Ultra HD, 4K, or 2160p)","5120x2880 (5K)","7680x4320 (8K)"],),
+            "standard": (["custom", "(SD) 512x512","(SDXL) 1024x1024","640x480 (VGA)", "800x600 (SVGA)", "1024x768 (XGA)", "1280x720 (HD)", "1366x768 (HD)","1600x900 (HD+)","1920x1080 (Full HD or 1080p)","2560x1440 (Quad HD or 1440p)","3840x2160 (Ultra HD, 4K, or 2160p)","5120x2880 (5K)","7680x4320 (8K)"],),
         }}
 
     RETURN_TYPES = ("INT","INT",)
@@ -187,6 +188,12 @@ class GRImageSize:
         if standard == "custom":
             height = height
             width = width
+        elif standard == "(SD) 512x512":
+            width = 512
+            height = 512
+        elif standard == "(SDXL) 1024x1024":
+            width = 1024
+            height = 1024
         elif standard == "640x480 (VGA)":
             width = 640
             height = 480
