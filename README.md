@@ -43,4 +43,4 @@ When you need to resize your mask image to fit your latent image
 
 Install in your custom_nodes directory:
 
-Git clone https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector
+Git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman
