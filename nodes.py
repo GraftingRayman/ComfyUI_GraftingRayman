@@ -236,3 +236,69 @@ class GRImageSize:
         latent = torch.zeros([batch_size, 4, height // 8, width // 8])
     
         return (height,width,{"samples":latent},)
+
+class GRTileImage:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        popular_colors = ["black", "white", "red", "blue", "green", "purple"]
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "columns": ("INT", {"min": 1}),
+                "rows": ("INT", {"min": 1}),
+                "border": ("INT", {"min": 0, "default": 0}),
+                "colour": (popular_colors,),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "tile_image"
+    CATEGORY = "GraftingRayman"
+
+    def tile_image(self, image, rows, columns, colour, border=0):
+        batch_size, orig_height, orig_width, channels = image.size()
+        
+        if border > 0:
+            orig_height_with_border = orig_height + 2 * border
+            orig_width_with_border = orig_width + 2 * border
+            
+            bordered_image = torch.ones((batch_size, orig_height_with_border, orig_width_with_border, channels), dtype=image.dtype, device=image.device)
+            bordered_image[:, border:-border, border:-border, :] = image
+            border_color = self.get_colour_value(colour)
+            bordered_image[:, :border, :, :] = border_color  # Top border
+            bordered_image[:, -border:, :, :] = border_color  # Bottom border
+            bordered_image[:, :, :border, :] = border_color  # Left border
+            bordered_image[:, :, -border:, :] = border_color  # Right border
+        else:
+            bordered_image = image
+
+        new_height = rows * orig_height_with_border if border > 0 else rows * orig_height
+        new_width = columns * orig_width_with_border if border > 0 else columns * orig_width
+        new_image = torch.zeros((batch_size, new_height, new_width, channels), dtype=image.dtype, device=image.device)
+
+        num_tiles_height = (new_height + orig_height_with_border - 1) // orig_height
+        num_tiles_width = (new_width + orig_width_with_border - 1) // orig_width
+
+        for i in range(num_tiles_height):
+            for j in range(num_tiles_width):
+                y_start = i * orig_height_with_border
+                y_end = min(y_start + orig_height_with_border, new_height)
+                x_start = j * orig_width_with_border
+                x_end = min(x_start + orig_width_with_border, new_width)
+                new_image[:, y_start:y_end, x_start:x_end, :] = bordered_image[:, :y_end - y_start, :x_end - x_start, :]
+
+        return (new_image,)
+
+    def get_colour_value(self, colour):
+        color_map = {
+            "black": torch.tensor([0, 0, 0], dtype=torch.float32),
+            "white": torch.tensor([255, 255, 255], dtype=torch.float32),
+            "red": torch.tensor([255, 0, 0], dtype=torch.float32),
+            "blue": torch.tensor([0, 0, 255], dtype=torch.float32),
+            "green": torch.tensor([0, 255, 0], dtype=torch.float32),
+            "purple": torch.tensor([128, 0, 128], dtype=torch.float32),
+        }
+        return color_map[colour]
