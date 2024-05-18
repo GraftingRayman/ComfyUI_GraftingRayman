@@ -45,7 +45,7 @@ A node with preselected image sizes or custom, outputs height and width, can als
 
 # GR Tile Image
 
-A node to add a border and tile the image
+A node to add a border in pixels and tile the image
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/8a2b4ddc-f69b-40db-9c40-5bf5fe9d1d6d)
 
