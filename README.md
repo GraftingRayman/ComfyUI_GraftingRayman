@@ -1,3 +1,12 @@
+Welcome to my page here, I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
+
+If you use thes, follow my YouTube channel 
+
+https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g
+
+Hope this stuff is helpful
+
+
 # GR Prompt Selector
 
 Can choose from 6 prompts
