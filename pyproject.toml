@@ -7,6 +7,8 @@ license = "LICENSE"
 [project.urls]
 Repository = "https://github.com/GraftingRayman/ComfyUI_GraftingRayman"
 #  Used by Comfy Registry https://comfyregistry.org
+#  Visit my YouTube channel here: https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g
+
 
 [tool.comfy]
 PublisherId = "GraftingRayman"
