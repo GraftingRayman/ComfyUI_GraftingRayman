@@ -9,6 +9,6 @@ Repository = "https://github.com/GraftingRayman/ComfyUI_GraftingRayman"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "GraftingRayman"
 DisplayName = "ComfyUI_GraftingRayman"
 Icon = ""
