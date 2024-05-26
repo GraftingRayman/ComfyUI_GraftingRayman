@@ -58,6 +58,23 @@ A node to add a border in pixels and tile the image
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/8a2b4ddc-f69b-40db-9c40-5bf5fe9d1d6d)
 
+# GR Mask Create Random
+
+Creates a random mask of your chosen size, useful to set a latent noise mask at random
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/285f94bd-8ba7-4be8-828b-c61a9a96d3f1)
+
+#GR Tile and Border Image Random Flip
+
+This node takes an image and tiles the image into defined columns and rows, but before outputting it flips one of the tiles randomly
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/88779540-848f-4a37-b5bf-9f0f229e1191)
+
+# GR Stack Image
+
+This node takes two images as input and stacks one on top of the other, both images need to be of the same dimensions
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/1f86b235-832e-497f-a23c-9865538309dc)
 
 
 # Installation:
