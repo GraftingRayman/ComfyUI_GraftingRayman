@@ -243,7 +243,9 @@ class GRTileImage:
 
     @classmethod
     def INPUT_TYPES(cls):
-        popular_colors = ["black", "white", "red", "blue", "green", "purple"]
+        popular_colors = [
+            "black", "white", "red", "blue", "green", "purple", "yellow"
+        ]
         return {
             "required": {
                 "image": ("IMAGE",),
@@ -293,12 +295,15 @@ class GRTileImage:
         return (new_image,)
 
     def get_colour_value(self, colour):
+        # Map color names to RGB values
         color_map = {
-            "black": torch.tensor([0, 0, 0], dtype=torch.float32),
-            "white": torch.tensor([255, 255, 255], dtype=torch.float32),
-            "red": torch.tensor([255, 0, 0], dtype=torch.float32),
-            "blue": torch.tensor([0, 0, 255], dtype=torch.float32),
-            "green": torch.tensor([0, 255, 0], dtype=torch.float32),
-            "purple": torch.tensor([128, 0, 128], dtype=torch.float32),
+            "black": [0, 0, 0],
+            "white": [255, 255, 255],
+            "red": [255, 0, 0],
+            "blue": [0, 0, 255],
+            "green": [0, 255, 0],
+            "purple": [128, 0, 128],
+            "yellow": [255, 255, 0],
+
         }
-        return color_map[colour]
+        return torch.tensor(color_map[colour], dtype=torch.float32)
