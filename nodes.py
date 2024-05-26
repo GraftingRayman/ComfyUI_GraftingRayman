@@ -6,7 +6,6 @@ import torch
 import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
 import latent_preview
-import httplib2
 from clip import tokenize, model
 from PIL import Image, ImageDraw
 
