@@ -1,3 +1,12 @@
+Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
+
+If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
+
+https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g
+
+Hope this stuff is helpful
+
+
 # GR Prompt Selector
 
 Can choose from 6 prompts
@@ -42,6 +51,12 @@ When you need to resize your mask image to fit your latent image
 A node with preselected image sizes or custom, outputs height and width, can also be used for empty latent image via the latent output
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c64b42d9-4b28-4c25-95a3-b39fc28911d8)
+
+# GR Tile Image
+
+A node to add a border in pixels and tile the image
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/8a2b4ddc-f69b-40db-9c40-5bf5fe9d1d6d)
 
 
 
