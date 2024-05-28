@@ -14,8 +14,12 @@ from PIL.PngImagePlugin import PngInfo
 import folder_paths
 from comfy.cli_args import args
 import random
+import time
 
 import folder_paths
+
+PREFIX = '\n\n\33[31m\33[94m[Loading GraftingRaymans GR Nodes]\n\33[0m '
+
 
 class GRPromptSelector:
     def __init__(self):
@@ -743,3 +747,5 @@ class GRImageDetailsDisplayer(GRImageDetailsSave):
         plt.text(0, -0.1, f"Height: {height}\nWidth: {width}\nType: {image_type}", horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=10, color='white')
         plt.tight_layout()  # Adjust layout to ensure text is visible
         plt.show()
+
+print(f"{PREFIX} \n14 Grafting Nodes Loaded\nLoading Complete - Get Grafting\n\n")
