@@ -76,6 +76,13 @@ This node takes two images as input and stacks one on top of the other, both ima
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/1f86b235-832e-497f-a23c-9865538309dc)
 
+# GR Image Resize Methods
+
+This node is a slightly improved Resize node that loads and displays the image (Similar to LoadImage), you can resize the image using different Interpolation methods.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c6d495ec-ba6e-4ecb-b34e-7706b3a70724)
+
+
 
 # Installation:
 
