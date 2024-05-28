@@ -16,6 +16,13 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
 
+[GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
+
+[GR Stack Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-stack-image)
+
+[GR Image Resize Methods](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-resize-methods)
+
+
 
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
