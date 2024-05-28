@@ -1,5 +1,7 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
+https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector
+
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
 https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g
