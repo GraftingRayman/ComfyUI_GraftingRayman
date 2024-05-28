@@ -7,7 +7,9 @@ import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
 import latent_preview
 from clip import tokenize, model
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageSequence, ImageOps
+
+import folder_paths
 
 class GRPromptSelector:
     def __init__(self):
@@ -536,3 +538,93 @@ class GRStackImage:
             "yellow": [255, 255, 0],
         }
         return torch.tensor(color_map[colour], dtype=torch.float32)
+
+class GRResizeImageMethods:
+    resize_methods = ["NEAREST", "BOX", "BILINEAR", "HAMMING", "BICUBIC", "LANCZOS"]
+    @classmethod
+    def INPUT_TYPES(cls):
+        input_dir = folder_paths.get_input_directory()  # Assumed to be defined elsewhere
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        if not files:
+            return {
+                "required": {
+                    "image": ("IMAGE",),
+                    "width": ("INT", {"min": 1}),
+                    "height": ("INT", {"min": 1}),
+                    "method": (cls.resize_methods,),
+                }
+            }
+        return {
+            "required": {
+                "image": (sorted(files), {"image_upload": True}),
+                "width": ("INT", {"min": 1}),
+                "height": ("INT", {"min": 1}),
+                "method": (cls.resize_methods,),            
+            }
+        }
+
+    CATEGORY = "image"
+    RETURN_TYPES = ("IMAGE", "MASK")
+    FUNCTION = "load_image"
+
+    def load_image(self, image, width, height, method):
+        if image is None:
+            raise ValueError("No image file selected.")
+        
+        image_path = folder_paths.get_annotated_filepath(image)  # Assumed to be defined elsewhere
+        img = Image.open(image_path)
+        output_images = []
+        output_masks = []
+
+        for i in ImageSequence.Iterator(img):
+            i = ImageOps.exif_transpose(i)
+            if i.mode == 'I':
+                i = i.point(lambda i: i * (1 / 255))
+            image = i.convert("RGB")
+            image = image.resize((width, height), getattr(Image, method))  # Resize image using the specified method
+            image = np.array(image).astype(np.float32) / 255.0
+            image = torch.from_numpy(image)[None,]
+            if 'A' in i.getbands():
+                mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
+                mask = Image.fromarray((mask * 255).astype(np.uint8)).resize((width, height), getattr(Image, method))
+                mask = np.array(mask).astype(np.float32) / 255.0
+                mask = 1. - torch.from_numpy(mask)
+            else:
+                mask = torch.zeros((height, width), dtype=torch.float32, device="cpu")
+            output_images.append(image)
+            output_masks.append(mask.unsqueeze(0))
+
+        if len(output_images) > 1:
+            output_image = torch.cat(output_images, dim=0)
+            output_mask = torch.cat(output_masks, dim=0)
+        else:
+            output_image = output_images[0]
+            output_mask = output_masks[0]
+
+        return (output_image, output_mask)
+
+    @classmethod
+    def IS_CHANGED(cls, image):
+        if image is None:
+            return None
+        image_path = folder_paths.get_annotated_filepath(image)  # Assumed to be defined elsewhere
+        m = hashlib.sha256()
+        with open(image_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, image):
+        if image is None:
+            return "No image file selected."
+        if not folder_paths.exists_annotated_filepath(image):  # Assumed to be defined elsewhere
+            return "Invalid image file: {}".format(image)
+        return True
+
+    def display_image(self, image_tensor):
+        image = image_tensor.squeeze().numpy().transpose(1, 2, 0)
+        plt.imshow(image)
+        plt.axis('off')
+        plt.show()
+
+
