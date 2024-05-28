@@ -1,8 +1,34 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
+[GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
+
+[GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
+
+[GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
+
+[GR Multi Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-multi-mask-create)
+
+[GR Mask Resize](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-resize)
+
+[GR Image Size](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-size)
+
+[GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
+
+[GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
+
+[GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
+
+[GR Stack Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-stack-image)
+
+[GR Image Resize Methods](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-resize-methods)
+
+
+
+
+
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
-https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g
+[My YouTube Channel](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
 
@@ -64,7 +90,7 @@ Creates a random mask of your chosen size, useful to set a latent noise mask at 
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/285f94bd-8ba7-4be8-828b-c61a9a96d3f1)
 
-#GR Tile and Border Image Random Flip
+# GR Tile and Border Image Random Flip
 
 This node takes an image and tiles the image into defined columns and rows, but before outputting it flips one of the tiles randomly
 
@@ -75,6 +101,13 @@ This node takes an image and tiles the image into defined columns and rows, but 
 This node takes two images as input and stacks one on top of the other, both images need to be of the same dimensions
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/1f86b235-832e-497f-a23c-9865538309dc)
+
+# GR Image Resize Methods
+
+This node is a slightly improved Resize node that loads and displays the image (Similar to LoadImage), you can resize the image using different Interpolation methods.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c6d495ec-ba6e-4ecb-b34e-7706b3a70724)
+
 
 
 # Installation:
