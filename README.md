@@ -6,6 +6,17 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
 
+[GR Multi Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-multi-mask-create)
+
+[GR Mask Resize](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-resize)
+
+[GR Image Size](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-size)
+
+[GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
+
+[GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
+
+
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
@@ -71,7 +82,7 @@ Creates a random mask of your chosen size, useful to set a latent noise mask at 
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/285f94bd-8ba7-4be8-828b-c61a9a96d3f1)
 
-#GR Tile and Border Image Random Flip
+# GR Tile and Border Image Random Flip
 
 This node takes an image and tiles the image into defined columns and rows, but before outputting it flips one of the tiles randomly
 
