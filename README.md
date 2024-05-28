@@ -116,6 +116,8 @@ I took the standard Image Preview node and updated it, now you can see the previ
 You can also save the file with the details with the save node
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/cc597614-e8d0-4bf4-b068-4aace58b06c2)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/ba5079e1-0219-44e2-b424-467d9411b005)
+
 
 
 
