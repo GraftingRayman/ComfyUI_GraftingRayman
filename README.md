@@ -112,7 +112,7 @@ This node is a slightly improved Resize node that loads and displays the image (
 
 # GR Image Displayer
 
-I took the standard Image Preview node and updated it, now you can see the preview with additional details like Filename, File Size, Heigh, Width, Type of Image
+I took the standard Image Preview node and updated it, now you can see the preview with additional details like Filename, File Size, Height, Width, Type of Image etc
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/5e01b1cc-2eba-48ba-86d4-74bee8f2e6d5)
 
