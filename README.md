@@ -22,6 +22,8 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Image Resize Methods](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-resize-methods)
 
+[GR Image Displayer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-displayer)
+
 
 
 
@@ -107,6 +109,12 @@ This node takes two images as input and stacks one on top of the other, both ima
 This node is a slightly improved Resize node that loads and displays the image (Similar to LoadImage), you can resize the image using different Interpolation methods.
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c6d495ec-ba6e-4ecb-b34e-7706b3a70724)
+
+# GR Image Displayer
+
+I took the standard Image Preview node and updated it, now you can see the preview with additional details like Filename, File Size, Heigh, Width, Type of Image
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/5e01b1cc-2eba-48ba-86d4-74bee8f2e6d5)
 
 
 
