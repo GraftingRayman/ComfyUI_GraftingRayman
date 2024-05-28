@@ -18,8 +18,14 @@ import time
 
 import folder_paths
 
-PREFIX = '\n\n\33[31m\33[94m[Loading GraftingRaymans GR Nodes]\n\33[0m '
+PREFIX = '\33[31m*\33[94m Loading GraftingRaymans GR Nodes \33[31m*\33[0m '
+print(f"\n\n\33[31m************************************\33[0m")
+print(f"{PREFIX}\n\33[31m************************************")
 
+
+for i in range(10):
+    time.sleep(0.2) 
+    print ("\r Loading... {}".format(i)+str(i), end="")
 
 class GRPromptSelector:
     def __init__(self):
@@ -748,4 +754,7 @@ class GRImageDetailsDisplayer(GRImageDetailsSave):
         plt.tight_layout()  # Adjust layout to ensure text is visible
         plt.show()
 
-print(f"{PREFIX} \n14 Grafting Nodes Loaded\nLoading Complete - Get Grafting\n\n")
+
+print(f"\b\b\b\b\b\b\b\b\b\b\b\b\b\b*\33[0m     14 Grafting Nodes Loaded     \33[31m*")
+print(f"*\33[0m           Get Grafting           \33[31m*")
+print(f"\33[31m************************************\33[0m\n\n")
