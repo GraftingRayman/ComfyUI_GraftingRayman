@@ -1,0 +1,9 @@
+numpy
+torch
+torchvision
+matplotlib
+latent-preview
+clip-by-openai
+Pillow
+folder_paths  # specify if custom or exact name
+comfy
