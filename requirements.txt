@@ -2,5 +2,5 @@ numpy
 torch
 torchvision
 matplotlib
-clip-by-openai
+clip
 Pillow
