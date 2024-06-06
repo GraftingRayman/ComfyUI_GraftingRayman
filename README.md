@@ -127,3 +127,5 @@ You can also save the file with the details with the save node
 Install in your custom_nodes directory:
 
 Git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman
+
+Install the requirements.txt if nodes are not loading
