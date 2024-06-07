@@ -24,9 +24,9 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Image Details](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-details)
 
-[GR Flip Tile Random Red Ring](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr_flip_tile_random_red_ring)
+[GR Flip Tile Random Red Ring](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-flip-tile-random-red-ring)
 
-[GR Flip Tile Random Inverted](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr_flip_tile_random_inverted)
+[GR Flip Tile Random Inverted](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-flip-tile-random-inverted)
 
 
 
