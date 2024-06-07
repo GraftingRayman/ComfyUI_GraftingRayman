@@ -24,6 +24,10 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Image Details](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-details)
 
+[GR Flip Tile Random Red Ring](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr_filp_tile_random_red_ring)
+
+[GR Flip Tile Random Inverted](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr_filp_tile_random_inverted)
+
 
 
 
@@ -118,8 +122,23 @@ You can also save the file with the details with the save node
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/cc597614-e8d0-4bf4-b068-4aace58b06c2)
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/ba5079e1-0219-44e2-b424-467d9411b005)
 
+# GR Flip Tile Random Red Ring
 
+This node takes an image input and creates a tile of the required size, it then flips a random tile and puts a red ring around it
 
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/e34b39e4-2618-43a8-82b8-ce77435a02a3)
+
+If a second image is provided (this iamge needs to be resized before joining to the dimenions of the main tile + 2 x border size, this will then use this second image as the flipped random tile and put a red ring around it
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/ca1db877-f4cc-4203-a80a-885b0bcae6aa)
+
+For both types, the first output will give you the image with the randomly flipped image, the second output will give you the same image but with the red ring around the flipped tile
+
+# GR Flip Tile Random Inverted
+
+This node takes an image, creates a tile of the required size with a randomly flipped tile, the first output shows the full tile with the randomly flipped tile, while the second output shows the randomly flipped tile inverted.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/5bb0ecfc-5f74-4055-bff2-6821f5ffd7aa)
 
 
 # Installation:
