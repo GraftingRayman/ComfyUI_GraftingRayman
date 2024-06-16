@@ -28,17 +28,26 @@ class GRImageSize:
         return {"required": {
             "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
             "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
-            "standard": (["custom", "(SD) 512x512","(SDXL) 1024x1024","640x480 (VGA)", "800x600 (SVGA)", "960x544 (Half HD)","1024x768 (XGA)", "1280x720 (HD)", "1366x768 (HD)","1600x900 (HD+)","1920x1080 (Full HD or 1080p)","2560x1440 (Quad HD or 1440p)","3840x2160 (Ultra HD, 4K, or 2160p)","5120x2880 (5K)","7680x4320 (8K)"],),
+            "standard": (["custom", "(SD) 512x512", "(SDXL) 1024x1024",
+                          "640x480 (VGA)", "800x600 (SVGA)", "960x544 (Half HD)", "1024x768 (XGA)", 
+                          "1280x720 (HD)", "1366x768 (HD)", "1600x900 (HD+)", 
+                          "1920x1080 (Full HD or 1080p)", "2560x1440 (Quad HD or 1440p)", 
+                          "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", 
+                          "7680x4320 (8K)", 
+                          "480x640 (VGA, Portrait)", "600x800 (SVGA, Portrait)", 
+                          "544x960 (Half HD, Portrait)", "768x1024 (XGA, Portrait)", 
+                          "720x1280 (HD, Portrait)", "768x1366 (HD, Portrait)", 
+                          "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
+                          "1440x2560 (Quad HD or 1440p, Portrait)", "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
+                          "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"],),
             "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
         },}
 
-    RETURN_TYPES = ("INT","INT","LATENT")
-    RETURN_NAMES = ("height","width","samples")
+    RETURN_TYPES = ("INT", "INT", "INT", "LATENT")
+    RETURN_NAMES = ("height", "width", "batch_size", "samples")
     FUNCTION = "image_size"
     CATEGORY = "GraftingRayman"
         
-
-
     def image_size(self, height, width, standard, batch_size=1):
         if standard == "custom":
             height = height
@@ -84,10 +93,46 @@ class GRImageSize:
             height = 2880
         elif standard == "7680x4320 (8K)":
             width = 7680
-            height = 4320            
+            height = 4320
+        elif standard == "480x640 (VGA, Portrait)":
+            width = 480
+            height = 640
+        elif standard == "600x800 (SVGA, Portrait)":
+            width = 600
+            height = 800
+        elif standard == "544x960 (Half HD, Portrait)":
+            width = 544
+            height = 960
+        elif standard == "768x1024 (XGA, Portrait)":
+            width = 768
+            height = 1024
+        elif standard == "720x1280 (HD, Portrait)":
+            width = 720
+            height = 1280
+        elif standard == "768x1366 (HD, Portrait)":
+            width = 768
+            height = 1366
+        elif standard == "900x1600 (HD+, Portrait)":
+            width = 900
+            height = 1600
+        elif standard == "1080x1920 (Full HD or 1080p, Portrait)":
+            width = 1080
+            height = 1920
+        elif standard == "1440x2560 (Quad HD or 1440p, Portrait)":
+            width = 1440
+            height = 2560
+        elif standard == "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)":
+            width = 2160
+            height = 3840
+        elif standard == "2880x5120 (5K, Portrait)":
+            width = 2880
+            height = 5120
+        elif standard == "4320x7680 (8K, Portrait)":
+            width = 4320
+            height = 7680            
         latent = torch.zeros([batch_size, 4, height // 8, width // 8])
     
-        return (height,width,{"samples":latent},)
+        return (height, width, batch_size, {"samples": latent})
 
 class GRImageResize:
     def __init__(self):
