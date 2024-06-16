@@ -34,7 +34,7 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
-[My YouTube Channel](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
+[![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
 
