@@ -38,6 +38,12 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 
 Hope this stuff is helpful
 
+# GR Text Overlay
+
+This node creates an text overlay, this can be single or multi line. Placement includes left, right, center, middle, top, bottom. Justification can be manually set. Lots of default colours selectable from the list. All your system TTF and OTF fonts available dynamically. Line spacing as well as letter spacing can be controlled in steps of 0.01. Text without padding can be used as a mask.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4bcd7c03-a53e-48fa-b7b3-fe7341e6ba83)
+
 
 # GR Prompt Selector
 
