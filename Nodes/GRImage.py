@@ -19,6 +19,8 @@ import time
 
 import folder_paths
 
+
+
 class GRImageSize:
     def __init__(self):
         pass
@@ -28,7 +30,9 @@ class GRImageSize:
         return {"required": {
             "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
             "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
-            "standard": (["custom", "(SD) 512x512", "(SDXL) 1024x1024",
+            "standard": (["custom", 
+                          "(SD) 512x512", "(SD2) 768x768", "(SD2) 768x512",
+                          "(SD2) 512x768 (Portrait)", "(SDXL) 1024x1024",
                           "640x480 (VGA)", "800x600 (SVGA)", "960x544 (Half HD)", "1024x768 (XGA)", 
                           "1280x720 (HD)", "1366x768 (HD)", "1600x900 (HD+)", 
                           "1920x1080 (Full HD or 1080p)", "2560x1440 (Quad HD or 1440p)", 
@@ -38,23 +42,41 @@ class GRImageSize:
                           "544x960 (Half HD, Portrait)", "768x1024 (XGA, Portrait)", 
                           "720x1280 (HD, Portrait)", "768x1366 (HD, Portrait)", 
                           "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
-                          "1440x2560 (Quad HD or 1440p, Portrait)", "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
+                          "1440x2560 (Quad HD or 1440p, Portrait)", 
+                          "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
                           "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"],),
             "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
-        },}
+            "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
+        },
+        "optional": {
+            "dimensions": ("IMAGE",)
+        }}
 
-    RETURN_TYPES = ("INT", "INT", "INT", "LATENT")
-    RETURN_NAMES = ("height", "width", "batch_size", "samples")
+    RETURN_TYPES = ("INT", "INT", "INT", "LATENT", "INT")
+    RETURN_NAMES = ("height", "width", "batch_size", "samples", "seed")
     FUNCTION = "image_size"
     CATEGORY = "GraftingRayman"
         
-    def image_size(self, height, width, standard, batch_size=1):
+    def image_size(self, height, width, standard, batch_size=1, seed=None, dimensions=None):
+        if dimensions is not None:
+            standard = "custom"
+            height, width, channels = dimensions.shape[-3:]
+        
         if standard == "custom":
             height = height
             width = width
         elif standard == "(SD) 512x512":
             width = 512
             height = 512
+        elif standard == "(SD2) 768x768":
+            width = 768
+            height = 768
+        elif standard == "(SD2) 768x512":
+            width = 768
+            height = 512
+        elif standard == "(SD2) 512x768 (Portrait)":
+            width = 512
+            height = 768
         elif standard == "(SDXL) 1024x1024":
             width = 1024
             height = 1024
@@ -129,10 +151,15 @@ class GRImageSize:
             height = 5120
         elif standard == "4320x7680 (8K, Portrait)":
             width = 4320
-            height = 7680            
+            height = 7680
+            
+        if seed is None:
+            seed = random.randint(10**14, 10**15 - 1)
+            
         latent = torch.zeros([batch_size, 4, height // 8, width // 8])
     
-        return (height, width, batch_size, {"samples": latent})
+        return (height, width, batch_size, {"samples": latent}, seed)
+
 
 class GRImageResize:
     def __init__(self):
@@ -331,7 +358,7 @@ class GRImageDetailsSave:
         self.compress_level = 4
 
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {"required": 
                     {"images": ("IMAGE", ),
                      "filename_prefix": ("STRING", {"default": "GR_"})},
@@ -383,7 +410,7 @@ class GRImageDetailsSave:
                 font_size = base_font_size
             font = ImageFont.truetype("arial.ttf", font_size)
             draw = ImageDraw.Draw(img)
-            text_height = sum(draw.textsize(line, font=font)[1] for line in text_lines) + 10
+            text_height = sum(draw.textbbox((0, 0), line, font=font)[3] - draw.textbbox((0, 0), line, font=font)[1] for line in text_lines) + 10
             new_img = Image.new('RGB', (img_width, img_height + text_height), (0, 0, 0))
             new_img.paste(img, (0, 0))
             draw = ImageDraw.Draw(new_img)
@@ -391,7 +418,7 @@ class GRImageDetailsSave:
             text_y = img_height + 5
             for line in text_lines:
                 draw.text((text_x, text_y), line, fill="white", font=font)
-                text_y += draw.textsize(line, font=font)[1]
+                text_y += draw.textbbox((0, 0), line, font=font)[3] - draw.textbbox((0, 0), line, font=font)[1]
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
             file = f"{filename_with_batch_num}_{counter:05}_.png"
             new_img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
@@ -402,9 +429,6 @@ class GRImageDetailsSave:
             })
             counter += 1
         return { "ui": { "images": results } }
-        
-        
-        
 
 class GRImageDetailsDisplayer(GRImageDetailsSave):
     def __init__(self):
@@ -414,7 +438,7 @@ class GRImageDetailsDisplayer(GRImageDetailsSave):
         self.compress_level = 1
 
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {"required":
                     {"images": ("IMAGE", ), },
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
