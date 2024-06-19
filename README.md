@@ -56,8 +56,6 @@ A second mask includes the stroke thickness
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
 
-
-
 # GR Prompt Selector
 
 Can choose from 6 prompts
@@ -68,6 +66,11 @@ Negative prompt included
 
 ![grpromptselector](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/e74d6aa6-3e5a-4c5a-91c2-3a9a2f65b7b4)
 
+# GR Prompt Selector Multi
+
+All the features of Prompt Selector, this time you can use all 6 prompt styles at the same time
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4fa4d338-68cb-48cf-b470-ae34779abbce)
 
 # GR Image Resizer
 
@@ -82,8 +85,6 @@ Credit to simeonovich
 This node creates a single mask that you can use
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/cd82a7d5-1c4e-458c-bdf1-c61b0ec85fad)
-
-
 
 # GR Multi Mask Create
 
@@ -106,9 +107,6 @@ When you need to resize your mask image to fit your latent image
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f3ad7848-92ad-48fd-8648-7f1fbd32c8de)
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/04ad98be-86c1-47ef-a334-eaa2844bd3be)
 
-
-
-
 # GR Image Size
 
 A node with preselected image sizes or custom, outputs height and width, can also be used for empty latent image via the latent output
@@ -120,8 +118,6 @@ Added a dimensions input to the node, this takes the dimensions from the image a
 A seed feature has also been added with 15 digit random seeds, this will reduce number of nodes on display
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/56b1fc0d-182d-4ccb-9258-c56ac7308b82)
-
-
 
 # GR Tile Image
 
