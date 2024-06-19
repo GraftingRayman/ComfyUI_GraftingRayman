@@ -16,6 +16,8 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
 
+[GR Mask/Depth Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask/depth-image)
+
 [GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
 
 [GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
