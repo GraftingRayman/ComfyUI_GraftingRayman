@@ -1,5 +1,7 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
+[GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
+
 [GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
 
 [GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
@@ -37,6 +39,17 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 [![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
+
+# GR Text Overlay
+
+This node creates an text overlay, this can be single or multi line. Placement includes left, right, center, middle, top, bottom. Justification can be manually set. Lots of default colours selectable from the list. All your system TTF and OTF fonts available dynamically. Line spacing as well as letter spacing can be controlled in steps of 0.01. Text without padding can be used as a mask.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4bcd7c03-a53e-48fa-b7b3-fe7341e6ba83)
+
+A second mask includes the stroke thickness
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
+
 
 
 # GR Prompt Selector
@@ -85,7 +98,8 @@ A node with preselected image sizes or custom, outputs height and width, can als
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/20942df2-f33a-451b-a95b-e3772b26801e)
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/94d8427b-342c-4cf6-9531-0eb1c1eefc8e)
 
-Added a dimensions input to the node, this takes the dimensions from the image and passes that for the height/width
+Added a dimensions input to the node, this takes the dimensions from the image and passes that for the height/width.
+A seed feature has also been added with 15 digit random seeds, this will reduce number of nodes on display
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/56b1fc0d-182d-4ccb-9258-c56ac7308b82)
 
