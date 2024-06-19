@@ -10,12 +10,13 @@ import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
 import latent_preview
 from clip import tokenize, model
-from PIL import Image, ImageOps, ImageSequence, ImageDraw, ImageFont
+from PIL import Image, ImageOps, ImageSequence, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from PIL.PngImagePlugin import PngInfo
 import folder_paths
 from comfy.cli_args import args
 import random
 import time
+import cv2
 
 import folder_paths
 
@@ -135,3 +136,94 @@ class GRMultiMaskCreate:
             mask[:, :, start_x:end_x] = 1.
             masks.append(mask)
         return tuple(masks)
+
+class GRImageMask:
+    _channels = ["alpha", "red", "green", "blue", "all"]
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "threshold": (
+                    "FLOAT",
+                    {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01},
+                ),
+                "invert": (
+                    "BOOLEAN",
+                    {"default": False},
+                ),
+                "blur_radius": (
+                    "FLOAT",
+                    {"default": 0.0, "min": 0.0, "max": 10.0, "step": 0.1},
+                ),
+                "blur_radius_expand": (
+                    "FLOAT",
+                    {"default": 0.0, "min": 0.0, "max": 10.0, "step": 0.1},
+                ),
+                "brightness": (
+                    "FLOAT",
+                    {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1},
+                ),
+                "contrast": (
+                    "FLOAT",
+                    {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1},
+                ),
+                "channel": (
+                    cls._channels,
+                    {"default": "all"},
+                ),
+                "expand": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 100, "step": 1},
+                ),
+                "contract": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 100, "step": 1},
+                ),
+            }
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "create_mask"
+    CATEGORY = "image/mask"
+
+    def create_mask(self, image, threshold, invert, blur_radius, blur_radius_expand, brightness, contrast, channel, expand, contract):
+        # Convert the image tensor to a PIL image
+        image_np = image.cpu().numpy()
+        pil_image = Image.fromarray((image_np.squeeze(0) * 255).astype(np.uint8))
+
+        # Select the specified channel
+        if channel == "alpha":
+            pil_image = pil_image.convert("RGBA")
+            channel_image = pil_image.split()[-1]
+        elif channel == "red":
+            channel_image = pil_image.split()[0]
+        elif channel == "green":
+            channel_image = pil_image.split()[1]
+        elif channel == "blue":
+            channel_image = pil_image.split()[2]
+        else:  # "all"
+            channel_image = pil_image.convert("L")
+        binary_mask = channel_image.point(lambda p: p > threshold * 255 and 255)
+        if invert:
+            binary_mask = ImageOps.invert(binary_mask)
+        if blur_radius > 0.0:
+            binary_mask = binary_mask.filter(ImageFilter.GaussianBlur(blur_radius))
+        if brightness != 1.0:
+            binary_mask = ImageEnhance.Brightness(binary_mask).enhance(brightness)
+        if contrast != 1.0:
+            binary_mask = ImageEnhance.Contrast(binary_mask).enhance(contrast)
+        binary_mask_np = np.array(binary_mask)
+        if expand > 0:
+            kernel = np.ones((expand * 2 + 1, expand * 2 + 1), np.uint8)
+            binary_mask_np = cv2.dilate(binary_mask_np, kernel, iterations=1)
+        if contract > 0:
+            kernel = np.ones((contract * 2 + 1, contract * 2 + 1), np.uint8)
+            binary_mask_np = cv2.erode(binary_mask_np, kernel, iterations=1)
+        binary_mask = Image.fromarray(binary_mask_np)
+        if blur_radius_expand > 0.0:
+            binary_mask = binary_mask.filter(ImageFilter.GaussianBlur(blur_radius_expand))
+        mask_tensor = torch.tensor(np.array(binary_mask).astype(np.float32) / 255.0).unsqueeze(0).unsqueeze(0)
+
+        return mask_tensor
