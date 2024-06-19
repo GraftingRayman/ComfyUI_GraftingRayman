@@ -16,7 +16,7 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
 
-[GR Mask/Depth Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask/depth-image)
+[GR Image/Depth Mask](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-depth-mask)
 
 [GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
 
@@ -93,7 +93,7 @@ When you need to resize your mask image to fit your latent image
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/26bab87d-add3-43f4-81c3-a64e4e326c0a)
 
-# GR Image/Depth Mask
+# GR Image Depth Mask
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/2b24166f-79a2-429e-8c12-77abd5be33cb)
 
