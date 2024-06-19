@@ -46,6 +46,11 @@ This node creates an text overlay, this can be single or multi line. Placement i
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4bcd7c03-a53e-48fa-b7b3-fe7341e6ba83)
 
+A second mask includes the stroke thickness
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
+
+
 
 # GR Prompt Selector
 
