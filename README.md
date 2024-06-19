@@ -91,6 +91,18 @@ When you need to resize your mask image to fit your latent image
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/26bab87d-add3-43f4-81c3-a64e4e326c0a)
 
+# GR Image/Depth Mask
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/2b24166f-79a2-429e-8c12-77abd5be33cb)
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c17c21a6-a36f-4a68-97c3-4ef5677ddde0)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/7598fac0-a339-42ab-bd04-a72ceb026476)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f3ad7848-92ad-48fd-8648-7f1fbd32c8de)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/04ad98be-86c1-47ef-a334-eaa2844bd3be)
+
+
+
+
 # GR Image Size
 
 A node with preselected image sizes or custom, outputs height and width, can also be used for empty latent image via the latent output
