@@ -1,26 +1,17 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
+# Overlays:
 [GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
 
+# Prompts:
 [GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
 
+[GR Prompt Selector Multi](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector-multi)
+
+# Image Utils:
 [GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
 
-[GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
-
-[GR Multi Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-multi-mask-create)
-
-[GR Mask Resize](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-resize)
-
 [GR Image Size](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-size)
-
-[GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
-
-[GR Image/Depth Mask](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-depth-mask)
-
-[GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
-
-[GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
 
 [GR Stack Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-stack-image)
 
@@ -28,12 +19,25 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Image Details](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-details)
 
+# Mask Utils:
+[GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
+
+[GR Multi Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-multi-mask-create)
+
+[GR Mask Resize](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-resize)
+
+[GR Image/Depth Mask](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-depth-mask)
+
+[GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
+
+# Image Tiling
 [GR Flip Tile Random Red Ring](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-flip-tile-random-red-ring)
 
 [GR Flip Tile Random Inverted](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-flip-tile-random-inverted)
 
+[GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
 
-
+[GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
 
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
