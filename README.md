@@ -178,7 +178,7 @@ This node takes an image, creates a tile of the required size with a randomly fl
 
 # Installation:
 
-Install in your custom_nodes directory:
+Install using ComfyUI Manager or manually install in your custom_nodes directory:
 
 Git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman
 
