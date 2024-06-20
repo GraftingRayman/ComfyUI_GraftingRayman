@@ -175,6 +175,13 @@ This node takes an image, creates a tile of the required size with a randomly fl
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/5bb0ecfc-5f74-4055-bff2-6821f5ffd7aa)
 
+# GR Checkered Board
+
+Creates a checkered board, outputs an image as well as a mask. You can choose from a myriad of colours, borders for individual boxes and the whole board.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/e1308e74-d664-40be-9877-054c054df406)
+
+
 
 # Installation:
 
