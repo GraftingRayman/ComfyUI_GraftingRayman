@@ -1,24 +1,17 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
+# Overlays:
 [GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
 
+# Prompts:
 [GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
 
+[GR Prompt Selector Multi](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector-multi)
+
+# Image Utils:
 [GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
 
-[GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
-
-[GR Multi Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-multi-mask-create)
-
-[GR Mask Resize](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-resize)
-
 [GR Image Size](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-size)
-
-[GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
-
-[GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
-
-[GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
 
 [GR Stack Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-stack-image)
 
@@ -26,12 +19,25 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 [GR Image Details](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-details)
 
+# Mask Utils:
+[GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
+
+[GR Multi Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-multi-mask-create)
+
+[GR Mask Resize](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-resize)
+
+[GR Image/Depth Mask](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-depth-mask)
+
+[GR Mask Create Random](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create-random)
+
+# Image Tiling
 [GR Flip Tile Random Red Ring](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-flip-tile-random-red-ring)
 
 [GR Flip Tile Random Inverted](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-flip-tile-random-inverted)
 
+[GR Tile Image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-image)
 
-
+[GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
 
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
@@ -50,8 +56,6 @@ A second mask includes the stroke thickness
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
 
-
-
 # GR Prompt Selector
 
 Can choose from 6 prompts
@@ -62,6 +66,11 @@ Negative prompt included
 
 ![grpromptselector](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/e74d6aa6-3e5a-4c5a-91c2-3a9a2f65b7b4)
 
+# GR Prompt Selector Multi
+
+All the features of Prompt Selector, this time you can use all 6 prompt styles at the same time
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4fa4d338-68cb-48cf-b470-ae34779abbce)
 
 # GR Image Resizer
 
@@ -77,8 +86,6 @@ This node creates a single mask that you can use
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/cd82a7d5-1c4e-458c-bdf1-c61b0ec85fad)
 
-
-
 # GR Multi Mask Create
 
 If you need multiple mask in one node, you can use this. This node creates upto 8 equal size masks.
@@ -91,6 +98,15 @@ When you need to resize your mask image to fit your latent image
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/26bab87d-add3-43f4-81c3-a64e4e326c0a)
 
+# GR Image Depth Mask
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/2b24166f-79a2-429e-8c12-77abd5be33cb)
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/c17c21a6-a36f-4a68-97c3-4ef5677ddde0)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/7598fac0-a339-42ab-bd04-a72ceb026476)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f3ad7848-92ad-48fd-8648-7f1fbd32c8de)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/04ad98be-86c1-47ef-a334-eaa2844bd3be)
+
 # GR Image Size
 
 A node with preselected image sizes or custom, outputs height and width, can also be used for empty latent image via the latent output
@@ -102,8 +118,6 @@ Added a dimensions input to the node, this takes the dimensions from the image a
 A seed feature has also been added with 15 digit random seeds, this will reduce number of nodes on display
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/56b1fc0d-182d-4ccb-9258-c56ac7308b82)
-
-
 
 # GR Tile Image
 
@@ -161,10 +175,18 @@ This node takes an image, creates a tile of the required size with a randomly fl
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/5bb0ecfc-5f74-4055-bff2-6821f5ffd7aa)
 
+# GR Checkered Board
+
+Creates a checkered board, outputs an image as well as a mask. You can choose from a myriad of colours, borders for individual boxes and the whole board.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/a7990eb6-cb84-4d2c-928d-62f57546c3a3)
+
+
+
 
 # Installation:
 
-Install in your custom_nodes directory:
+Install using ComfyUI Manager or manually install in your custom_nodes directory:
 
 Git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman
 
