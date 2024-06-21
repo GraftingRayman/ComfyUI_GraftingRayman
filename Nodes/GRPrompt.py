@@ -21,7 +21,7 @@ class GRPromptSelector:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "STRING")
     RETURN_NAMES = ("positive", "negative", "prompts")
     FUNCTION = "select_prompt"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Prompt"
 
     def select_prompt(self, clip, **kwargs):
         select_prompt = kwargs["select_prompt"]
@@ -61,7 +61,8 @@ class GRPromptSelectorMulti:
     RETURN_TYPES = ("CONDITIONING","CONDITIONING","CONDITIONING","CONDITIONING","CONDITIONING","CONDITIONING","CONDITIONING",)
     RETURN_NAMES = ("positive1","positive2","positive3","positive4","positive5","positive6","negative",)
     FUNCTION = "select_promptmulti"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Prompt"
+
         
 
 

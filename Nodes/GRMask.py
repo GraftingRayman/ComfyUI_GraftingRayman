@@ -37,7 +37,8 @@ class GRMaskCreateRandom:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "create_mask"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Mask"
+
 
     def create_mask(self, height, width, mask_size, seed):
         mask_dim = int(min(height, width) * mask_size)
@@ -71,7 +72,8 @@ class GRMaskResize:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "resize_mask"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Mask"
+
 
     def resize_mask(self, mask, height, width):
         resized_mask = TF.resize(mask, (height, width))
@@ -96,7 +98,8 @@ class GRMaskCreate:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "create_mask"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Mask"
+
 
     def create_mask(self, height, width, mask_width, position_percentage):
         transparent_width = int(width * mask_width)
@@ -124,7 +127,8 @@ class GRMultiMaskCreate:
     RETURN_TYPES = ("MASK",) * 8  
     RETURN_NAMES = ("mask1", "mask2", "mask3", "mask4", "mask5", "mask6", "mask7", "mask8")
     FUNCTION = "create_masks"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Mask"
+
 
     def create_masks(self, height, width, num_masks):
         masks = []
@@ -186,7 +190,8 @@ class GRImageMask:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "create_mask"
-    CATEGORY = "image/mask"
+    CATEGORY = "GraftingRayman/Mask"
+
 
     def create_mask(self, image, threshold, invert, blur_radius, blur_radius_expand, brightness, contrast, channel, expand, contract):
         # Convert the image tensor to a PIL image

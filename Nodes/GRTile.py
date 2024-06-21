@@ -16,8 +16,8 @@ import folder_paths
 from comfy.cli_args import args
 import random
 import time
-
 import folder_paths
+from comfy.utils import ProgressBar
 
 class GRTileImage:
     def __init__(self):
@@ -40,7 +40,7 @@ class GRTileImage:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "tile_image"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Tiles"
 
     def tile_image(self, image, rows, columns, colour, border=0):
         batch_size, orig_height, orig_width, channels = image.size()
@@ -111,7 +111,8 @@ class GRTileFlipImage:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "tile_image"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Tiles"
+
 
     def tile_image(self, image, rows, columns, colour, border=0):
         batch_size, orig_height, orig_width, channels = image.size()
@@ -192,7 +193,8 @@ class GRFlipTileInverted:
 
     RETURN_TYPES = ("IMAGE", "IMAGE")
     FUNCTION = "GRtile_image"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Tiles"
+
 
     def GRtile_image(self, image, rows, columns, colour, border=0):
         batch_size, orig_height, orig_width, channels = image.size()
@@ -280,7 +282,8 @@ class GRFlipTileRedRing:
 
     RETURN_TYPES = ("IMAGE", "IMAGE")
     FUNCTION = "GRRedRingtile_image"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Tiles"
+
 
     def GRRedRingtile_image(self, image, rows, columns, colour, border=0, border_thickness=5, seed=None, flipped_tile_image=None):
         batch_size, orig_height, orig_width, channels = image.size()
@@ -356,3 +359,125 @@ class GRFlipTileRedRing:
             "yellow": [255, 255, 0],
         }
         return torch.tensor(color_map[colour], dtype=torch.float32)
+
+class GRCheckeredBoard:
+    def __init__(self):
+        self.colors = {
+            "black": torch.tensor([0, 0, 0], dtype=torch.float32) / 255.0,
+            "blue": torch.tensor([0, 0, 255], dtype=torch.float32) / 255.0,
+            "brown": torch.tensor([165, 42, 42], dtype=torch.float32) / 255.0,
+            "cyan": torch.tensor([0, 255, 255], dtype=torch.float32) / 255.0,
+            "darkblue": torch.tensor([0, 0, 139], dtype=torch.float32) / 255.0,
+            "darkgray": torch.tensor([169, 169, 169], dtype=torch.float32) / 255.0,
+            "darkgreen": torch.tensor([0, 100, 0], dtype=torch.float32) / 255.0,
+            "darkred": torch.tensor([139, 0, 0], dtype=torch.float32) / 255.0,
+            "gray": torch.tensor([128, 128, 128], dtype=torch.float32) / 255.0,
+            "green": torch.tensor([0, 255, 0], dtype=torch.float32) / 255.0,
+            "lightblue": torch.tensor([173, 216, 230], dtype=torch.float32) / 255.0,
+            "lightgray": torch.tensor([211, 211, 211], dtype=torch.float32) / 255.0,
+            "lightgreen": torch.tensor([144, 238, 144], dtype=torch.float32) / 255.0,
+            "lightred": torch.tensor([255, 182, 193], dtype=torch.float32) / 255.0,
+            "magenta": torch.tensor([255, 0, 255], dtype=torch.float32) / 255.0,
+            "maroon": torch.tensor([128, 0, 0], dtype=torch.float32) / 255.0,
+            "navy": torch.tensor([0, 0, 128], dtype=torch.float32) / 255.0,
+            "olive": torch.tensor([128, 128, 0], dtype=torch.float32) / 255.0,
+            "orange": torch.tensor([255, 165, 0], dtype=torch.float32) / 255.0,
+            "pink": torch.tensor([255, 192, 203], dtype=torch.float32) / 255.0,
+            "purple": torch.tensor([128, 0, 128], dtype=torch.float32) / 255.0,
+            "red": torch.tensor([255, 0, 0], dtype=torch.float32) / 255.0,
+            "salmon": torch.tensor([250, 128, 114], dtype=torch.float32) / 255.0,
+            "silver": torch.tensor([192, 192, 192], dtype=torch.float32) / 255.0,
+            "teal": torch.tensor([0, 128, 128], dtype=torch.float32) / 255.0,
+            "violet": torch.tensor([238, 130, 238], dtype=torch.float32) / 255.0,
+            "white": torch.tensor([255, 255, 255], dtype=torch.float32) / 255.0,
+            "yellow": torch.tensor([255, 255, 0], dtype=torch.float32) / 255.0,
+            "gold": torch.tensor([255, 215, 0], dtype=torch.float32) / 255.0,
+            "khaki": torch.tensor([240, 230, 140], dtype=torch.float32) / 255.0,
+            "lime": torch.tensor([50, 205, 50], dtype=torch.float32) / 255.0,
+            "turquoise": torch.tensor([64, 224, 208], dtype=torch.float32) / 255.0,
+        }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        colors = list(cls().colors.keys())
+        return {
+            "required": {
+                "rows": ("INT", {"min": 1}),
+                "columns": ("INT", {"min": 1}),
+                "tile_size": ("INT", {"min": 1}),
+                "color1": (colors,),
+                "color2": (colors,),
+                "border": ("INT", {"min": 0, "default": 0}),
+                "border_color": (colors,),
+                "outer_border": ("INT", {"min": 0, "default": 0}),
+                "outer_border_color": (colors,)
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE", "MASK",)
+    FUNCTION = "create_checkered_board"
+    CATEGORY = "GraftingRayman/Patterns"
+
+    def create_checkered_board(self, rows, columns, tile_size, color1, color2, border=0, border_color="black", outer_border=0, outer_border_color="black"):
+        total_tile_size = tile_size + 2 * border
+        board_height = rows * total_tile_size
+        board_width = columns * total_tile_size
+        outer_board_height = board_height + 2 * outer_border
+        outer_board_width = board_width + 2 * outer_border
+
+        image = torch.zeros((1, outer_board_height, outer_board_width, 3), dtype=torch.float32)
+        mask = torch.ones((1, outer_board_height, outer_board_width), dtype=torch.float32)  # Start with a mask of ones (opaque)
+        
+        color1_value = self.colors[color1]
+        color2_value = self.colors[color2]
+        border_color_value = self.colors[border_color]
+        outer_border_color_value = self.colors[outer_border_color]
+
+        # Determine the lightest color for the mask
+        if color1_value.mean() > color2_value.mean():
+            transparent_color_value = color1_value
+        else:
+            transparent_color_value = color2_value
+
+        # Fill the outer border
+        if outer_border > 0:
+            image[:, :outer_border, :, :] = outer_border_color_value  # Top border
+            image[:, -outer_border:, :, :] = outer_border_color_value  # Bottom border
+            image[:, :, :outer_border, :] = outer_border_color_value  # Left border
+            image[:, :, -outer_border:, :] = outer_border_color_value  # Right border
+
+        batch = rows * columns
+        pbar = ProgressBar(batch)
+        
+        for i in range(rows):
+            for j in range(columns):
+                idx = i * columns + j  # Calculate the current index for progress bar
+
+                y_start = outer_border + i * total_tile_size
+                y_end = y_start + total_tile_size
+                x_start = outer_border + j * total_tile_size
+                x_end = x_start + total_tile_size
+
+                if (i + j) % 2 == 0:
+                    tile_color_value = color1_value
+                else:
+                    tile_color_value = color2_value
+
+                image[:, y_start + border:y_end - border, x_start + border:x_end - border, :] = tile_color_value
+                
+                # Update mask for the transparent color
+                if torch.equal(tile_color_value, transparent_color_value):
+                    mask[:, y_start + border:y_end - border, x_start + border:x_end - border] = 0  # Set transparent
+
+                if border > 0:
+                    image[:, y_start:y_start + border, x_start:x_end, :] = border_color_value  # Top border
+                    image[:, y_end - border:y_end, x_start:x_end, :] = border_color_value  # Bottom border
+                    image[:, y_start:y_end, x_start:x_start + border, :] = border_color_value  # Left border
+                    image[:, y_start:y_end, x_end - border:x_end, :] = border_color_value  # Right border
+                
+                pbar.update_absolute(idx)
+
+        return image, mask
+
+    def get_color_value(self, color):
+        return self.colors[color]

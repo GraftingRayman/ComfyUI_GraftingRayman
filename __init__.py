@@ -5,13 +5,13 @@ print(f"{PREFIX}\n\33[31m************************************")
 from .Nodes.GRImage import GRImageSize, GRImageResize, GRStackImage, GRResizeImageMethods, GRImageDetailsDisplayer, GRImageDetailsSave
 from .Nodes.GRPrompt import GRPromptSelector, GRPromptSelectorMulti
 from .Nodes.GRMask import GRMaskResize, GRMaskCreate, GRMultiMaskCreate, GRMaskCreateRandom, GRImageMask
-from .Nodes.GRTile import GRTileImage, GRTileFlipImage, GRFlipTileRedRing, GRFlipTileInverted
-from .Nodes.GRTextOverlay import GRTextOverlay
+from .Nodes.GRTile import GRTileImage, GRTileFlipImage, GRFlipTileRedRing, GRFlipTileInverted, GRCheckeredBoard
+from .Nodes.GRTextOverlay import GRTextOverlay, GROnomatopoeia
 
 import time
 
 
-NODE_CLASS_MAPPINGS = { "GR Prompt Selector" : GRPromptSelector , "GR Image Resize" : GRImageResize, "GR Mask Resize" : GRMaskResize, "GR Mask Create" : GRMaskCreate, "GR Multi Mask Create" : GRMultiMaskCreate, "GR Image Size": GRImageSize, "GR Tile and Border Image": GRTileImage, "GR Prompt Selector Multi": GRPromptSelectorMulti, "GR Tile and Border Image Random Flip" : GRTileFlipImage, "GR Mask Create Random": GRMaskCreateRandom, "GR Stack Image": GRStackImage, "GR Image Resize Methods" : GRResizeImageMethods,"GR Image Details Displayer": GRImageDetailsDisplayer, "GR Image Details Saver": GRImageDetailsSave, "GR Flip Tile Random Red Ring": GRFlipTileRedRing, "GR Flip Tile Random Inverted": GRFlipTileInverted,"GR Text Overlay": GRTextOverlay,"GR Image/Depth Mask": GRImageMask }
+NODE_CLASS_MAPPINGS = { "GR Prompt Selector" : GRPromptSelector , "GR Image Resize" : GRImageResize, "GR Mask Resize" : GRMaskResize, "GR Mask Create" : GRMaskCreate, "GR Multi Mask Create" : GRMultiMaskCreate, "GR Image Size": GRImageSize, "GR Tile and Border Image": GRTileImage, "GR Prompt Selector Multi": GRPromptSelectorMulti, "GR Tile and Border Image Random Flip" : GRTileFlipImage, "GR Mask Create Random": GRMaskCreateRandom, "GR Stack Image": GRStackImage, "GR Image Resize Methods" : GRResizeImageMethods,"GR Image Details Displayer": GRImageDetailsDisplayer, "GR Image Details Saver": GRImageDetailsSave, "GR Flip Tile Random Red Ring": GRFlipTileRedRing, "GR Flip Tile Random Inverted": GRFlipTileInverted,"GR Text Overlay": GRTextOverlay,"GR Image/Depth Mask": GRImageMask,"GR Checkered Board":GRCheckeredBoard, "GR Onomatopoeia": GROnomatopoeia }
 
 NODE_DISPLAY_NAME_MAPPINGS = { }
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

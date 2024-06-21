@@ -21,145 +21,99 @@ import folder_paths
 
 
 
+
+
 class GRImageSize:
+    _available_colours = {
+        "amethyst": "#9966CC", "black": "#000000", "blue": "#0000FF", "cyan": "#00FFFF", "diamond": "#B9F2FF",
+        "emerald": "#50C878", "gold": "#FFD700", "gray": "#808080", "green": "#008000", "lime": "#00FF00",
+        "magenta": "#FF00FF", "maroon": "#800000", "navy": "#000080", "neon_blue": "#1B03A3", "neon_green": "#39FF14",
+        "neon_orange": "#FF6103", "neon_pink": "#FF10F0", "neon_yellow": "#DFFF00", "olive": "#808000", "platinum": "#E5E4E2",
+        "purple": "#800080", "red": "#FF0000", "rose_gold": "#B76E79", "ruby": "#E0115F", "sapphire": "#0F52BA",
+        "silver": "#C0C0C0", "teal": "#008080", "topaz": "#FFCC00", "white": "#FFFFFF", "yellow": "#FFFF00"
+    }
+
     def __init__(self):
         pass
-                
+
     @classmethod
     def INPUT_TYPES(cls):
-        return {"required": {
-            "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
-            "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
-            "standard": (["custom", 
-                          "(SD) 512x512", "(SD2) 768x768", "(SD2) 768x512",
-                          "(SD2) 512x768 (Portrait)", "(SDXL) 1024x1024",
-                          "640x480 (VGA)", "800x600 (SVGA)", "960x544 (Half HD)", "1024x768 (XGA)", 
-                          "1280x720 (HD)", "1366x768 (HD)", "1600x900 (HD+)", 
-                          "1920x1080 (Full HD or 1080p)", "2560x1440 (Quad HD or 1440p)", 
-                          "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", 
-                          "7680x4320 (8K)", 
-                          "480x640 (VGA, Portrait)", "600x800 (SVGA, Portrait)", 
-                          "544x960 (Half HD, Portrait)", "768x1024 (XGA, Portrait)", 
-                          "720x1280 (HD, Portrait)", "768x1366 (HD, Portrait)", 
-                          "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
-                          "1440x2560 (Quad HD or 1440p, Portrait)", 
-                          "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
-                          "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"],),
-            "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
-            "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
-        },
-        "optional": {
-            "dimensions": ("IMAGE",)
-        }}
+        return {
+            "required": {
+                "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
+                "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
+                "standard": ([
+                    "custom", "(SD) 512x512", "(SD2) 768x768", "(SD2) 768x512", "(SD2) 512x768 (Portrait)", 
+                    "(SDXL) 1024x1024", "640x480 (VGA)", "800x600 (SVGA)", "960x544 (Half HD)", "1024x768 (XGA)", 
+                    "1280x720 (HD)", "1366x768 (HD)", "1600x900 (HD+)", "1920x1080 (Full HD or 1080p)", 
+                    "2560x1440 (Quad HD or 1440p)", "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", 
+                    "7680x4320 (8K)", "480x640 (VGA, Portrait)", "600x800 (SVGA, Portrait)", 
+                    "544x960 (Half HD, Portrait)", "768x1024 (XGA, Portrait)", "720x1280 (HD, Portrait)", 
+                    "768x1366 (HD, Portrait)", "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
+                    "1440x2560 (Quad HD or 1440p, Portrait)", "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
+                    "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"
+                ],),
+                "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
+                "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
+                "color": (list(sorted(cls._available_colours.keys())), {"default": "white"})
+            },
+            "optional": {
+                "dimensions": ("IMAGE",)
+            }
+        }
 
-    RETURN_TYPES = ("INT", "INT", "INT", "LATENT", "INT")
-    RETURN_NAMES = ("height", "width", "batch_size", "samples", "seed")
+    RETURN_TYPES = ("INT", "INT", "INT", "LATENT", "INT", "IMAGE")
+    RETURN_NAMES = ("height", "width", "batch_size", "samples", "seed", "empty_image")
     FUNCTION = "image_size"
-    CATEGORY = "GraftingRayman"
-        
-    def image_size(self, height, width, standard, batch_size=1, seed=None, dimensions=None):
+    CATEGORY = "GraftingRayman/Images"
+
+    def hex_to_rgb(self, hex_color):
+        """Convert hex color to RGB."""
+        hex_color = hex_color.lstrip("#")
+        if len(hex_color) == 3:
+            hex_color = hex_color * 2
+        return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
+
+    def generate_empty_image(self, width, height, batch_size, color):
+        """Generate an empty image filled with the specified color."""
+        color_value = int(self._available_colours[color].lstrip("#"), 16)
+        r = torch.full([batch_size, height, width, 1], ((color_value >> 16) & 0xFF) / 0xFF)
+        g = torch.full([batch_size, height, width, 1], ((color_value >> 8) & 0xFF) / 0xFF)
+        b = torch.full([batch_size, height, width, 1], ((color_value) & 0xFF) / 0xFF)
+        return torch.cat((r, g, b), dim=-1)
+
+    def image_size(self, height, width, standard, batch_size=1, seed=None, color="white", dimensions=None):
         if dimensions is not None:
             standard = "custom"
             height, width, channels = dimensions.shape[-3:]
-        
+
         if standard == "custom":
             height = height
             width = width
-        elif standard == "(SD) 512x512":
-            width = 512
-            height = 512
-        elif standard == "(SD2) 768x768":
-            width = 768
-            height = 768
-        elif standard == "(SD2) 768x512":
-            width = 768
-            height = 512
-        elif standard == "(SD2) 512x768 (Portrait)":
-            width = 512
-            height = 768
-        elif standard == "(SDXL) 1024x1024":
-            width = 1024
-            height = 1024
-        elif standard == "640x480 (VGA)":
-            width = 640
-            height = 480
-        elif standard == "800x600 (SVGA)":
-            width = 800
-            height = 608
-        elif standard == "960x544 (Half HD)":
-            width = 960
-            height = 544
-        elif standard == "1024x768 (XGA)":
-            width = 1024
-            height = 768
-        elif standard == "1280x720 (HD)":
-            width = 1280
-            height = 720
-        elif standard == "1366x768 (HD)":
-            width = 1360
-            height = 768
-        elif standard == "1600x900 (HD+)":
-            width = 1600
-            height = 896
-        elif standard == "1920x1080 (Full HD or 1080p)":
-            width = 1920
-            height = 1088
-        elif standard == "2560x1440 (Quad HD or 1440p)":
-            width = 2560
-            height = 1440
-        elif standard == "3840x2160 (Ultra HD, 4K, or 2160p)":
-            width = 3840
-            height = 2160
-        elif standard == "5120x2880 (5K)":
-            width = 5120
-            height = 2880
-        elif standard == "7680x4320 (8K)":
-            width = 7680
-            height = 4320
-        elif standard == "480x640 (VGA, Portrait)":
-            width = 480
-            height = 640
-        elif standard == "600x800 (SVGA, Portrait)":
-            width = 600
-            height = 800
-        elif standard == "544x960 (Half HD, Portrait)":
-            width = 544
-            height = 960
-        elif standard == "768x1024 (XGA, Portrait)":
-            width = 768
-            height = 1024
-        elif standard == "720x1280 (HD, Portrait)":
-            width = 720
-            height = 1280
-        elif standard == "768x1366 (HD, Portrait)":
-            width = 768
-            height = 1366
-        elif standard == "900x1600 (HD+, Portrait)":
-            width = 900
-            height = 1600
-        elif standard == "1080x1920 (Full HD or 1080p, Portrait)":
-            width = 1080
-            height = 1920
-        elif standard == "1440x2560 (Quad HD or 1440p, Portrait)":
-            width = 1440
-            height = 2560
-        elif standard == "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)":
-            width = 2160
-            height = 3840
-        elif standard == "2880x5120 (5K, Portrait)":
-            width = 2880
-            height = 5120
-        elif standard == "4320x7680 (8K, Portrait)":
-            width = 4320
-            height = 7680
-            
+        else:
+            standard_sizes = {
+                "(SD) 512x512": (512, 512), "(SD2) 768x768": (768, 768), "(SD2) 768x512": (768, 512),
+                "(SD2) 512x768 (Portrait)": (512, 768), "(SDXL) 1024x1024": (1024, 1024), "640x480 (VGA)": (640, 480),
+                "800x600 (SVGA)": (800, 608), "960x544 (Half HD)": (960, 544), "1024x768 (XGA)": (1024, 768),
+                "1280x720 (HD)": (1280, 720), "1366x768 (HD)": (1360, 768), "1600x900 (HD+)": (1600, 896),
+                "1920x1080 (Full HD or 1080p)": (1920, 1088), "2560x1440 (Quad HD or 1440p)": (2560, 1440),
+                "3840x2160 (Ultra HD, 4K, or 2160p)": (3840, 2160), "5120x2880 (5K)": (5120, 2880),
+                "7680x4320 (8K)": (7680, 4320), "480x640 (VGA, Portrait)": (480, 640), "600x800 (SVGA, Portrait)": (600, 800),
+                "544x960 (Half HD, Portrait)": (544, 960), "768x1024 (XGA, Portrait)": (768, 1024),
+                "720x1280 (HD, Portrait)": (720, 1280), "768x1366 (HD, Portrait)": (768, 1366),
+                "900x1600 (HD+, Portrait)": (900, 1600), "1080x1920 (Full HD or 1080p, Portrait)": (1080, 1920),
+                "1440x2560 (Quad HD or 1440p, Portrait)": (1440, 2560), "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (2160, 3840),
+                "2880x5120 (5K, Portrait)": (2880, 5120), "4320x7680 (8K, Portrait)": (4320, 7680)
+            }
+            height, width = standard_sizes.get(standard, (height, width))
+
         if seed is None:
             seed = random.randint(10**14, 10**15 - 1)
             
         latent = torch.zeros([batch_size, 4, height // 8, width // 8])
+        empty_image = self.generate_empty_image(width, height, batch_size, color)
     
-        return (height, width, batch_size, {"samples": latent}, seed)
-
+        return (height, width, batch_size, {"samples": latent}, seed, empty_image)
 
 class GRImageResize:
     def __init__(self):
@@ -177,7 +131,8 @@ class GRImageResize:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "resize_image"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Images"
+
 
     def resize_image(self, image, height, width):
         input_image = image.permute((0, 3, 1, 2))
@@ -205,7 +160,8 @@ class GRStackImage:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "stack_images"
-    CATEGORY = "GraftingRayman"
+    CATEGORY = "GraftingRayman/Images"
+
 
     def stack_images(self, image1, image2, colour, border=0):
         batch_size1, orig_height1, orig_width1, channels1 = image1.size()
@@ -285,7 +241,8 @@ class GRResizeImageMethods:
             }
         }
 
-    CATEGORY = "image"
+    CATEGORY = "GraftingRayman/Images"
+
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "load_image"
 
@@ -370,7 +327,8 @@ class GRImageDetailsSave:
 
     OUTPUT_NODE = True
 
-    CATEGORY = "image"
+    CATEGORY = "GraftingRayman/Images"
+
 
     def image_details(self, images, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
         filename_prefix += self.prefix_append
@@ -443,6 +401,8 @@ class GRImageDetailsDisplayer(GRImageDetailsSave):
                     {"images": ("IMAGE", ), },
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
                 }
+    CATEGORY = "GraftingRayman/Images"
+
 
     def display_image(self, image_tensor):
         if image_tensor is None:
