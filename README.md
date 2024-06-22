@@ -1,5 +1,25 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
+# Installation:
+
+Install using ComfyUI Manager or manually install in your custom_nodes directory with the following command:
+
+"git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman"
+
+Make sure to install Clip
+
+For comfyui portal run the following command in your comyfui folder
+
+ ".\python_embeded\python.exe -m pip install git+https://github.com/openai/CLIP.git"
+
+ For system python run the following command
+
+ "pip install git+https://github.com/openai/CLIP.git"
+
+ Without this the nodes will fail to be importec
+
+
+
 # Overlays:
 [GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
 
@@ -193,12 +213,3 @@ Creates a checkered board, outputs an image as well as a mask. You can choose fr
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/a7990eb6-cb84-4d2c-928d-62f57546c3a3)
 
 
-
-
-# Installation:
-
-Install using ComfyUI Manager or manually install in your custom_nodes directory:
-
-Git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman
-
-Install the requirements.txt if nodes are not loading
