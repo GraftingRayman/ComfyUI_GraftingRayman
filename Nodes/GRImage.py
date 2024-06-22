@@ -21,8 +21,6 @@ import folder_paths
 
 
 
-
-
 class GRImageSize:
     _available_colours = {
         "amethyst": "#9966CC", "black": "#000000", "blue": "#0000FF", "cyan": "#00FFFF", "diamond": "#B9F2FF",
@@ -92,18 +90,18 @@ class GRImageSize:
             width = width
         else:
             standard_sizes = {
-                "(SD) 512x512": (512, 512), "(SD2) 768x768": (768, 768), "(SD2) 768x512": (768, 512),
-                "(SD2) 512x768 (Portrait)": (512, 768), "(SDXL) 1024x1024": (1024, 1024), "640x480 (VGA)": (640, 480),
-                "800x600 (SVGA)": (800, 608), "960x544 (Half HD)": (960, 544), "1024x768 (XGA)": (1024, 768),
-                "1280x720 (HD)": (1280, 720), "1366x768 (HD)": (1360, 768), "1600x900 (HD+)": (1600, 896),
-                "1920x1080 (Full HD or 1080p)": (1920, 1088), "2560x1440 (Quad HD or 1440p)": (2560, 1440),
-                "3840x2160 (Ultra HD, 4K, or 2160p)": (3840, 2160), "5120x2880 (5K)": (5120, 2880),
-                "7680x4320 (8K)": (7680, 4320), "480x640 (VGA, Portrait)": (480, 640), "600x800 (SVGA, Portrait)": (600, 800),
-                "544x960 (Half HD, Portrait)": (544, 960), "768x1024 (XGA, Portrait)": (768, 1024),
-                "720x1280 (HD, Portrait)": (720, 1280), "768x1366 (HD, Portrait)": (768, 1366),
-                "900x1600 (HD+, Portrait)": (900, 1600), "1080x1920 (Full HD or 1080p, Portrait)": (1080, 1920),
-                "1440x2560 (Quad HD or 1440p, Portrait)": (1440, 2560), "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (2160, 3840),
-                "2880x5120 (5K, Portrait)": (2880, 5120), "4320x7680 (8K, Portrait)": (4320, 7680)
+                "(SD) 512x512": (512, 512), "(SD2) 768x768": (768, 768), "(SD2) 768x512": (512, 768),
+                "(SD2) 512x768 (Portrait)": (768, 512), "(SDXL) 1024x1024": (1024, 1024), "640x480 (VGA)": (480, 640),
+                "800x600 (SVGA)": (600, 800), "960x544 (Half HD)": (544, 960), "1024x768 (XGA)": (768, 1024),
+                "1280x720 (HD)": (720, 1280), "1366x768 (HD)": (768, 1366), "1600x900 (HD+)": (900, 1600),
+                "1920x1080 (Full HD or 1080p)": (1080, 1920), "2560x1440 (Quad HD or 1440p)": (1440, 2560),
+                "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840), "5120x2880 (5K)": (2880, 5120),
+                "7680x4320 (8K)": (4320, 7680), "480x640 (VGA, Portrait)": (640, 480), "600x800 (SVGA, Portrait)": (800, 600),
+                "544x960 (Half HD, Portrait)": (960, 544), "768x1024 (XGA, Portrait)": (1024, 768),
+                "720x1280 (HD, Portrait)": (1280, 720), "768x1366 (HD, Portrait)": (1366, 768),
+                "900x1600 (HD+, Portrait)": (1600, 900), "1080x1920 (Full HD or 1080p, Portrait)": (1920, 1080),
+                "1440x2560 (Quad HD or 1440p, Portrait)": (2560, 1440), "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (3840, 2160),
+                "2880x5120 (5K, Portrait)": (5120, 2880), "4320x7680 (8K, Portrait)": (7680, 4320)
             }
             height, width = standard_sizes.get(standard, (height, width))
 
@@ -114,6 +112,7 @@ class GRImageSize:
         empty_image = self.generate_empty_image(width, height, batch_size, color)
     
         return (height, width, batch_size, {"samples": latent}, seed, empty_image)
+
 
 class GRImageResize:
     def __init__(self):
