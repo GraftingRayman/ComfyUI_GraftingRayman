@@ -6,7 +6,7 @@ Install using ComfyUI Manager or manually install in your custom_nodes directory
 
 "git clone https://github.com/GraftingRayman/ComfyUI_GraftingRayman"
 
-Make sure to install Clip
+**Make sure to install Clip
 
 For comfyui portal run the following command in your comyfui folder
 
@@ -16,7 +16,7 @@ For comfyui portal run the following command in your comyfui folder
 
  "pip install git+https://github.com/openai/CLIP.git"
 
- Without this the nodes will fail to be importec
+ Without this the nodes will fail to be imported**
 
 
 
