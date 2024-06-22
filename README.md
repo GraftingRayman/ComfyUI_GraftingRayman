@@ -10,13 +10,13 @@ Install using ComfyUI Manager or manually install in your custom_nodes directory
 
 For comfyui portal run the following command in your comyfui folder
 
- ".\python_embeded\python.exe -m pip install git+https://github.com/openai/CLIP.git"
+ **".\python_embeded\python.exe -m pip install git+https://github.com/openai/CLIP.git"**
 
  For system python run the following command
 
- "pip install git+https://github.com/openai/CLIP.git"
+ **"pip install git+https://github.com/openai/CLIP.git"**
 
- Without this the nodes will fail to be imported**
+ Without this the nodes will fail to be imported
 
 
 
