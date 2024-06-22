@@ -8,7 +8,7 @@ Install using ComfyUI Manager or manually install in your custom_nodes directory
 
 **Make sure to install Clip**
 
-For comfyui portal run the following command in your comyfui folder
+For comfyui portable run the following command in your comyfui folder
 
  **".\python_embeded\python.exe -m pip install git+https://github.com/openai/CLIP.git"**
 
