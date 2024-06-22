@@ -3,6 +3,8 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 # Overlays:
 [GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
 
+[GR Onomatopoeia](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-onomatopoeia)
+
 # Prompts:
 [GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
 
@@ -55,6 +57,15 @@ This node creates an text overlay, this can be single or multi line. Placement i
 A second mask includes the stroke thickness
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
+
+# GR Onomatopoeia
+
+Creates random Onomatopoeia or uses the letters provided. Still a bit buggy, currently placing it left or right does not work correctly.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/10dc92f6-4941-43ba-b122-e14f79242b9b)
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/3049f65d-9e65-44a2-9120-37e272b601e8)
+
 
 # GR Prompt Selector
 
