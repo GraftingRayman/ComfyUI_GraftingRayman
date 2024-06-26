@@ -1,4 +1,4 @@
-import os
+import torch
 from clip import tokenize
 
 
