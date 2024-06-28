@@ -41,6 +41,8 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Image Details](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-details)
 
+[GR Image Paste](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-paste)
+
 # Mask Utils:
 [GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
 
@@ -212,4 +214,8 @@ Creates a checkered board, outputs an image as well as a mask. You can choose fr
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/a7990eb6-cb84-4d2c-928d-62f57546c3a3)
 
+# GR Image Paste
 
+This node takes the second image and pastes it over the first. Opacity can be set for the second image. Both images need to be of the same dimensions, this can be resized using GR Image Resize node.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/06aaa5d4-275c-4abe-b4cc-107f334a124b)
