@@ -415,3 +415,29 @@ class GRImageDetailsDisplayer(GRImageDetailsSave):
         plt.text(0, -0.1, f"Height: {height}\nWidth: {width}\nType: {image_type}", horizontalalignment='left', verticalalignment='top', transform=plt.gca().transAxes, fontsize=10, color='white')
         plt.tight_layout()  # Adjust layout to ensure text is visible
         plt.show()
+
+class GRImagePaste:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image1": ("IMAGE",),
+                "image2": ("IMAGE",),
+                "opacity": ("INT", {"min": 0, "max": 100, "default": 100}),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "gr_image_paste"
+    CATEGORY = "GraftingRayman/Images"
+
+    def gr_image_paste(self, image1, image2, opacity):
+        device = image1.device
+        image2 = image2.to(device)
+        image2 = TF.resize(image2, image1.shape[-2:])
+        opacity_factor = opacity / 100.0
+        combined_image = image1 * (1 - opacity_factor) + image2 * opacity_factor
+        return (combined_image,)
