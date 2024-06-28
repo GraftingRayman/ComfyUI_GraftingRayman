@@ -18,7 +18,6 @@ import random
 import time
 import cv2
 
-import folder_paths
 
 class GRMaskCreateRandom:
     def __init__(self):

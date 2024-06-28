@@ -16,7 +16,7 @@ import folder_paths
 from comfy.cli_args import args
 import random
 import time
-
+import hashlib 
 import folder_paths
 
 
