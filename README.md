@@ -80,6 +80,11 @@ A second mask includes the stroke thickness
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
 
+Added a background box that can be used to highlight the text, the edge styles for the box can be selected as well as its opacity
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4d3f5cfa-bfd7-418b-8f74-40600b3f35d7)
+
+
 # GR Onomatopoeia
 
 Creates random Onomatopoeia or uses the letters provided. Still a bit buggy, currently placing it left or right does not work correctly.
