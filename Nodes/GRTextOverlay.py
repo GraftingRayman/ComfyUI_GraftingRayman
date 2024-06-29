@@ -524,9 +524,6 @@ class GRTextOverlay:
 
             return images_tensor, text_masks_tensor, stroke_masks_tensor
 
-
-
-
 class GROnomatopoeia:
     _horizontal_alignments = ["left", "center", "right"]
     _vertical_alignments = ["top", "middle", "bottom"]
