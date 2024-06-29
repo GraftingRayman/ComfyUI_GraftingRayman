@@ -558,6 +558,8 @@ class GROnomatopoeia:
         "silver": "#C0C0C0", "teal": "#008080", "topaz": "#FFCC00", "white": "#FFFFFF", "yellow": "#FFFF00"
     }
 
+    _shapes = ["none", "star", "cloud", "lightning", "bomb", "skull", "dots"]
+
     def __init__(self, device="cpu"):
         self.device = device
         self._loaded_font = None
@@ -577,7 +579,6 @@ class GROnomatopoeia:
                 "vertical_alignment": (cls._vertical_alignments, {"default": "middle"}),
                 "horizontal_alignment": (cls._horizontal_alignments, {"default": "center"}),
                 "justification": (cls._justifications, {"default": "left"}),
-                "bubble_justification": (cls._justifications, {"default": "center"}),
                 "padding": ("INT", {"default": 0, "min": 0, "max": 128, "step": 1}),
                 "stroke_thickness": ("INT", {"default": 5, "min": 0, "max": 10, "step": 1}),
                 "stroke_colour": (list(sorted(cls._available_colours.keys())), {"default": "red"}),
@@ -588,9 +589,11 @@ class GROnomatopoeia:
                 "bubble_stroke_thickness": ("INT", {"default": 10, "min": 0, "max": 20, "step": 1}),
                 "bubble_fill": ("BOOLEAN", {"default": True}),
                 "bubble_fill_colour": (list(sorted(cls._available_colours.keys())), {"default": "white"}),
-                "jagged_points": ("INT", {"default": 45, "min": 3, "max": 100, "step": 1}),
+                "line_type": (["straight", "curved inwards", "curved outwards", "splat", "drip"], {"default": "straight"}),
+                "jagged_points": ("INT", {"default": 45, "min": 3, "max": 100, "step": 2}),
                 "jagged_min_distance": ("INT", {"default": 50, "min": 0, "max": 500, "step": 1}),
                 "jagged_max_distance": ("INT", {"default": 100, "min": 0, "max": 500, "step": 1}),
+                "shape_type": (cls._shapes, {"default": "none"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 999999999999999}),
                 "vertical_randomness": ("INT", {"default": 10, "min": 0, "max": 100, "step": 1}),
                 "letter_spacing": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
@@ -599,7 +602,7 @@ class GROnomatopoeia:
             }
         }
 
-    RETURN_TYPES = ("IMAGE",)
+    RETURN_TYPES = ("IMAGE", "MASK",)
     FUNCTION = "batch_process"
     CATEGORY = "GraftingRayman/Overlays"
 
@@ -608,6 +611,11 @@ class GROnomatopoeia:
         if len(hex_color) == 3:
             hex_color = hex_color * 2
         return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
+
+    def get_rgb(self, color_name):
+        if color_name in self._available_colours:
+            return self.hex_to_rgb(self._available_colours[color_name])
+        return self.hex_to_rgb(color_name)
 
     def load_font(self, font, font_size):
         try:
@@ -634,29 +642,82 @@ class GROnomatopoeia:
                 x += (bbox[2] - bbox[0]) + letter_spacing
             y += font.size
 
-    def draw_bubble(self, draw, bubble_bbox, bubble_thickness, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, horizontal_alignment, vertical_alignment, bubble_justification, jagged_points, jagged_min_distance, jagged_max_distance, font_size, image_width, image_height):
+    def draw_star(self, draw, position, size, color):
+        x, y = position
+        points = []
+        for i in range(5):
+            angle = i * 2 * math.pi / 5 - math.pi / 2
+            points.append((x + size * math.cos(angle), y + size * math.sin(angle)))
+            angle = (i + 0.5) * 2 * math.pi / 5 - math.pi / 2
+            points.append((x + size / 2 * math.cos(angle), y + size / 2 * math.sin(angle)))
+        draw.polygon(points, fill=color, outline=color)
+
+    def draw_cloud(self, draw, position, size, color):
+        x, y = position
+        draw.ellipse([x - size, y - size, x + size, y + size], fill=color, outline=color)
+        draw.ellipse([x - size / 1.5, y - size * 1.5, x + size / 1.5, y + size / 1.5], fill=color, outline=color)
+        draw.ellipse([x + size / 1.5, y - size, x + size * 1.5, y + size], fill=color, outline=color)
+
+    def draw_lightning(self, draw, position, size, color):
+        x, y = position
+        lightning_patterns = [
+            [(x, y), (x + size / 3, y + size / 3), (x - size / 3, y + size / 2), (x + size / 3, y + size), (x - size / 3, y + size)],
+            [(x, y), (x + size / 2, y + size / 4), (x - size / 4, y + size / 2), (x + size / 2, y + size), (x - size / 4, y + size)],
+            [(x, y), (x + size / 4, y + size / 3), (x - size / 4, y + size / 2), (x + size / 4, y + size), (x - size / 4, y + size)]
+        ]
+        pattern = random.choice(lightning_patterns)
+        draw.polygon(pattern, fill=color, outline=color)
+
+    def draw_bomb(self, draw, position, size, color):
+        x, y = position
+        draw.ellipse([x - size, y - size, x + size, y + size], fill=color, outline=color)
+        draw.rectangle([x - size / 5, y - size - size / 2, x + size / 5, y - size], fill=color, outline=color)
+
+    def draw_skull(self, draw, position, size, color):
+        x, y = position
+        # Skull base
+        draw.ellipse([x - size, y - size, x + size, y + size], fill=color, outline=color)
+        # Eyes
+        eye_size = size // 4
+        draw.ellipse([x - size / 3 - eye_size, y - size / 4 - eye_size, x - size / 3 + eye_size, y - size / 4 + eye_size], fill="black")
+        draw.ellipse([x + size / 3 - eye_size, y - size / 4 - eye_size, x + size / 3 + eye_size, y - size / 4 + eye_size], fill="black")
+        # Nose
+        draw.polygon([(x, y + size / 10), (x - size / 10, y + size / 5), (x + size / 10, y + size / 5)], fill="black")
+        # Mouth
+        draw.rectangle([x - size / 6, y + size / 2.5, x + size / 6, y + size / 2], fill="black")
+
+    def draw_dots(self, draw, position, size, color):
+        x, y = position
+        for i in range(5):
+            draw.ellipse([x - size, y - size, x + size, y + size], fill=color, outline=color)
+            x += size * 2
+
+    def draw_shape(self, draw, shape, position, size):
+        color = self.randomize_colours()
+        if shape == "star":
+            self.draw_star(draw, position, size, color)
+        elif shape == "cloud":
+            self.draw_cloud(draw, position, size, color)
+        elif shape == "lightning":
+            self.draw_lightning(draw, position, size, color)
+        elif shape == "bomb":
+            self.draw_bomb(draw, position, size, color)
+        elif shape == "skull":
+            self.draw_skull(draw, position, size, color)
+        elif shape == "dots":
+            self.draw_dots(draw, position, size, color)
+
+    def draw_bubble(self, draw, bubble_bbox, bubble_thickness, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, line_type, shape_type, jagged_points, jagged_min_distance, jagged_max_distance):
         left, top, right, bottom = bubble_bbox
         width, height = right - left, bottom - top
         center_x = (left + right) / 2
         center_y = (top + bottom) / 2
 
-        half_font_size = font_size / 2
-
-        if horizontal_alignment == "left" or bubble_justification == "left":
-            center_x = bubble_distance + jagged_max_distance + bubble_stroke_thickness + half_font_size
-        elif horizontal_alignment == "center":
-            center_x = image_width / 2
-        elif horizontal_alignment == "right" or bubble_justification == "right":
-            center_x = image_width - bubble_distance - jagged_max_distance - bubble_stroke_thickness - half_font_size
-
-        if vertical_alignment == "top":
-            center_y = bubble_distance + jagged_max_distance + bubble_stroke_thickness + half_font_size
-        elif vertical_alignment == "middle":
-            center_y = image_height / 2
-        elif vertical_alignment == "bottom":
-            center_y = image_height - bubble_distance - jagged_max_distance - bubble_stroke_thickness - half_font_size
-
         bubble_points = []
+        control_points_inwards = []
+        control_points_outwards = []
+        splat_control_points = []
+        drip_points = []
         angle_step = 2 * math.pi / jagged_points
 
         for i in range(jagged_points):
@@ -668,17 +729,70 @@ class GROnomatopoeia:
             y = center_y + radius_y * math.sin(angle)
             bubble_points.append((x, y))
 
-        if bubble_fill:
-            draw.polygon(bubble_points, fill=self.hex_to_rgb(bubble_fill_colour), outline=self.hex_to_rgb(bubble_colour), width=bubble_stroke_thickness)
-        else:
-            draw.polygon(bubble_points, outline=self.hex_to_rgb(bubble_colour), width=bubble_stroke_thickness)
+            if line_type != "straight":
+                next_angle = (i + 1) * angle_step
+                mid_x = center_x + radius_x * math.cos((angle + next_angle) / 2)
+                mid_y = center_y + radius_y * math.sin((angle + next_angle) / 2)
+                control_x_inwards = center_x + (radius_x - random_distance / 2) * math.cos((angle + next_angle) / 2)
+                control_y_inwards = center_y + (radius_y - random_distance / 2) * math.sin((angle + next_angle) / 2)
+                control_x_outwards = center_x + (radius_x + random_distance / 2) * math.cos((angle + next_angle) / 2)
+                control_y_outwards = center_y + (radius_y + random_distance / 2) * math.sin((angle + next_angle) / 2)
+
+                control_points_inwards.append((control_x_inwards, control_y_inwards))
+                control_points_outwards.append((control_x_outwards, control_y_outwards))
+
+                # Control points for splat effect
+                splat_control_x = center_x + (radius_x + random_distance) * math.cos((angle + next_angle) / 2)
+                splat_control_y = center_y + (radius_y + random_distance) * math.sin((angle + next_angle) / 2)
+                splat_control_points.append((splat_control_x, splat_control_y))
+
+                # Points for drip effect
+                drip_length = random.randint(10, 30)
+                drip_x = x + drip_length * math.cos(angle + math.pi / 2)
+                drip_y = y + drip_length * math.sin(angle + math.pi / 2)
+                drip_points.append((drip_x, drip_y))
+
+        def bezier_curve(points, control_points):
+            if len(points) < 3 or not control_points:
+                return points
+            result = []
+            for i in range(len(points) - 1):
+                p0, p1, p2 = points[i], control_points[i], points[(i + 1) % len(points)]
+                for t in range(100):
+                    t /= 100
+                    x = (1 - t)**2 * p0[0] + 2 * (1 - t) * t * p1[0] + t**2 * p2[0]
+                    y = (1 - t)**2 * p0[1] + 2 * (1 - t) * t * p1[1] + t**2 * p2[1]
+                    result.append((x, y))
+            return result
+
+        if line_type == "curved inwards":
+            bubble_points = bezier_curve(bubble_points, control_points_inwards)
+        elif line_type == "curved outwards":
+            bubble_points = bezier_curve(bubble_points, control_points_outwards)
+        elif line_type == "splat":
+            bubble_points = bezier_curve(bubble_points, splat_control_points)
+        elif line_type == "drip":
+            for i in range(len(bubble_points)):
+                bubble_points.insert(i * 2 + 1, drip_points[i])
+
+        fill_color = self.get_rgb(bubble_fill_colour) if bubble_fill else None
+        draw.polygon(bubble_points, fill=fill_color, outline=self.get_rgb(bubble_colour), width=bubble_stroke_thickness)
+
+        # Draw a random number of shapes between 3 and 6, equally spaced around the bubble
+        if shape_type != "none":
+            num_shapes = random.randint(3, 6)
+            step = len(bubble_points) // num_shapes
+            for i in range(num_shapes):
+                point = bubble_points[i * step]
+                self.draw_shape(draw, shape_type, point, jagged_points // 3)
 
     def randomize_colours(self):
         return random.choice(list(self._available_colours.values()))
 
-    def draw_text(self, image, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, bubble_justification, jagged_points, jagged_min_distance, jagged_max_distance, seed, vertical_randomness, letter_spacing, randomize_colours):
+    def draw_text(self, image, mask, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, line_type, shape_type, jagged_points, jagged_min_distance, jagged_max_distance, seed, vertical_randomness, letter_spacing, randomize_colours):
         self._loaded_font = self.load_font(font, font_size)
         draw = ImageDraw.Draw(image)
+        mask_draw = ImageDraw.Draw(mask)
         
         if not text:
             random_exclamations = "!" * random.randint(1, 3)
@@ -704,10 +818,7 @@ class GROnomatopoeia:
 
         image_width, image_height = image.size
 
-        left, top, right, bottom = draw.textbbox((0, 0), self._full_text, font=self._loaded_font, stroke_width=stroke_thickness, align=horizontal_alignment)
-
-        if bubble > 0:
-            self.draw_bubble(draw, (left, top, right, bottom), bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, horizontal_alignment, vertical_alignment, bubble_justification, jagged_points, jagged_min_distance, jagged_max_distance, font_size, image_width, image_height)
+        left, top, right, bottom = mask_draw.textbbox((0, 0), self._full_text, font=self._loaded_font, stroke_width=stroke_thickness, align=horizontal_alignment)
 
         text_left, text_top, text_right, text_bottom = left, top, right, bottom
 
@@ -725,14 +836,24 @@ class GROnomatopoeia:
         elif vertical_alignment == "bottom":
             self._y = image_height - (text_bottom - text_top) - padding - bubble_distance - jagged_max_distance - stroke_thickness
 
-        self.draw_text_with_letter_spacing(draw, (self._x, self._y), self._full_text, self._loaded_font, self.hex_to_rgb(fill_colour), self.hex_to_rgb(stroke_colour), stroke_thickness, horizontal_alignment, vertical_randomness, letter_spacing, justification)
-        return image
+        self.draw_text_with_letter_spacing(mask_draw, (self._x, self._y), self._full_text, self._loaded_font, 255, 255, stroke_thickness, horizontal_alignment, vertical_randomness, letter_spacing, justification)
 
-    def batch_process(self, image, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, bubble_justification, jagged_points, jagged_min_distance, jagged_max_distance, seed, vertical_randomness, letter_spacing, randomize_colours):
+        # Calculate the bounding box of the text on the mask
+        mask_bbox = mask.getbbox()
+
+        if bubble > 0 and mask_bbox:
+            self.draw_bubble(draw, mask_bbox, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, line_type, shape_type, jagged_points, jagged_min_distance, jagged_max_distance)
+
+        self.draw_text_with_letter_spacing(draw, (self._x, self._y), self._full_text, self._loaded_font, self.hex_to_rgb(fill_colour), self.hex_to_rgb(stroke_colour), stroke_thickness, horizontal_alignment, vertical_randomness, letter_spacing, justification)
+
+        return image, mask
+
+    def batch_process(self, image, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, line_type, shape_type, jagged_points, jagged_min_distance, jagged_max_distance, seed, vertical_randomness, letter_spacing, randomize_colours):
         pbar = ProgressBar(len(image))
         if len(image.shape) == 3:
             image_np = image.cpu().numpy()
             image = Image.fromarray((image_np.squeeze(0) * 255).astype(np.uint8))
+            mask = Image.new("L", image.size, 0)  # Create a new mask image
             if seed == 0:
                 seed = random.randint(10**14, 10**15 - 1)
             random.seed(seed)
@@ -741,15 +862,18 @@ class GROnomatopoeia:
                 stroke_colour = self.randomize_colours()
                 bubble_colour = self.randomize_colours()
                 bubble_fill_colour = self.randomize_colours()
-            image = self.draw_text(image, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, bubble_justification, jagged_points, jagged_min_distance, jagged_max_distance, seed, vertical_randomness, letter_spacing, randomize_colours)
+            image, mask = self.draw_text(image, mask, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, line_type, shape_type, jagged_points, jagged_min_distance, jagged_max_distance, seed, vertical_randomness, letter_spacing, randomize_colours)
             image_tensor_out = torch.tensor(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
+            mask_tensor_out = torch.tensor(np.array(mask).astype(np.float32) / 255.0).unsqueeze(0)
             pbar.update_absolute(0)
-            return image_tensor_out,
+            return image_tensor_out, mask_tensor_out
         else:
             image_np = image.cpu().numpy()
             images = [Image.fromarray((img * 255).astype(np.uint8)) for img in image_np]
+            masks = [Image.new("L", img.size, 0) for img in images]  # Create masks for each image in the batch
             images_out = []
-            for idx, img in enumerate(images):
+            masks_out = []
+            for idx, (img, mask) in enumerate(zip(images, masks)):
                 if seed == 0:
                     seed = random.randint(10**14, 10**15 - 1)
                 random.seed(seed + idx)  # Different seed for each image in the batch
@@ -758,8 +882,10 @@ class GROnomatopoeia:
                     stroke_colour = self.randomize_colours()
                     bubble_colour = self.randomize_colours()
                     bubble_fill_colour = self.randomize_colours()
-                img = self.draw_text(img, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, bubble_justification, jagged_points, jagged_min_distance, jagged_max_distance, seed + idx, vertical_randomness, letter_spacing, randomize_colours)
+                img, mask = self.draw_text(img, mask, text, randomize, font_size, font, fill_colour, stroke_colour, stroke_thickness, padding, horizontal_alignment, vertical_alignment, justification, bubble, bubble_distance, bubble_colour, bubble_stroke_thickness, bubble_fill, bubble_fill_colour, line_type, shape_type, jagged_points, jagged_min_distance, jagged_max_distance, seed + idx, vertical_randomness, letter_spacing, randomize_colours)
                 images_out.append(np.array(img).astype(np.float32) / 255.0)
+                masks_out.append(np.array(mask).astype(np.float32) / 255.0)
                 pbar.update_absolute(idx)
             images_tensor = torch.from_numpy(np.stack(images_out))
-            return images_tensor,
+            masks_tensor = torch.from_numpy(np.stack(masks_out))
+            return images_tensor, masks_tensor
