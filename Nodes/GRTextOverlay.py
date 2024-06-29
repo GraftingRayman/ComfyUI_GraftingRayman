@@ -10,16 +10,17 @@ class GRTextOverlay:
     _horizontal_alignments = ["left", "center", "right"]
     _vertical_alignments = ["top", "middle", "bottom"]
     _justifications = ["left", "center", "right"]
+    _edge_styles = ["straight", "curved", "rounded", "wavy", "zigzag", "double_line", "dashed_line", "beveled"]
 
     @staticmethod
     def _populate_fonts_from_os():
         fonts = set()
         font_paths = [
-            "/usr/share/fonts/truetype",      # Common Linux path
-            "/usr/local/share/fonts",         # Another common Linux path
-            "/Library/Fonts",                 # macOS path
-            "/System/Library/Fonts",          # macOS system path
-            "C:\\Windows\\Fonts"              # Windows path
+            "/usr/share/fonts/truetype",
+            "/usr/local/share/fonts",
+            "/Library/Fonts",
+            "/System/Library/Fonts",
+            "C:\\Windows\\Fonts"
         ]
         for path in font_paths:
             if os.path.isdir(path):
@@ -105,8 +106,8 @@ class GRTextOverlay:
                     {"default": 16, "min": 0, "max": 128, "step": 1},
                 ),
                 "stroke_thickness": (
-                    "FLOAT",
-                    {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01},
+                    "INT",
+                    {"default": 2, "min": 0, "max": 50, "step": 1},
                 ),
                 "stroke_colour": (
                     list(sorted(cls._available_colours.keys())),
@@ -132,6 +133,34 @@ class GRTextOverlay:
                     "INT",
                     {"default": 0, "min": -128, "max": 128, "step": 1},
                 ),
+                "background": (
+                    "BOOLEAN",
+                    {"default": False},
+                ),
+                "background_size": (
+                    "INT",
+                    {"default": 10, "min": 0, "max": 256, "step": 1},
+                ),
+                "background_stroke": (
+                    "INT",
+                    {"default": 2, "min": 0, "max": 50, "step": 1},
+                ),
+                "background_stroke_colour": (
+                    list(sorted(cls._available_colours.keys())),
+                    {"default": "black"},
+                ),
+                "background_colour": (
+                    list(sorted(cls._available_colours.keys())),
+                    {"default": "white"},
+                ),
+                "background_opacity": (
+                    "INT",
+                    {"default": 100, "min": 0, "max": 100, "step": 1},
+                ),
+                "edge_style": (
+                    cls._edge_styles,
+                    {"default": "straight"},
+                ),
                 "image": ("IMAGE",),
             }
         }
@@ -140,16 +169,17 @@ class GRTextOverlay:
     FUNCTION = "batch_process"
     CATEGORY = "GraftingRayman/Overlays"
 
-
     def hex_to_rgb(self, hex_color):
-        """Convert hex color to RGB."""
         hex_color = hex_color.lstrip("#")
         if len(hex_color) == 3:
             hex_color = hex_color * 2
         return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
 
+    def hex_to_rgba(self, hex_color, alpha):
+        r, g, b = self.hex_to_rgb(hex_color)
+        return (r, g, b, int((100 - alpha) * 255 / 100))
+
     def load_font(self, font, font_size):
-        """Load the specified font."""
         try:
             return ImageFont.truetype(font, font_size)
         except Exception as e:
@@ -159,7 +189,6 @@ class GRTextOverlay:
     def draw_text_with_letter_spacing(
         self, draw, position, text, font, fill, stroke_fill, stroke_width, align, letter_spacing, spacing, justification
     ):
-        """Draw text with letter spacing."""
         x, y = position
         lines = text.split('\n')
         for line in lines:
@@ -178,9 +207,83 @@ class GRTextOverlay:
 
             y += font.size + spacing
 
+    def calculate_text_bbox(self, text, font, line_spacing, letter_spacing, justification):
+        lines = text.split('\n')
+        max_width = 0
+        total_height = 0
+        line_widths = []
+
+        for line in lines:
+            line_width = 0
+            for char in line:
+                bbox = font.getbbox(char)
+                line_width += (bbox[2] - bbox[0]) + letter_spacing
+            line_width -= letter_spacing
+            max_width = max(max_width, line_width)
+            total_height += font.size + line_spacing
+            line_widths.append(line_width)
+
+        total_height -= line_spacing
+        return max_width, total_height, line_widths
+
+    def is_italic_font(self, font):
+        font_name = font.getname()[0].lower()
+        font_path = font.path.lower()
+        return "italic" in font_name or "oblique" in font_name or "italic" in font_path or "oblique" in font_path
+
+    def adjust_for_italic(self, font):
+        if self.is_italic_font(font):
+            return font.size // 4
+        return 0
+
+    def draw_wavy_edge(self, draw, left, top, right, bottom, fill, outline, width):
+        path = []
+        wave_height = (bottom - top) / 10
+        for x in range(left, right, int((right - left) / 20)):
+            path.append((x, top if (x // 20) % 2 == 0 else top + wave_height))
+        for x in range(right, left, -int((right - left) / 20)):
+            path.append((x, bottom if (x // 20) % 2 == 0 else bottom - wave_height))
+        draw.polygon(path, fill=fill, outline=outline, width=width)
+
+    def draw_zigzag_edge(self, draw, left, top, right, bottom, fill, outline, width):
+        path = []
+        zigzag_height = (bottom - top) / 10
+        for x in range(left, right, int((right - left) / 20)):
+            path.append((x, top if (x // 20) % 2 == 0 else top + zigzag_height))
+        for x in range(right, left, -int((right - left) / 20)):
+            path.append((x, bottom if (x // 20) % 2 == 0 else bottom - zigzag_height))
+        draw.polygon(path, fill=fill, outline=outline, width=width)
+
+    def draw_background(self, draw, left, top, right, bottom, fill, outline, width, style, italic_adjust):
+        left -= italic_adjust
+        right += italic_adjust
+
+        if style == "straight":
+            draw.rectangle([left, top, right, bottom], fill=fill, outline=outline, width=width)
+        elif style == "curved":
+            draw.rounded_rectangle([left, top, right, bottom], radius=(bottom - top) / 2, fill=fill, outline=outline, width=width)
+        elif style == "rounded":
+            draw.rounded_rectangle([left, top, right, bottom], radius=width, fill=fill, outline=outline, width=width)
+        elif style == "wavy":
+            self.draw_wavy_edge(draw, left, top, right, bottom, fill, outline, width)
+        elif style == "zigzag":
+            self.draw_zigzag_edge(draw, left, top, right, bottom, fill, outline, width)
+        elif style == "double_line":
+            draw.rectangle([left, top, right, bottom], fill=fill, outline=outline, width=width)
+            draw.rectangle([left + width*2, top + width*2, right - width*2, bottom - width*2], outline=outline, width=width)
+        elif style == "dashed_line":
+            for i in range(left, right, 10):
+                draw.line((i, top, i + 5, top), fill=outline, width=width)
+                draw.line((i, bottom, i + 5, bottom), fill=outline, width=width)
+            for i in range(top, bottom, 10):
+                draw.line((left, i, left, i + 5), fill=outline, width=width)
+                draw.line((right, i, right, i + 5), fill=outline, width=width)
+        elif style == "beveled":
+            draw.polygon([left, top, left + width, top + width, right - width, top + width, right, top,
+                          right, bottom, right - width, bottom - width, left + width, bottom - width, left, bottom], 
+                         fill=fill, outline=outline, width=width)
+
     def create_masks(self, image, text, font, font_size, stroke_thickness, justification, line_spacing, padding):
-        """Create two masks: one for text only and one including stroke."""
-        # Create a mask for text only
         text_mask = Image.new("L", (image.width, image.height), 0)
         text_mask_draw = ImageDraw.Draw(text_mask)
         self.draw_text_with_letter_spacing(
@@ -197,7 +300,6 @@ class GRTextOverlay:
             justification
         )
         
-        # Create a mask for text with stroke
         stroke_mask = Image.new("L", (image.width, image.height), 0)
         stroke_mask_draw = ImageDraw.Draw(stroke_mask)
         self.draw_text_with_letter_spacing(
@@ -207,7 +309,7 @@ class GRTextOverlay:
             font,
             255,
             255,
-            int(font_size * stroke_thickness * 0.5),
+            stroke_thickness,
             justification,
             0,
             line_spacing,
@@ -218,6 +320,13 @@ class GRTextOverlay:
         stroke_mask_tensor = torch.tensor(np.array(stroke_mask).astype(np.float32) / 255.0).unsqueeze(0).unsqueeze(0)
 
         return text_mask_tensor, stroke_mask_tensor
+
+    def get_bounding_box(self, mask_tensor):
+        mask_np = mask_tensor.numpy().squeeze()
+        coords = np.column_stack(np.where(mask_np > 0))
+        y_min, x_min = coords.min(axis=0)
+        y_max, x_max = coords.max(axis=0)
+        return x_min, y_min, x_max, y_max
 
     def draw_text(
         self,
@@ -236,37 +345,72 @@ class GRTextOverlay:
         y_align,
         line_spacing,
         letter_spacing,
+        background,
+        background_size,
+        background_stroke,
+        background_stroke_colour,
+        background_colour,
+        background_opacity,
+        edge_style,
         use_cache=False,
     ):
-        """Draw the text on the image with the specified parameters."""
         self._loaded_font = self.load_font(font, font_size)
+
+        bg_layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        bg_draw = ImageDraw.Draw(bg_layer)
+
         draw = ImageDraw.Draw(image)
         self._full_text = text
 
-        left, top, right, bottom = draw.multiline_textbbox(
-            (0, 0),
-            self._full_text,
-            font=self._loaded_font,
-            stroke_width=int(font_size * stroke_thickness * 0.5),
-            spacing=int(font_size * line_spacing),
-            align=horizontal_alignment,
+        text_width, text_height, line_widths = self.calculate_text_bbox(
+            self._full_text, self._loaded_font, line_spacing, letter_spacing, justification
         )
 
+        italic_adjust = self.adjust_for_italic(self._loaded_font)
+
+        total_padding = padding + stroke_thickness + background_size
+
         if horizontal_alignment == "left":
-            self._x = padding
+            self._x = total_padding
         elif horizontal_alignment == "center":
             self._x = image.width / 2
         elif horizontal_alignment == "right":
-            self._x = image.width - padding
+            self._x = image.width - total_padding
 
         self._x += x_align
         if vertical_alignment == "middle":
-            self._y = (image.height - (bottom - top)) / 2
+            self._y = (image.height - text_height) / 2
         elif vertical_alignment == "top":
-            self._y = padding
+            self._y = total_padding
         elif vertical_alignment == "bottom":
-            self._y = image.height - (bottom - top) - padding
+            self._y = image.height - text_height - total_padding
         self._y += y_align
+
+        _, stroke_mask_tensor = self.create_masks(image, self._full_text, self._loaded_font, font_size, stroke_thickness, justification, line_spacing, padding)
+        x_min, y_min, x_max, y_max = self.get_bounding_box(stroke_mask_tensor)
+
+        if background:
+            bg_left = x_min - background_size
+            bg_top = y_min - background_size
+            bg_right = x_max + background_size
+            bg_bottom = y_max + background_size
+
+            self.draw_background(
+                bg_draw,
+                bg_left,
+                bg_top,
+                bg_right,
+                bg_bottom,
+                fill=self.hex_to_rgba(self._available_colours[background_colour], background_opacity),
+                outline=self.hex_to_rgb(self._available_colours[background_stroke_colour]),
+                width=background_stroke,
+                style=edge_style,
+                italic_adjust=italic_adjust
+            )
+
+        image = Image.alpha_composite(image.convert("RGBA"), bg_layer)
+
+        draw = ImageDraw.Draw(image)
 
         self.draw_text_with_letter_spacing(
             draw,
@@ -275,7 +419,7 @@ class GRTextOverlay:
             self._loaded_font,
             self.hex_to_rgb(self._available_colours[fill_colour]),
             self.hex_to_rgb(self._available_colours[stroke_colour]),
-            int(font_size * stroke_thickness * 0.5),
+            stroke_thickness,
             horizontal_alignment,
             letter_spacing,
             line_spacing,
@@ -302,9 +446,15 @@ class GRTextOverlay:
         x_align,
         y_align,
         line_spacing,
-        letter_spacing
+        letter_spacing,
+        background,
+        background_size,
+        background_stroke,
+        background_stroke_colour,
+        background_colour,
+        background_opacity,
+        edge_style
     ):
-        """Batch process images."""
         if len(image.shape) == 3:
             image_np = image.cpu().numpy()
             image = Image.fromarray((image_np.squeeze(0) * 255).astype(np.uint8))
@@ -323,7 +473,14 @@ class GRTextOverlay:
                 x_align,
                 y_align,
                 line_spacing,
-                letter_spacing
+                letter_spacing,
+                background,
+                background_size,
+                background_stroke,
+                background_stroke_colour,
+                background_colour,
+                background_opacity,
+                edge_style
             )
             image_tensor_out = torch.tensor(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
             return image_tensor_out, text_mask, stroke_mask
@@ -348,6 +505,13 @@ class GRTextOverlay:
                     y_align,
                     line_spacing,
                     letter_spacing,
+                    background,
+                    background_size,
+                    background_stroke,
+                    background_stroke_colour,
+                    background_colour,
+                    background_opacity,
+                    edge_style,
                     use_cache=False
                 )
                 images_out.append(np.array(img).astype(np.float32) / 255.0)
@@ -359,6 +523,7 @@ class GRTextOverlay:
             stroke_masks_tensor = torch.from_numpy(np.stack([mask.numpy() for mask in stroke_masks_out]))
 
             return images_tensor, text_masks_tensor, stroke_masks_tensor
+
 
 
 
