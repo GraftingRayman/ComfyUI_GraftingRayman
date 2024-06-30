@@ -3,4 +3,8 @@ torch
 torchvision
 matplotlib
 git+https://github.com/openai/CLIP.git
-Pillow
+pillow
+insightface==0.7.3
+onnx>=1.14.0
+opencv-python>=4.7.0.72
+segment_anything
