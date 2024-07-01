@@ -43,6 +43,8 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Image Paste](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-paste)
 
+[GR Image Paste With Mask](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-paste-with-mask)
+
 # Mask Utils:
 [GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
 
@@ -224,3 +226,9 @@ Creates a checkered board, outputs an image as well as a mask. You can choose fr
 This node takes the second image and pastes it over the first. Opacity can be set for the second image. Both images need to be of the same dimensions, this can be resized using GR Image Resize node.
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/06aaa5d4-275c-4abe-b4cc-107f334a124b)
+
+# GR Image Paste With Mask
+
+This node, takes a background image, an overlay image and a mask. The overlay image is pasted over the background image with guidance from the mask. The opacity can be manually set along with manual positioning of the overlay image as well as the mask. If you want to see where the mask is being placed you can enable an outline of the mask with configurable outline thickness, colour and opacity along with outline placement. Various blend options are available for the blending of the masked image. 4 Outputs are provied, 1st output sends the overlayed image, 2nd output sends the same overlayed image with the mask inverted, 3rd output sends the outline only and the fourth output sends the dimensions of the background image in text format.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d1f7451a-fbe9-4cf9-95b6-17ecf114dc05)
