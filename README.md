@@ -242,4 +242,5 @@ This node, takes a background image (Dimensions of background image are used to 
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d1f7451a-fbe9-4cf9-95b6-17ecf114dc05)
 
-![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f7d0d4bc-5682-4dba-9b7b-dd183e08f20b)
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/b85abee7-abd9-4ddd-8676-03c1d7f49589)
+
