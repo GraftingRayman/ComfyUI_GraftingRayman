@@ -10,7 +10,7 @@ import torchvision.transforms.functional as TF
 import matplotlib.pyplot as plt
 import latent_preview
 from clip import tokenize, model
-from PIL import Image, ImageOps, ImageSequence, ImageDraw, ImageFont
+from PIL import Image, ImageOps, ImageSequence, ImageDraw, ImageFont, ImageChops
 from PIL.PngImagePlugin import PngInfo
 import folder_paths
 from comfy.cli_args import args
@@ -18,8 +18,7 @@ import random
 import time
 import hashlib 
 import folder_paths
-
-
+import cv2
 
 class GRImageSize:
     _available_colours = {
@@ -441,3 +440,271 @@ class GRImagePaste:
         opacity_factor = opacity / 100.0
         combined_image = image1 * (1 - opacity_factor) + image2 * opacity_factor
         return (combined_image,)
+
+class GRImagePasteWithMask:
+    _available_colours = {
+        "amethyst": "#9966CC", "black": "#000000", "blue": "#0000FF", "cyan": "#00FFFF",
+        "diamond": "#B9F2FF", "emerald": "#50C878", "gold": "#FFD700", "gray": "#808080",
+        "green": "#008000", "lime": "#00FF00", "magenta": "#FF00FF", "maroon": "#800000",
+        "navy": "#000080", "neon_blue": "#1B03A3", "neon_green": "#39FF14", "neon_orange": "#FF6103",
+        "neon_pink": "#FF10F0", "neon_yellow": "#DFFF00", "olive": "#808000", "platinum": "#E5E4E2",
+        "purple": "#800080", "red": "#FF0000", "rose_gold": "#B76E79", "ruby": "#E0115F",
+        "sapphire": "#0F52BA", "silver": "#C0C0C0", "teal": "#008080", "topaz": "#FFCC00",
+        "white": "#FFFFFF", "yellow": "#FFFF00"
+    }
+
+    _blend_methods = [
+        "add", "subtract", "multiply", "screen", "overlay", "difference", "hard_light", "soft_light",
+        "add_modulo", "blend", "darker", "duplicate", "lighter", "subtract_modulo"
+    ]
+
+    def __init__(self): pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "background_image": ("IMAGE", ), "overlay_image": ("IMAGE", ), "mask_image": ("MASK", ),
+                "opacity": ("FLOAT", {"default": 100.0, "min": 0.0, "max": 100.0, "step": 0.5}),
+                "overlay_x": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
+                "overlay_y": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
+                "overlay_fit": (["left", "right", "center", "top", "top left", "top right", "bottom", "bottom left", "bottom right"], {"default": "center"}),
+                "mask_x": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
+                "mask_y": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
+                "mask_fit": (["left", "right", "center", "top", "top left", "top right", "bottom", "bottom left", "bottom right"], {"default": "center"}),
+                "outline": ("BOOLEAN", {"default": False}),
+                "outline_thickness": ("INT", {"default": 2, "min": 1, "max": 50, "step": 1}),
+                "outline_colour": (list(sorted(cls._available_colours.keys())), {"default": "black"}),
+                "outline_opacity": ("FLOAT", {"default": 100.0, "min": 0.0, "max": 100.0, "step": 0.5}),
+                "outline_position": (["center", "inside", "outside"], {"default": "center"}),
+                "blend": ("BOOLEAN", {"default": False}),
+                "blend_method": (cls._blend_methods, {"default": "add"}),
+                "blend_strength": ("FLOAT", {"default": 50.0, "min": 0.0, "max": 100.0, "step": 0.5}),
+                "blend_area": (["all", "inside", "outside", "outline"], {"default": "all"})
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "IMAGE", "IMAGE", "STRING")
+    RETURN_NAMES = ("output_image", "inverted_mask_image", "contour_image", "image_dimensions")
+    FUNCTION = "paste_with_mask"
+    CATEGORY = "Image Processing"
+
+    def hex_to_rgb(self, hex_color): 
+        hex_color = hex_color.lstrip("#")
+        return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+    def hex_to_rgba(self, hex_color, alpha): 
+        r, g, b = self.hex_to_rgb(hex_color)
+        return (r, g, b, int(alpha * 255 / 100))
+
+    def blend_images(self, img1, img2, method, strength):
+        blended = None
+        if method == "add":
+            blended = ImageChops.add(img1, img2)
+        elif method == "subtract":
+            blended = ImageChops.subtract(img1, img2)
+        elif method == "multiply":
+            blended = ImageChops.multiply(img1, img2)
+        elif method == "screen":
+            blended = ImageChops.screen(img1, img2)
+        elif method == "overlay":
+            blended = ImageChops.overlay(img1, img2)
+        elif method == "difference":
+            blended = ImageChops.difference(img1, img2)
+        elif method == "hard_light":
+            blended = ImageChops.hard_light(img1, img2)
+        elif method == "soft_light":
+            blended = ImageChops.soft_light(img1, img2)
+        elif method == "add_modulo":
+            blended = ImageChops.add_modulo(img1, img2)
+        elif method == "blend":
+            blended = ImageChops.blend(img1, img2, strength / 100.0)
+        elif method == "darker":
+            blended = ImageChops.darker(img1, img2)
+        elif method == "duplicate":
+            blended = ImageChops.duplicate(img1)
+        elif method == "lighter":
+            blended = ImageChops.lighter(img1, img2)
+        elif method == "subtract_modulo":
+            blended = ImageChops.subtract_modulo(img1, img2)
+        else:
+            raise ValueError("Unsupported blend method")
+        
+        return Image.blend(img1, blended, strength / 100.0)
+
+    def resize_and_fit_image(self, background_image, image, fit_option, x_offset, y_offset, is_mask=False):
+        bg_h, bg_w = background_image.shape[1], background_image.shape[2]
+        image_pil = Image.fromarray((image.squeeze().cpu().numpy() * 255).astype(np.uint8))
+        if is_mask:
+            image_pil = image_pil.convert("L")
+        image_w, image_h = image_pil.size
+
+        if is_mask:
+            if bg_h < bg_w and image_h > image_w:
+                new_width = bg_w
+                new_height = int((new_width / image_w) * image_h)
+                image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+                top = (new_height - bg_h) // 2 if fit_option == "center" else 0 if "top" in fit_option else new_height - bg_h
+                left = 0
+                if "left" in fit_option:
+                    left = 0
+                elif "right" in fit_option:
+                    left = new_width - bg_w
+                else:
+                    left = (new_width - bg_w) // 2
+                image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
+            elif bg_h > bg_w and image_h < image_w:
+                new_width = bg_w
+                new_height = int((new_width / image_w) * image_h)
+                image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+                top = (bg_h - new_height) // 2 if fit_option == "center" else 0 if "top" in fit_option else bg_h - new_height
+                left = 0
+                if "left" in fit_option:
+                    left = 0
+                elif "right" in fit_option:
+                    left = bg_w - new_width
+                else:
+                    left = (bg_w - new_width) // 2
+                new_image = Image.new("L", (bg_w, bg_h))
+                new_image.paste(image_pil, (left + x_offset, top + y_offset))
+                image_pil = new_image
+            else:
+                scale = min(bg_w / image_w, bg_h / image_h)
+                new_size = (int(image_w * scale), int(image_h * scale))
+                image_pil = image_pil.resize(new_size, Image.LANCZOS)
+                left = top = 0
+                if "top" in fit_option:
+                    top = 0
+                elif "bottom" in fit_option:
+                    top = image_pil.size[1] - bg_h
+                else:
+                    top = (image_pil.size[1] - bg_h) // 2
+
+                if "left" in fit_option:
+                    left = 0
+                elif "right" in fit_option:
+                    left = image_pil.size[0] - bg_w
+                else:
+                    left = (image_pil.size[0] - bg_w) // 2
+
+                image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
+        else:
+            if bg_h < bg_w and image_h > image_w:
+                new_width = bg_w
+                new_height = int((new_width / image_w) * image_h)
+                image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+            elif bg_h > bg_w and image_h < image_w:
+                new_height = bg_h
+                new_width = int((new_height / image_h) * image_w)
+                image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+            else:
+                scale = min(bg_w / image_w, bg_h / image_h)
+                new_size = (int(image_w * scale), int(image_h * scale))
+                image_pil = image_pil.resize(new_size, Image.LANCZOS)
+
+            left = top = 0
+            if "top" in fit_option:
+                top = 0
+            elif "bottom" in fit_option:
+                top = image_pil.size[1] - bg_h
+            else:
+                top = (image_pil.size[1] - bg_h) // 2
+
+            if "left" in fit_option:
+                left = 0
+            elif "right" in fit_option:
+                left = image_pil.size[0] - bg_w
+            else:
+                left = (image_pil.size[0] - bg_w) // 2
+
+            image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
+
+        return torch.tensor(np.array(image_pil).astype(np.float32) / 255.0).unsqueeze(0)
+
+    def paste_with_mask(self, background_image, overlay_image, mask_image, opacity, overlay_x, overlay_y, overlay_fit, mask_x, mask_y, mask_fit, outline, outline_thickness, outline_colour, outline_opacity, outline_position, blend, blend_method, blend_strength, blend_area):
+        overlay_image = self.resize_and_fit_image(background_image, overlay_image, overlay_fit, overlay_x, overlay_y, is_mask=False)
+        mask_image = self.resize_and_fit_image(background_image, mask_image, mask_fit, mask_x, mask_y, is_mask=True)
+
+        mask_image = mask_image.unsqueeze(1)
+        mask_image = mask_image.expand(background_image.shape[0], background_image.shape[3], background_image.shape[1], background_image.shape[2]).permute(0, 2, 3, 1)
+        opacity /= 100.0
+        output_image = (background_image * (1 - mask_image * opacity) + overlay_image * (mask_image * opacity)).clamp(0, 1)
+        inverted_mask_image = (background_image * mask_image * opacity + overlay_image * (1 - mask_image * opacity)).clamp(0, 1)
+
+        if blend:
+            output_image_pil = Image.fromarray((output_image.squeeze().cpu().numpy() * 255).astype(np.uint8))
+            overlay_image_pil = Image.fromarray((overlay_image.squeeze().cpu().numpy() * 255).astype(np.uint8))
+            inverted_mask_image_pil = Image.fromarray((inverted_mask_image.squeeze().cpu().numpy() * 255).astype(np.uint8))
+
+            if blend_area == "all":
+                output_image_pil = self.blend_images(output_image_pil, overlay_image_pil, blend_method, blend_strength)
+                inverted_mask_image_pil = self.blend_images(inverted_mask_image_pil, overlay_image_pil, blend_method, blend_strength)
+            elif blend_area == "inside":
+                mask_np = (mask_image.squeeze().cpu().numpy() * 255).astype(np.uint8)
+                mask_pil = Image.fromarray(mask_np).convert("L")
+                blended_inside = self.blend_images(output_image_pil, overlay_image_pil, blend_method, blend_strength)
+                output_image_pil = Image.composite(blended_inside, output_image_pil, mask_pil)
+                blended_inside_inverted = self.blend_images(inverted_mask_image_pil, overlay_image_pil, blend_method, blend_strength)
+                inverted_mask_image_pil = Image.composite(blended_inside_inverted, inverted_mask_image_pil, mask_pil)
+            elif blend_area == "outside":
+                mask_np = ((1 - mask_image).squeeze().cpu().numpy() * 255).astype(np.uint8)
+                mask_pil = Image.fromarray(mask_np).convert("L")
+                blended_outside = self.blend_images(output_image_pil, overlay_image_pil, blend_method, blend_strength)
+                output_image_pil = Image.composite(blended_outside, output_image_pil, mask_pil)
+                blended_outside_inverted = self.blend_images(inverted_mask_image_pil, overlay_image_pil, blend_method, blend_strength)
+                inverted_mask_image_pil = Image.composite(blended_outside_inverted, inverted_mask_image_pil, mask_pil)
+            elif blend_area == "outline":
+                mask_np = (mask_image.squeeze().cpu().numpy() * 255).astype(np.uint8)
+                if len(mask_np.shape) > 2: mask_np = mask_np[:, :, 0]
+                contours, _ = cv2.findContours(mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                outline_mask = Image.new("L", (mask_np.shape[1], mask_np.shape[0]), 0)
+                outline_draw = ImageDraw.Draw(outline_mask)
+                for contour in contours:
+                    contour_list = [tuple(point[0]) for point in contour]
+                    if len(contour_list) > 2:
+                        offset = outline_thickness // 2
+                        offset_contour = [tuple(np.array(point) - offset if outline_position == "inside" else np.array(point) + offset if outline_position == "outside" else point) for point in contour_list]
+                        outline_draw.line(offset_contour + [offset_contour[0]], fill=255, width=outline_thickness)
+                outline_mask = outline_mask.convert("L")
+                blended_outline = self.blend_images(output_image_pil, overlay_image_pil, blend_method, blend_strength)
+                output_image_pil = Image.composite(blended_outline, output_image_pil, outline_mask)
+                blended_outline_inverted = self.blend_images(inverted_mask_image_pil, overlay_image_pil, blend_method, blend_strength)
+                inverted_mask_image_pil = Image.composite(blended_outline_inverted, inverted_mask_image_pil, outline_mask)
+
+            output_image = torch.tensor(np.array(output_image_pil).astype(np.float32) / 255.0).unsqueeze(0)
+            inverted_mask_image = torch.tensor(np.array(inverted_mask_image_pil).astype(np.float32) / 255.0).unsqueeze(0)
+
+        contour_image = torch.zeros_like(output_image)
+        if outline:
+            mask_np = (mask_image.squeeze().cpu().numpy() > 0.5).astype(np.uint8)
+            if len(mask_np.shape) > 2: mask_np = mask_np[:, :, 0]
+            contours, _ = cv2.findContours(mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            outline_colour_rgba = self.hex_to_rgba(self._available_colours[outline_colour], outline_opacity)
+            output_image_np = (output_image.squeeze().cpu().numpy() * 255).astype(np.uint8)
+            output_image_pil, contour_image_pil = Image.fromarray(output_image_np), Image.fromarray(np.zeros_like(output_image_np))
+            draw, contour_draw = ImageDraw.Draw(output_image_pil, "RGBA"), ImageDraw.Draw(contour_image_pil, "RGBA")
+            for contour in contours:
+                contour_list = [tuple(point[0]) for point in contour]
+                if len(contour_list) > 2:
+                    offset = outline_thickness // 2
+                    offset_contour = [tuple(np.array(point) - offset if outline_position == "inside" else np.array(point) + offset if outline_position == "outside" else point) for point in contour_list]
+                    draw.line(offset_contour + [offset_contour[0]], fill=outline_colour_rgba, width=outline_thickness)
+                    contour_draw.line(contour_list + [contour_list[0]], fill=outline_colour_rgba, width=outline_thickness)
+            
+            inverted_mask_image_np = (inverted_mask_image.squeeze().cpu().numpy() * 255).astype(np.uint8)
+            inverted_mask_image_pil = Image.fromarray(inverted_mask_image_np)
+            inverted_draw = ImageDraw.Draw(inverted_mask_image_pil, "RGBA")
+            for contour in contours:
+                contour_list = [tuple(point[0]) for point in contour]
+                if len(contour_list) > 2:
+                    offset = outline_thickness // 2
+                    offset_contour = [tuple(np.array(point) - offset if outline_position == "inside" else np.array(point) + offset if outline_position == "outside" else point) for point in contour_list]
+                    inverted_draw.line(offset_contour + [offset_contour[0]], fill=outline_colour_rgba, width=outline_thickness)
+
+            output_image = torch.tensor(np.array(output_image_pil).astype(np.float32) / 255.0).unsqueeze(0)
+            contour_image = torch.tensor(np.array(contour_image_pil).astype(np.float32) / 255.0).unsqueeze(0)
+            inverted_mask_image = torch.tensor(np.array(inverted_mask_image_pil).astype(np.float32) / 255.0).unsqueeze(0)
+
+        image_dimensions = f"Width: {background_image.shape[2]}, Height: {background_image.shape[1]}"
+        
+        return output_image, inverted_mask_image, contour_image, image_dimensions
