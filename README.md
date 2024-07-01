@@ -241,3 +241,5 @@ This node takes the second image and pastes it over the first. Opacity can be se
 This node, takes a background image, an overlay image and a mask. The overlay image is pasted over the background image with guidance from the mask. The opacity can be manually set along with manual positioning of the overlay image as well as the mask. If you want to see where the mask is being placed you can enable an outline of the mask with configurable outline thickness, colour and opacity along with outline placement. Various blend options are available for the blending of the masked image. 4 Outputs are provied, 1st output sends the overlayed image, 2nd output sends the same overlayed image with the mask inverted, 3rd output sends the outline only and the fourth output sends the dimensions of the background image in text format.
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d1f7451a-fbe9-4cf9-95b6-17ecf114dc05)
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f7d0d4bc-5682-4dba-9b7b-dd183e08f20b)
