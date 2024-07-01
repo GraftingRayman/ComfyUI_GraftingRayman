@@ -30,6 +30,8 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Prompt Selector Multi](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector-multi)
 
+[GR Prompt Hub](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-hub)
+
 # Image Utils:
 [GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
 
@@ -111,6 +113,13 @@ Negative prompt included
 All the features of Prompt Selector, this time you can use all 6 prompt styles at the same time
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4fa4d338-68cb-48cf-b470-ae34779abbce)
+
+# GR Prompt Hub
+
+This is a simple prompt combiner, will take 6 positives and 6 negatives and combine them
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/e1815752-a20d-4505-b6f0-35bdb6d2b2b6)
+
 
 # GR Image Resizer
 
