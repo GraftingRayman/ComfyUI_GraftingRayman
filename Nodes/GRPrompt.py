@@ -91,3 +91,57 @@ class GRPromptSelectorMulti:
 
         return ([[condP1, {"pooled_output": pooledP1}]],[[condP2, {"pooled_output": pooledP2}]],[[condP3, {"pooled_output": pooledP3}]],[[condP4, {"pooled_output": pooledP4}]],[[condP5, {"pooled_output": pooledP5}]],[[condP6, {"pooled_output": pooledP6}]],[[condN1, {"pooled_output": pooledN1}]],)
 
+class GRPromptHub:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "positive1": ("CONDITIONING", )
+            },
+            "optional": {
+                "positive2": ("CONDITIONING", ),
+                "positive3": ("CONDITIONING", ),
+                "positive4": ("CONDITIONING", ),
+                "positive5": ("CONDITIONING", ),
+                "positive6": ("CONDITIONING", ),
+                "negative1": ("CONDITIONING", ),
+                "negative2": ("CONDITIONING", ),
+                "negative3": ("CONDITIONING", ),
+                "negative4": ("CONDITIONING", ),
+                "negative5": ("CONDITIONING", ),
+                "negative6": ("CONDITIONING", )
+            }
+        }
+    
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING")
+    FUNCTION = "combine"
+    CATEGORY = "GraftingRayman/Prompt"
+    
+    def combine(self, positive1, positive2=None, positive3=None, positive4=None, positive5=None, positive6=None,
+                negative1=None, negative2=None, negative3=None, negative4=None, negative5=None, negative6=None):
+        positive_result = positive1
+        if positive2 is not None:
+            positive_result += positive2
+        if positive3 is not None:
+            positive_result += positive3
+        if positive4 is not None:
+            positive_result += positive4
+        if positive5 is not None:
+            positive_result += positive5
+        if positive6 is not None:
+            positive_result += positive6
+        
+        negative_result = negative1 if negative1 is not None else 0
+        if negative2 is not None:
+            negative_result += negative2
+        if negative3 is not None:
+            negative_result += negative3
+        if negative4 is not None:
+            negative_result += negative4
+        if negative5 is not None:
+            negative_result += negative5
+        if negative6 is not None:
+            negative_result += negative6
+        
+        return (positive_result, negative_result)
+
