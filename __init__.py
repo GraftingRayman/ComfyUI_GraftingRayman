@@ -20,6 +20,6 @@ for i in range(10):
     time.sleep(0.1) 
     print ("\r Loading... {}".format(i)+str(i), end="")
 
-print(f"\b\b\b\b\b\b\b\b\b\b\b\b\b\b*\33[0m     16 Grafting Nodes Loaded     \33[31m*")
+print(f"\b\b\b\b\b\b\b\b\b\b\b\b\b\b*\33[0m     19 Grafting Nodes Loaded     \33[31m*")
 print(f"*\33[0m           Get Grafting           \33[31m*")
 print(f"\33[31m************************************\33[0m\n\n")
