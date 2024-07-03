@@ -89,7 +89,7 @@ class GRCounterVideo:
 
     RETURN_TYPES = ("STRING", "IMAGE")
     RETURN_NAMES = ("FileDetails", "FrameImages")
-    CATEGORY = "Video Helper Suite 🎥🅥🅗🅢"
+    CATEGORY = "GraftingRayman/Video"
     FUNCTION = "generate_video"
 
     def __init__(self):
