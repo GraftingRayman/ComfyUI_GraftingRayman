@@ -67,6 +67,11 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Tile and Border Image Random Flip](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-tile-and-border-image-random-flip)
 
+# Video
+
+[GR Counter](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-counter)
+
+
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
@@ -243,4 +248,12 @@ This node, takes a background image (Dimensions of background image are used to 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d1f7451a-fbe9-4cf9-95b6-17ecf114dc05)
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/b85abee7-abd9-4ddd-8676-03c1d7f49589)
+
+# GR Counter
+
+This node creates a countdown or count up timer video, you can choose the font and size you want, also includes an outline feature. The node outputs the frames which can be further processed if required. Video is saved in the location specified in the node which is of type MP4. Can move the timer across the screen or resize the timer from start to finish.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/99df7bac-2331-41df-97e5-ca34983e3bfc)
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/2a23097f-9db7-463f-af00-b6167beccd08)
 
