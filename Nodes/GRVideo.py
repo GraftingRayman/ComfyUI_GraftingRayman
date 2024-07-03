@@ -57,7 +57,7 @@ class GRCounterVideo:
                 ),
                 "font_opacity": ("INT", {"default": 100, "min": 0, "max": 100, "step": 1}),
                 "font_control": (
-                    ["decrease", "constant", "increase"],
+                    ["decrease", "constant", "increase", "pulse"],
                     {"default": "constant"}
                 ),
                 "outline": ("BOOLEAN", {"default": False}),
@@ -89,7 +89,7 @@ class GRCounterVideo:
 
     RETURN_TYPES = ("STRING", "IMAGE")
     RETURN_NAMES = ("FileDetails", "FrameImages")
-    CATEGORY = "Video Helper Suite 🎥🅥🅗🅢"
+    CATEGORY = "GraftingRayman/Video"
     FUNCTION = "generate_video"
 
     def __init__(self):
@@ -173,11 +173,14 @@ class GRCounterVideo:
         return (r, g, b, int(alpha * 255 / 100))
 
     @staticmethod
-    def calculate_font_size(frame_index, total_frames, font_size_min, font_size_max, font_control):
+    def calculate_font_size(frame_index, total_frames, font_size_min, font_size_max, font_control, frames_per_counter=None):
         if font_control == "increase":
             return int(font_size_min + (font_size_max - font_size_min) * (frame_index / total_frames))
         elif font_control == "decrease":
             return int(font_size_max - (font_size_max - font_size_min) * (frame_index / total_frames))
+        elif font_control == "pulse" and frames_per_counter is not None:
+            cycle_position = frame_index % frames_per_counter
+            return int(font_size_min + (font_size_max - font_size_min) * (cycle_position / frames_per_counter))
         else:  # constant
             return font_size_min
 
@@ -205,37 +208,60 @@ class GRCounterVideo:
                 seconds = start + idx if not countdown else finish - idx
                 time_str = str(timedelta(seconds=seconds))
                 time_str = time_str.zfill(8)  # Ensure it matches HH:MM:SS format
-                for _ in range(frames_per_counter):
-                    font_size = GRCounterVideo.calculate_font_size(idx, total_frames, font_size_min, font_size_max, font_control)
-                    pos_x = GRCounterVideo.calculate_position(idx, total_frames, start_x, end_x, movement)
-                    pos_y = GRCounterVideo.calculate_position(idx, total_frames, start_y, end_y, movement)
+                for frame_idx in range(frames_per_counter):
+                    overall_frame_idx = idx * frames_per_counter + frame_idx
+                    font_size = GRCounterVideo.calculate_font_size(
+                        overall_frame_idx if font_control != "pulse" else frame_idx,
+                        total_frames,
+                        font_size_min,
+                        font_size_max,
+                        font_control,
+                        frames_per_counter
+                    )
+                    pos_x = GRCounterVideo.calculate_position(overall_frame_idx, total_frames, start_x, end_x, movement)
+                    pos_y = GRCounterVideo.calculate_position(overall_frame_idx, total_frames, start_y, end_y, movement)
                     frame = GRCounterVideo.create_frame(time_str, font_path, font_size, font_color, font_opacity, outline, outline_size, outline_color, outline_opacity, resolution, device, pos_x, pos_y)
                     frames.append(frame)
-                    pbar.update_absolute(idx)
-                    idx += 1
+                    pbar.update_absolute(overall_frame_idx)
         else:
             idx = 0
             if countdown:
                 start, finish = finish, start
                 for i in range(start, finish - 1, -1):
-                    for _ in range(frames_per_counter):
-                        font_size = GRCounterVideo.calculate_font_size(idx, total_frames, font_size_min, font_size_max, font_control)
-                        pos_x = GRCounterVideo.calculate_position(idx, total_frames, start_x, end_x, movement)
-                        pos_y = GRCounterVideo.calculate_position(idx, total_frames, start_y, end_y, movement)
+                    for frame_idx in range(frames_per_counter):
+                        overall_frame_idx = idx * frames_per_counter + frame_idx
+                        font_size = GRCounterVideo.calculate_font_size(
+                            overall_frame_idx if font_control != "pulse" else frame_idx,
+                            total_frames,
+                            font_size_min,
+                            font_size_max,
+                            font_control,
+                            frames_per_counter
+                        )
+                        pos_x = GRCounterVideo.calculate_position(overall_frame_idx, total_frames, start_x, end_x, movement)
+                        pos_y = GRCounterVideo.calculate_position(overall_frame_idx, total_frames, start_y, end_y, movement)
                         frame = GRCounterVideo.create_frame(i, font_path, font_size, font_color, font_opacity, outline, outline_size, outline_color, outline_opacity, resolution, device, pos_x, pos_y)
                         frames.append(frame)
-                        pbar.update_absolute(idx)
-                        idx += 1
+                        pbar.update_absolute(overall_frame_idx)
+                    idx += 1
             else:
                 for i in range(start, finish + 1):
-                    for _ in range(frames_per_counter):
-                        font_size = GRCounterVideo.calculate_font_size(idx, total_frames, font_size_min, font_size_max, font_control)
-                        pos_x = GRCounterVideo.calculate_position(idx, total_frames, start_x, end_x, movement)
-                        pos_y = GRCounterVideo.calculate_position(idx, total_frames, start_y, end_y, movement)
+                    for frame_idx in range(frames_per_counter):
+                        overall_frame_idx = idx * frames_per_counter + frame_idx
+                        font_size = GRCounterVideo.calculate_font_size(
+                            overall_frame_idx if font_control != "pulse" else frame_idx,
+                            total_frames,
+                            font_size_min,
+                            font_size_max,
+                            font_control,
+                            frames_per_counter
+                        )
+                        pos_x = GRCounterVideo.calculate_position(overall_frame_idx, total_frames, start_x, end_x, movement)
+                        pos_y = GRCounterVideo.calculate_position(overall_frame_idx, total_frames, start_y, end_y, movement)
                         frame = GRCounterVideo.create_frame(i, font_path, font_size, font_color, font_opacity, outline, outline_size, outline_color, outline_opacity, resolution, device, pos_x, pos_y)
                         frames.append(frame)
-                        pbar.update_absolute(idx)
-                        idx += 1
+                        pbar.update_absolute(overall_frame_idx)
+                    idx += 1
 
         return frames
 
