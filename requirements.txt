@@ -9,3 +9,4 @@ onnx>=1.14.0
 opencv-python>=4.7.0.72
 segment_anything
 packaging
+setuptools
