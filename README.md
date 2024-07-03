@@ -71,7 +71,7 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Counter](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-counter)
 
-
+#
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
