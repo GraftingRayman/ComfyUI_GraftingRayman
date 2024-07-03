@@ -249,6 +249,8 @@ This node, takes a background image (Dimensions of background image are used to 
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/b85abee7-abd9-4ddd-8676-03c1d7f49589)
 
+![AnimateDiff_00063](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d7fdfee0-6c6f-498c-bb3e-11ab8c8c0d7e)
+
 # GR Counter
 
 This node creates a countdown or count up timer video, you can choose the font and size you want, also includes an outline feature. The node outputs the frames which can be further processed if required. Video is saved in the location specified in the node which is of type MP4. Can move the timer across the screen or resize the timer from start to finish.
