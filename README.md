@@ -273,6 +273,8 @@ This node is an updated version of other REMBG nodes, includes all available REM
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/15868261-6f65-449c-9662-c1f175a0e785)
 
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/e9592033-0928-425f-8fd0-2da4c3a539a2)
+
 Use the general use model for all types of images
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/2f0e6f6d-278c-45a3-aea7-9e6d13671fbd)
