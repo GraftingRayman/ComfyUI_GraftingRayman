@@ -47,6 +47,8 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Image Paste With Mask](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-paste-with-mask)
 
+[GR Background Remover REMBG](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-background-remover-rembg)
+
 # Mask Utils:
 [GR Mask Create](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-mask-create)
 
@@ -262,4 +264,20 @@ This node creates a countdown or count up timer video, you can choose the font a
 ![AnimateDiff_00064](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f4283db8-cedc-4e63-9312-fdb85f840147)
 
 ![AnimateDiff_00066](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/b78d247f-04f6-419a-b823-3daebf852cc6)
+
+# GR Background Remover REMBG
+
+This node is an updated version of other REMBG nodes, includes all available REMBG models to choose from
+
+8 Different models to choose from
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/15868261-6f65-449c-9662-c1f175a0e785)
+
+Use the general use model for all types of images
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/2f0e6f6d-278c-45a3-aea7-9e6d13671fbd)
+
+Use the anime model for anime images
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f6760b21-6910-46b4-95b1-7436c4629fd2)
 
