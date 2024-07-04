@@ -7,6 +7,8 @@ import json
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+from torchvision import transforms as T
+
 import matplotlib.pyplot as plt
 import latent_preview
 from clip import tokenize, model
@@ -19,6 +21,10 @@ import time
 import hashlib 
 import folder_paths
 import cv2
+from torchvision import transforms as T
+from rembg import remove as rembg_remove
+from rembg.session_factory import new_session
+
 
 class GRImageSize:
     _available_colours = {
@@ -487,7 +493,8 @@ class GRImagePasteWithMask:
     RETURN_TYPES = ("IMAGE", "IMAGE", "IMAGE", "STRING")
     RETURN_NAMES = ("output_image", "inverted_mask_image", "contour_image", "image_dimensions")
     FUNCTION = "paste_with_mask"
-    CATEGORY = "Image Processing"
+    CATEGORY = "GraftingRayman\Images"
+
 
     def hex_to_rgb(self, hex_color): 
         hex_color = hex_color.lstrip("#")
@@ -708,3 +715,45 @@ class GRImagePasteWithMask:
         image_dimensions = f"Width: {background_image.shape[2]}, Height: {background_image.shape[1]}"
         
         return output_image, inverted_mask_image, contour_image, image_dimensions
+
+
+class GRBackgroundRemoverREMBG:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+            },
+            "optional": {
+                "rembg_model": (
+                    ["u2net", "u2netp", "u2net_human_seg", "u2net_cloth_seg", "silueta", "isnet-general-use", "isnet-anime"],
+                    {"default": "u2net"}
+                ),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("output_image",)
+    CATEGORY = "GraftingRayman\Images"
+    FUNCTION = "remove_background"
+
+    def remove_background(self, image, rembg_model="u2net"):
+        return self._rembg_remove_background_wrapper(image, rembg_model)
+
+    def _rembg_remove_background_wrapper(self, image, rembg_model):
+        session = new_session(model_name=rembg_model)
+        return self._rembg_remove_background(image, session)
+
+    def _rembg_remove_background(self, image, session):
+        image = image.permute([0, 3, 1, 2])  # (B, H, W, C) to (B, C, H, W)
+        output = []
+        for img in image:
+            img = T.ToPILImage()(img)
+            img = rembg_remove(img, session=session)
+            output.append(T.ToTensor()(img))
+
+        output = torch.stack(output, dim=0)
+        output = output.permute([0, 2, 3, 1])  # (B, C, H, W) to (B, H, W, C)
+        mask = output[:, :, :, 3] if output.shape[3] == 4 else torch.ones_like(output[:, :, :, 0])
+
+        return output[:, :, :, :3], mask
