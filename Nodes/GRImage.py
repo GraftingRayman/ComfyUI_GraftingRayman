@@ -477,7 +477,10 @@ class GRImagePasteWithMask:
                 "overlay_fit": (["left", "right", "center", "top", "top left", "top right", "bottom", "bottom left", "bottom right"], {"default": "center"}),
                 "mask_x": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
                 "mask_y": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
-                "mask_fit": (["left", "right", "center", "top", "top left", "top right", "bottom", "bottom left", "bottom right"], {"default": "center"}),
+                "mask_fit": (["left", "right", "center", "top", "top left", "top right", "bottom", "bottom left", "bottom right", "zoom_left", "zoom_center", "zoom_right", "fit"], {"default": "center"}),
+                "mask_zoom": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
+                "mask_stretch_x": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
+                "mask_stretch_y": ("INT", {"default": 0, "min": -250, "max": 250, "step": 1}),
                 "outline": ("BOOLEAN", {"default": False}),
                 "outline_thickness": ("INT", {"default": 2, "min": 1, "max": 50, "step": 1}),
                 "outline_colour": (list(sorted(cls._available_colours.keys())), {"default": "black"}),
@@ -494,7 +497,6 @@ class GRImagePasteWithMask:
     RETURN_NAMES = ("output_image", "inverted_mask_image", "contour_image", "image_dimensions")
     FUNCTION = "paste_with_mask"
     CATEGORY = "GraftingRayman\Images"
-
 
     def hex_to_rgb(self, hex_color): 
         hex_color = hex_color.lstrip("#")
@@ -539,62 +541,137 @@ class GRImagePasteWithMask:
         
         return Image.blend(img1, blended, strength / 100.0)
 
-    def resize_and_fit_image(self, background_image, image, fit_option, x_offset, y_offset, is_mask=False):
+    def resize_and_fit_image(self, background_image, image, fit_option, x_offset, y_offset, mask_zoom, mask_stretch_x, mask_stretch_y, is_mask=False):
         bg_h, bg_w = background_image.shape[1], background_image.shape[2]
         image_pil = Image.fromarray((image.squeeze().cpu().numpy() * 255).astype(np.uint8))
         if is_mask:
             image_pil = image_pil.convert("L")
         image_w, image_h = image_pil.size
 
+        # Apply mask zoom
+        if mask_zoom != 0:
+            new_width = image_w + mask_zoom
+            new_height = image_h + mask_zoom
+            image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+            image_w, image_h = new_width, new_height
+
+        # Apply mask stretch x
+        if mask_stretch_x != 0:
+            new_width = image_w + mask_stretch_x
+            image_pil = image_pil.resize((new_width, image_h), Image.LANCZOS)
+            image_w = new_width
+
+        # Apply mask stretch y
+        if mask_stretch_y != 0:
+            new_height = image_h + mask_stretch_y
+            image_pil = image_pil.resize((image_w, new_height), Image.LANCZOS)
+            image_h = new_height
+
         if is_mask:
-            if bg_h < bg_w and image_h > image_w:
-                new_width = bg_w
-                new_height = int((new_width / image_w) * image_h)
-                image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
-                top = (new_height - bg_h) // 2 if fit_option == "center" else 0 if "top" in fit_option else new_height - bg_h
-                left = 0
-                if "left" in fit_option:
-                    left = 0
-                elif "right" in fit_option:
-                    left = new_width - bg_w
-                else:
-                    left = (new_width - bg_w) // 2
-                image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
-            elif bg_h > bg_w and image_h < image_w:
-                new_width = bg_w
-                new_height = int((new_width / image_w) * image_h)
-                image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
-                top = (bg_h - new_height) // 2 if fit_option == "center" else 0 if "top" in fit_option else bg_h - new_height
-                left = 0
-                if "left" in fit_option:
-                    left = 0
-                elif "right" in fit_option:
-                    left = bg_w - new_width
-                else:
-                    left = (bg_w - new_width) // 2
-                new_image = Image.new("L", (bg_w, bg_h))
-                new_image.paste(image_pil, (left + x_offset, top + y_offset))
-                image_pil = new_image
-            else:
+            if fit_option == "fit":
+                # Convert image to binary mask
+                mask_np = np.array(image_pil) > 0
+                # Find bounding box
+                coords = np.column_stack(np.where(mask_np))
+                y_min, x_min = coords.min(axis=0)
+                y_max, x_max = coords.max(axis=0)
+                bbox = (x_min, y_min, x_max, y_max)
+                # Crop the mask to the bounding box
+                image_pil = image_pil.crop(bbox)
+                image_w, image_h = image_pil.size
+
+                # Resize to fit the background image while keeping proportions
                 scale = min(bg_w / image_w, bg_h / image_h)
                 new_size = (int(image_w * scale), int(image_h * scale))
                 image_pil = image_pil.resize(new_size, Image.LANCZOS)
-                left = top = 0
-                if "top" in fit_option:
-                    top = 0
-                elif "bottom" in fit_option:
-                    top = image_pil.size[1] - bg_h
-                else:
-                    top = (image_pil.size[1] - bg_h) // 2
 
-                if "left" in fit_option:
+                # Center the mask on the background
+                left = (bg_w - new_size[0]) // 2 + x_offset
+                top = (bg_h - new_size[1]) // 2 + y_offset
+                new_image = Image.new("L", (bg_w, bg_h))
+                new_image.paste(image_pil, (left, top))
+                image_pil = new_image
+            elif fit_option in ["zoom_left", "zoom_center", "zoom_right"]:
+                if bg_h > bg_w:
+                    new_height = bg_h
+                    new_width = int((new_height / image_h) * image_w)
+                    image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+                    if fit_option == "zoom_left":
+                        image_pil = image_pil.crop((0 + x_offset, 0 + y_offset, bg_w + x_offset, bg_h + y_offset))
+                    elif fit_option == "zoom_right":
+                        image_pil = image_pil.crop((new_width - bg_w + x_offset, 0 + y_offset, new_width + x_offset, bg_h + y_offset))
+                    else:  # zoom_center
+                        left = (new_width - bg_w) // 2
+                        image_pil = image_pil.crop((left + x_offset, 0 + y_offset, left + bg_w + x_offset, bg_h + y_offset))
+                else:
+                    scale = min(bg_w / image_w, bg_h / image_h)
+                    new_size = (int(image_w * scale), int(image_h * scale))
+                    image_pil = image_pil.resize(new_size, Image.LANCZOS)
+                    left = top = 0
+                    if "top" in fit_option:
+                        top = 0
+                    elif "bottom" in fit_option:
+                        top = image_pil.size[1] - bg_h
+                    else:
+                        top = (image_pil.size[1] - bg_h) // 2
+
+                    if "left" in fit_option:
+                        left = 0
+                    elif "right" in fit_option:
+                        left = image_pil.size[0] - bg_w
+                    else:
+                        left = (image_pil.size[0] - bg_w) // 2
+
+                    image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
+            else:
+                if bg_h < bg_w and image_h > image_w:
+                    new_width = bg_w
+                    new_height = int((new_width / image_w) * image_h)
+                    image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+                    top = (new_height - bg_h) // 2 if fit_option == "center" else 0 if "top" in fit_option else new_height - bg_h
                     left = 0
-                elif "right" in fit_option:
-                    left = image_pil.size[0] - bg_w
+                    if "left" in fit_option:
+                        left = 0
+                    elif "right" in fit_option:
+                        left = new_width - bg_w
+                    else:
+                        left = (new_width - bg_w) // 2
+                    image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
+                elif bg_h > bg_w and image_h < image_w:
+                    new_width = bg_w
+                    new_height = int((new_width / image_w) * image_h)
+                    image_pil = image_pil.resize((new_width, new_height), Image.LANCZOS)
+                    top = (bg_h - new_height) // 2 if fit_option == "center" else 0 if "top" in fit_option else bg_h - new_height
+                    left = 0
+                    if "left" in fit_option:
+                        left = 0
+                    elif "right" in fit_option:
+                        left = bg_w - new_width
+                    else:
+                        left = (bg_w - new_width) // 2
+                    new_image = Image.new("L", (bg_w, bg_h))
+                    new_image.paste(image_pil, (left + x_offset, top + y_offset))
+                    image_pil = new_image
                 else:
-                    left = (image_pil.size[0] - bg_w) // 2
+                    scale = min(bg_w / image_w, bg_h / image_h)
+                    new_size = (int(image_w * scale), int(image_h * scale))
+                    image_pil = image_pil.resize(new_size, Image.LANCZOS)
+                    left = top = 0
+                    if "top" in fit_option:
+                        top = 0
+                    elif "bottom" in fit_option:
+                        top = image_pil.size[1] - bg_h
+                    else:
+                        top = (image_pil.size[1] - bg_h) // 2
 
-                image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
+                    if "left" in fit_option:
+                        left = 0
+                    elif "right" in fit_option:
+                        left = image_pil.size[0] - bg_w
+                    else:
+                        left = (image_pil.size[0] - bg_w) // 2
+
+                    image_pil = image_pil.crop((left + x_offset, top + y_offset, left + bg_w + x_offset, top + bg_h + y_offset))
         else:
             if bg_h < bg_w and image_h > image_w:
                 new_width = bg_w
@@ -628,9 +705,9 @@ class GRImagePasteWithMask:
 
         return torch.tensor(np.array(image_pil).astype(np.float32) / 255.0).unsqueeze(0)
 
-    def paste_with_mask(self, background_image, overlay_image, mask_image, opacity, overlay_x, overlay_y, overlay_fit, mask_x, mask_y, mask_fit, outline, outline_thickness, outline_colour, outline_opacity, outline_position, blend, blend_method, blend_strength, blend_area):
-        overlay_image = self.resize_and_fit_image(background_image, overlay_image, overlay_fit, overlay_x, overlay_y, is_mask=False)
-        mask_image = self.resize_and_fit_image(background_image, mask_image, mask_fit, mask_x, mask_y, is_mask=True)
+    def paste_with_mask(self, background_image, overlay_image, mask_image, opacity, overlay_x, overlay_y, overlay_fit, mask_x, mask_y, mask_fit, mask_zoom, mask_stretch_x, mask_stretch_y, outline, outline_thickness, outline_colour, outline_opacity, outline_position, blend, blend_method, blend_strength, blend_area):
+        overlay_image = self.resize_and_fit_image(background_image, overlay_image, overlay_fit, overlay_x, overlay_y, 0, 0, 0, is_mask=False)
+        mask_image = self.resize_and_fit_image(background_image, mask_image, mask_fit, mask_x, mask_y, mask_zoom, mask_stretch_x, mask_stretch_y, is_mask=True)
 
         mask_image = mask_image.unsqueeze(1)
         mask_image = mask_image.expand(background_image.shape[0], background_image.shape[3], background_image.shape[1], background_image.shape[2]).permute(0, 2, 3, 1)
