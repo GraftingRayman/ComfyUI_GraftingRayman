@@ -4,7 +4,7 @@ import os
 from PIL import ImageFont, ImageDraw, Image, ImageOps
 from datetime import datetime, timedelta
 import torch
-from comfy.utils import ProgressBar  # Ensure this module is available in your environment
+from comfy.utils import ProgressBar, common_upscale  # Ensure this module is available in your environment
 
 # Conversion functions
 def tensor2pil(image):
@@ -168,15 +168,17 @@ class GRCounterVideo:
                 "movement": (
                     ["move left", "constant", "move right"],
                     {"default": "constant"}
-                )
+                ),
+                "upscale": ("FLOAT", {"default": 1.0, "min": 1.0, "max": 10.0, "step": 0.1})
+
             },
             "optional": {
                 "background_image": ("IMAGE", {})
             }
         }
 
-    RETURN_TYPES = ("STRING", "IMAGE")
-    RETURN_NAMES = ("FileDetails", "FrameImages")
+    RETURN_TYPES = ("STRING", "IMAGE","IMAGE")
+    RETURN_NAMES = ("FileDetails", "FrameImages","UpscaledImage")
     CATEGORY = "GraftingRayman/Video"
     FUNCTION = "generate_video"
 
@@ -477,8 +479,17 @@ class GRCounterVideo:
         )
         return file_details
 
+    @staticmethod
+    def upscale(image, upscale_method, scale_by):
+        samples = image.movedim(-1, 1)
+        width = round(samples.shape[3] * scale_by)
+        height = round(samples.shape[2] * scale_by)
+        s = common_upscale(samples, width, height, upscale_method, "disabled")
+        s = s.movedim(1, -1)
+        return s
+
     @classmethod
-    def generate_video(cls, start, finish, countdown, clock_type, output_path, fps, font_path, font_size_min, font_size_max, font_color, font_opacity, font_shadow, font_shadow_dist, font_control, outline, outline_size, outline_color, outline_opacity, background_colour, use_background_image=False, background_image=None, resolution='HD 1280x720', counter_duration=1000, rotate=False, rotate_type="clockwise", rotate_freq=1, processing_device="cpu", start_x=0, start_y=0, end_x=0, end_y=0, movement="constant"):
+    def generate_video(cls, start, finish, countdown, clock_type, output_path, fps, font_path, font_size_min, font_size_max, font_color, font_opacity, font_shadow, font_shadow_dist, font_control, outline, outline_size, outline_color, outline_opacity, background_colour, use_background_image=False, background_image=None, resolution='HD 1280x720', counter_duration=1000, rotate=False, rotate_type="clockwise", rotate_freq=1, processing_device="cpu", start_x=0, start_y=0, end_x=0, end_y=0, movement="constant", upscale=1.0):
         # Append date and time to the output path
         now = datetime.now().strftime("%d-%y-%m-%H-%M")
         output_path = os.path.splitext(output_path)[0] + f"_{now}.mp4"
@@ -491,5 +502,12 @@ class GRCounterVideo:
         for frame in frames:
             print(f"Frame shape before permutation: {frame.shape}")
         frame_images = [torch.from_numpy(frame).permute(0, 1, 2) for frame in frames]  # Convert to (C, H, W) format
+        batch_tensor = torch.stack(frame_images)  # Create a batch in (N, C, H, W) format
 
-        return (file_details, frame_images)
+        # Upscale the batch tensor using the upscale method if upscale >= 1.0
+        if upscale >= 1.0:
+            upscaled_batch_tensor = cls.upscale(batch_tensor, "lanczos", upscale)
+        else:
+            upscaled_batch_tensor = cls.upscale(batch_tensor, "lanczos", upscale)
+
+        return (file_details, frame_images, upscaled_batch_tensor)
