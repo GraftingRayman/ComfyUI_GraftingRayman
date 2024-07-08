@@ -78,6 +78,8 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Counter](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-counter)
 
+[GR Scroller](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-scroller)
+
 #
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
@@ -266,10 +268,6 @@ This node creates a countdown or count up timer video, you can choose the font a
 
 ![AnimateDiff_00063](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d7fdfee0-6c6f-498c-bb3e-11ab8c8c0d7e)
 
-![AnimateDiff_00064](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f4283db8-cedc-4e63-9312-fdb85f840147)
-
-![AnimateDiff_00066](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/b78d247f-04f6-419a-b823-3daebf852cc6)
-
 # GR Background Remover REMBG
 
 This node is an updated version of other REMBG nodes, includes all available REMBG models to choose from
@@ -287,4 +285,16 @@ Use the general use model for all types of images
 Use the anime model for anime images
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/f6760b21-6910-46b4-95b1-7436c4629fd2)
+
+# GR Scroller
+
+A node that creates a scrolling text on a background colour of your choice. You can select the path it saves the video or individual frames.
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4f1fe40a-f4d1-465c-8c35-00293682b881)
+
+Lots of different styles to select from
+
+![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d29b328b-3417-462b-8f0c-b945428b48fa)
+
+
 
