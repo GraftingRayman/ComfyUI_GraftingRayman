@@ -7,7 +7,8 @@ from .Nodes.GRPrompt import GRPromptSelector, GRPromptSelectorMulti, GRPromptHub
 from .Nodes.GRMask import GRMaskResize, GRMaskCreate, GRMultiMaskCreate, GRMaskCreateRandom, GRImageMask
 from .Nodes.GRTile import GRTileImage, GRTileFlipImage, GRFlipTileRedRing, GRFlipTileInverted, GRCheckeredBoard
 from .Nodes.GRTextOverlay import GRTextOverlay, GROnomatopoeia
-from .Nodes.GRVideo import GRCounterVideo, GRScrollerVideo
+from .Nodes.GRCounter import GRCounterVideo
+from .Nodes.GRScroller import GRScrollerVideo
 
 import time
 
