@@ -296,5 +296,3 @@ Lots of different styles to select from
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/d29b328b-3417-462b-8f0c-b945428b48fa)
 
-
-
