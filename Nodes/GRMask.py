@@ -245,6 +245,11 @@ class GRMaskCreateRandomMulti:
         "white": "#FFFFFF", "yellow": "#FFFF00"
     }
 
+    _available_shapes = [
+        "rectangular", "circular", "elliptical", "triangular", 
+        "polygonal", "star", "random", "hexagon", "pentagon"
+    ]
+
     def __init__(self):
         pass
 
@@ -255,7 +260,7 @@ class GRMaskCreateRandomMulti:
                 "seed": ("INT", {"default": None}),
                 "mask_size": ("FLOAT", {"min": 0.01, "max": 1, "step": 0.01}),
                 "mask_number": ("INT", {"min": 1}),
-                "exclude_borders": ("BOOLEAN", {"default": False}),  # Moved here
+                "exclude_borders": ("BOOLEAN", {"default": False}),
                 "border_margin_height": ("INT", {"min": 0, "default": 15}),
                 "border_margin_width": ("INT", {"min": 0, "default": 15}),
                 "min_distance": ("INT", {"min": 0, "default": 10}),
@@ -266,6 +271,12 @@ class GRMaskCreateRandomMulti:
                 "ring_type": (
                     ["solid", "dashed", "dotted"],
                     {"default": "solid"}
+                ),
+                "distance_from_boundary": ("INT", {"min": 1, "default": 10}),
+                "ring_thickness": ("INT", {"min": 1, "default": 5}),
+                "mask_shape": (
+                    cls._available_shapes,
+                    {"default": "rectangular"}
                 ),
                 "use_image_dimensions": ("BOOLEAN", {"default": False}),
                 "height": ("INT", {"min": 1, "default": 256}),
@@ -280,7 +291,7 @@ class GRMaskCreateRandomMulti:
     FUNCTION = "create_masked_image_with_rings"
     CATEGORY = "GraftingRayman/Tiles"
 
-    def create_masked_image_with_rings(self, image=None, seed=None, mask_size=None, mask_number=None, exclude_borders=False, ring_color="black", ring_type="solid", border_margin_height=15, border_margin_width=15, min_distance=10, use_image_dimensions=False, height=256, width=256):
+    def create_masked_image_with_rings(self, image=None, seed=None, mask_size=None, mask_number=None, exclude_borders=False, ring_color="black", ring_type="solid", border_margin_height=15, border_margin_width=15, min_distance=10, distance_from_boundary=10, ring_thickness=5, mask_shape="rectangular", use_image_dimensions=False, height=256, width=256):
         if image is None:
             image = torch.zeros((1, height, width, 3), dtype=torch.float32)
 
@@ -293,16 +304,17 @@ class GRMaskCreateRandomMulti:
         if seed is not None:
             random.seed(seed)  # Set the seed if provided
 
-        mask = self.create_mask(height, width, mask_size, mask_number, seed, exclude_borders, border_margin_height, border_margin_width, min_distance)
-        grow_distance = 10  # Hardcoded grow distance
-        grown_mask = self.grow_mask(mask, grow_distance)
-        grown_mask2 = self.grow_mask(grown_mask, grow_distance)  # Grow grown_mask again
+        mask = self.create_mask(height, width, mask_size, mask_number, seed, exclude_borders, border_margin_height, border_margin_width, min_distance, mask_shape)
+        grown_mask_outer = self.grow_mask(mask, distance_from_boundary + ring_thickness)
+        grown_mask_inner = self.grow_mask(mask, distance_from_boundary)
 
-        ringed_image2 = self.apply_curved_rings_to_image(image.clone(), grown_mask, grown_mask2, ring_color, ring_type)  # Second ringed image with curved corners
+        ring_mask = grown_mask_outer - grown_mask_inner
 
-        return (mask, ringed_image2)
+        ringed_image = self.apply_rings_to_image(image.clone(), ring_mask, ring_color, ring_type)
 
-    def create_mask(self, height, width, mask_size, mask_number, seed=0, exclude_borders=False, border_margin_height=15, border_margin_width=15, min_distance=10):
+        return (mask, ringed_image)
+
+    def create_mask(self, height, width, mask_size, mask_number, seed=0, exclude_borders=False, border_margin_height=15, border_margin_width=15, min_distance=10, mask_shape="rectangular"):
         if seed != 0:
             random.seed(seed)
         
@@ -339,7 +351,23 @@ class GRMaskCreateRandomMulti:
                         break
                 
                 if not too_close:
-                    mask[:, :, y_start:y_start + mask_dim, x_start:x_start + mask_dim] = 1.
+                    actual_shape = mask_shape if mask_shape != "random" else random.choice(self._available_shapes[:-1])
+                    if actual_shape == "rectangular":
+                        mask[:, :, y_start:y_start + mask_dim, x_start:x_start + mask_dim] = 1.
+                    elif actual_shape == "circular":
+                        self.draw_circle(mask, x_start, y_start, mask_dim)
+                    elif actual_shape == "elliptical":
+                        self.draw_ellipse(mask, x_start, y_start, mask_dim)
+                    elif actual_shape == "triangular":
+                        self.draw_triangle(mask, x_start, y_start, mask_dim)
+                    elif actual_shape == "polygonal":
+                        self.draw_polygon(mask, x_start, y_start, mask_dim)
+                    elif actual_shape == "star":
+                        self.draw_star(mask, x_start, y_start, mask_dim)
+                    elif actual_shape == "hexagon":
+                        self.draw_hexagon(mask, x_start, y_start, mask_dim)
+                    elif actual_shape == "pentagon":
+                        self.draw_pentagon(mask, x_start, y_start, mask_dim)
                     placed_masks.append((x_start, y_start))
                     placed = True
                 
@@ -350,13 +378,75 @@ class GRMaskCreateRandomMulti:
         
         return mask
 
+    def draw_circle(self, mask, x_center, y_center, diameter):
+        radius = diameter // 2
+        for y in range(-radius, radius):
+            for x in range(-radius, radius):
+                if x**2 + y**2 <= radius**2:
+                    if 0 <= x_center + x < mask.shape[3] and 0 <= y_center + y < mask.shape[2]:
+                        mask[0, 0, y_center + y, x_center + x] = 1.
+
+    def draw_ellipse(self, mask, x_center, y_center, diameter):
+        a = diameter // 2
+        b = diameter // 3  # Aspect ratio of ellipse
+        for y in range(-b, b):
+            for x in range(-a, a):
+                if (x**2) / (a**2) + (y**2) / (b**2) <= 1:
+                    if 0 <= x_center + x < mask.shape[3] and 0 <= y_center + y < mask.shape[2]:
+                        mask[0, 0, y_center + y, x_center + x] = 1.
+
+    def draw_triangle(self, mask, x_start, y_start, side_length):
+        height = int(math.sqrt(side_length**2 - (side_length / 2)**2))
+        for y in range(height):
+            x_min = x_start - (y * side_length) // height
+            x_max = x_start + (y * side_length) // height
+            mask[0, 0, y_start + y, max(0, x_min):min(mask.shape[3], x_max)] = 1.
+
+    def draw_polygon(self, mask, x_center, y_center, diameter, sides=6):
+        radius = diameter // 2
+        angle = 2 * math.pi / sides
+        points = [(x_center + radius * math.cos(i * angle), y_center + radius * math.sin(i * angle)) for i in range(sides)]
+        self.draw_filled_polygon(mask, points)
+
+    def draw_star(self, mask, x_center, y_center, diameter):
+        radius = diameter // 2
+        angle = math.pi / 5
+        points = []
+        for i in range(10):
+            r = radius if i % 2 == 0 else radius // 2
+            points.append((x_center + r * math.cos(i * angle), y_center + r * math.sin(i * angle)))
+        self.draw_filled_polygon(mask, points)
+
+    def draw_hexagon(self, mask, x_center, y_center, diameter):
+        self.draw_polygon(mask, x_center, y_center, diameter, sides=6)
+
+    def draw_pentagon(self, mask, x_center, y_center, diameter):
+        self.draw_polygon(mask, x_center, y_center, diameter, sides=5)
+
+    def draw_filled_polygon(self, mask, points):
+        def is_point_in_polygon(x, y, poly):
+            num = len(poly)
+            j = num - 1
+            c = False
+            for i in range(num):
+                if ((poly[i][1] > y) != (poly[j][1] > y)) and \
+                        (x < (poly[j][0] - poly[i][0]) * (y - poly[i][1]) / (poly[j][1] - poly[i][1]) + poly[i][0]):
+                    c = not c
+                j = i
+            return c
+
+        for y in range(mask.shape[2]):
+            for x in range(mask.shape[3]):
+                if is_point_in_polygon(x, y, points):
+                    mask[0, 0, y, x] = 1
+
     def grow_mask(self, mask, distance):
         grown_mask = mask.clone()
         for _ in range(distance):
             grown_mask = torch.nn.functional.max_pool2d(grown_mask, kernel_size=3, stride=1, padding=1)
         return grown_mask
 
-    def apply_curved_rings_to_image(self, image, mask, grown_mask, ring_color, ring_type):
+    def apply_rings_to_image(self, image, ring_mask, ring_color, ring_type):
         color_dict = {
             "amethyst": "#9966CC", "black": "#000000", "blue": "#0000FF", "cyan": "#00FFFF",
             "diamond": "#B9F2FF", "emerald": "#50C878", "gold": "#FFD700", "gray": "#808080",
@@ -372,8 +462,6 @@ class GRMaskCreateRandomMulti:
         ring_color_rgb = torch.tensor([int(hex_color[i:i+2], 16) for i in (1, 3, 5)], dtype=image.dtype, device=image.device)
 
         print(f"Applying {ring_type} ring with color {ring_color} (RGB: {ring_color_rgb})")
-
-        ring_mask = grown_mask - mask  # This creates the ring region
 
         # Apply Gaussian blur to smooth the edges
         ring_mask = F.conv2d(ring_mask, self.gaussian_kernel(5, 1.0), padding=2)
