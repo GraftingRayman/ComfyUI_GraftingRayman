@@ -29,7 +29,7 @@ class GRMaskCreateRandom:
                 "height": ("INT", {"min": 1}),
                 "width": ("INT", {"min": 1}),
                 "mask_size": ("FLOAT", {"min": 0.01, "max": 1, "step": 0.01}),
-                "seed": ("INT", {"min": 1, "default": 0}),
+                "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
             },
         }
 
@@ -257,7 +257,7 @@ class GRMaskCreateRandomMulti:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "seed": ("INT", {"default": 0}),
+                "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
                 "mask_size": ("FLOAT", {"min": 0.01, "max": 1, "step": 0.01}),
                 "mask_number": ("INT", {"min": 1}),
                 "exclude_borders": ("BOOLEAN", {"default": False}),

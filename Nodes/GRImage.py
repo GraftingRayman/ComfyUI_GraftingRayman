@@ -159,6 +159,7 @@ class GRStackImage:
                 "image2": ("IMAGE",),
                 "border": ("INT", {"min": 0, "default": 0}),
                 "colour": (popular_colors,),
+                "horizontal_stack": ("BOOLEAN", {"default": False})  # New boolean input
             },
         }
 
@@ -166,21 +167,21 @@ class GRStackImage:
     FUNCTION = "stack_images"
     CATEGORY = "GraftingRayman/Images"
 
-
-    def stack_images(self, image1, image2, colour, border=0):
+    def stack_images(self, image1, image2, colour, border=0, horizontal_stack=False):
         batch_size1, orig_height1, orig_width1, channels1 = image1.size()
         batch_size2, orig_height2, orig_width2, channels2 = image2.size()
 
-        if batch_size1 != batch_size2 or channels1 != channels2 or orig_width1 != orig_width2:
-            raise ValueError("Images must have the same batch size, width, and number of channels.")
+        if batch_size1 != batch_size2 or channels1 != channels2 or (horizontal_stack and orig_height1 != orig_height2) or (not horizontal_stack and orig_width1 != orig_width2):
+            raise ValueError("Images must have the same batch size, number of channels, and matching dimensions for the selected stack direction.")
         
         if border > 0:
             orig_height1_with_border = orig_height1 + 2 * border
             orig_height2_with_border = orig_height2 + 2 * border
             orig_width_with_border = orig_width1 + 2 * border
+            orig_width2_with_border = orig_width2 + 2 * border
             
             bordered_image1 = torch.ones((batch_size1, orig_height1_with_border, orig_width_with_border, channels1), dtype=image1.dtype, device=image1.device)
-            bordered_image2 = torch.ones((batch_size2, orig_height2_with_border, orig_width_with_border, channels2), dtype=image2.dtype, device=image2.device)
+            bordered_image2 = torch.ones((batch_size2, orig_height2_with_border, orig_width2_with_border, channels2), dtype=image2.dtype, device=image2.device)
 
             bordered_image1[:, border:-border, border:-border, :] = image1
             bordered_image2[:, border:-border, border:-border, :] = image2
@@ -199,12 +200,22 @@ class GRStackImage:
             bordered_image1 = image1
             bordered_image2 = image2
 
-        new_height = (orig_height1_with_border if border > 0 else orig_height1) + (orig_height2_with_border if border > 0 else orig_height2)
-        new_width = orig_width_with_border if border > 0 else orig_width1
-        new_image = torch.zeros((batch_size1, new_height, new_width, channels1), dtype=image1.dtype, device=image1.device)
+        if horizontal_stack:
+            # Horizontal stacking
+            new_height = orig_height1_with_border if border > 0 else orig_height1
+            new_width = (orig_width_with_border if border > 0 else orig_width1) + (orig_width2_with_border if border > 0 else orig_width2)
+            new_image = torch.zeros((batch_size1, new_height, new_width, channels1), dtype=image1.dtype, device=image1.device)
 
-        new_image[:, :bordered_image1.size(1), :, :] = bordered_image1
-        new_image[:, bordered_image1.size(1):, :, :] = bordered_image2
+            new_image[:, :, :bordered_image1.size(2), :] = bordered_image1
+            new_image[:, :, bordered_image1.size(2):, :] = bordered_image2
+        else:
+            # Vertical stacking
+            new_height = (orig_height1_with_border if border > 0 else orig_height1) + (orig_height2_with_border if border > 0 else orig_height2)
+            new_width = orig_width_with_border if border > 0 else orig_width1
+            new_image = torch.zeros((batch_size1, new_height, new_width, channels1), dtype=image1.dtype, device=image1.device)
+
+            new_image[:, :bordered_image1.size(1), :, :] = bordered_image1
+            new_image[:, bordered_image1.size(1):, :, :] = bordered_image2
 
         return (new_image,)
 
@@ -220,7 +231,6 @@ class GRStackImage:
             "yellow": [255, 255, 0],
         }
         return torch.tensor(color_map[colour], dtype=torch.float32)
-
 class GRResizeImageMethods:
     resize_methods = ["NEAREST", "BOX", "BILINEAR", "HAMMING", "BICUBIC", "LANCZOS"]
     @classmethod

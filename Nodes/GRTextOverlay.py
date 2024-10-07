@@ -591,7 +591,7 @@ class GROnomatopoeia:
                 "jagged_min_distance": ("INT", {"default": 50, "min": 0, "max": 500, "step": 1}),
                 "jagged_max_distance": ("INT", {"default": 100, "min": 0, "max": 500, "step": 1}),
                 "shape_type": (cls._shapes, {"default": "none"}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 999999999999999}),
+                "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
                 "vertical_randomness": ("INT", {"default": 10, "min": 0, "max": 100, "step": 1}),
                 "letter_spacing": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
                 "randomize_colours": ("BOOLEAN", {"default": True}),
