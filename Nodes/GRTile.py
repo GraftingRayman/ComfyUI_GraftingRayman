@@ -273,7 +273,7 @@ class GRFlipTileRedRing:
                 "border": ("INT", {"min": 0, "default": 0}),
                 "colour": (popular_colors,),
                 "border_thickness": ("INT", {"min": 1, "default": 5}),
-                "seed": ("INT", {"default": None}),  # Adding seed input
+                "seed": ("INT", {"default": 0}),  # Adding seed input
             },
             "optional": {
                 "flipped_tile_image": ("IMAGE",)

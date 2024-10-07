@@ -257,7 +257,7 @@ class GRMaskCreateRandomMulti:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "seed": ("INT", {"default": None}),
+                "seed": ("INT", {"default": 0}),
                 "mask_size": ("FLOAT", {"min": 0.01, "max": 1, "step": 0.01}),
                 "mask_number": ("INT", {"min": 1}),
                 "exclude_borders": ("BOOLEAN", {"default": False}),
