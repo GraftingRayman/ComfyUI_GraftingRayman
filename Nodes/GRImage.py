@@ -506,7 +506,7 @@ class GRImagePasteWithMask:
     RETURN_TYPES = ("IMAGE", "IMAGE", "IMAGE", "STRING")
     RETURN_NAMES = ("output_image", "inverted_mask_image", "contour_image", "image_dimensions")
     FUNCTION = "paste_with_mask"
-    CATEGORY = "GraftingRayman\Images"
+    CATEGORY = "GraftingRayman/Images"
 
     def hex_to_rgb(self, hex_color): 
         hex_color = hex_color.lstrip("#")
@@ -821,7 +821,7 @@ class GRBackgroundRemoverREMBG:
 
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("output_image",)
-    CATEGORY = "GraftingRayman\Images"
+    CATEGORY = "GraftingRayman/Images"
     FUNCTION = "remove_background"
 
     def remove_background(self, image, rembg_model="u2net"):
