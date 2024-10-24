@@ -18,6 +18,77 @@ import random
 import time
 import cv2
 
+class GRMask:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "height": ("INT", {"min": 1}),
+                "width": ("INT", {"min": 1}),
+                "mask_width": ("INT", {"min": 1}),  # Mask width in pixels
+                "mask_height": ("INT", {"min": 1}),  # Mask height in pixels
+                "mask_position_v": (["bottom", "middle", "top"],),  # Vertical position options
+                "mask_position_h": (["left", "center", "right"],),  # Horizontal position options
+                "offset_x": ("INT", {"min": -1024, "max": 1024}),  # Offset for x-axis
+                "offset_y": ("INT", {"min": -1024, "max": 1024}),  # Offset for y-axis
+                "mask_shape": (["circle", "square", "rectangle", "oval"],),  # Mask shape options
+            },
+        }
+
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "create_mask"
+    CATEGORY = "GraftingRayman/Mask"
+
+    def create_mask(self, height, width, mask_width, mask_height, mask_position_v, mask_position_h, offset_x, offset_y, mask_shape):
+        # Initialize a blank mask
+        mask = torch.zeros((1, 1, height, width), dtype=torch.float32)
+
+        # Calculate mask position based on the vertical alignment
+        if mask_position_v == "top":
+            y_start = 0
+        elif mask_position_v == "middle":
+            y_start = (height - mask_height) // 2
+        else:  # "bottom"
+            y_start = height - mask_height
+
+        # Calculate mask position based on the horizontal alignment
+        if mask_position_h == "left":
+            x_start = 0
+        elif mask_position_h == "center":
+            x_start = (width - mask_width) // 2
+        else:  # "right"
+            x_start = width - mask_width
+
+        # Apply the offsets
+        x_start = max(0, min(width - mask_width, x_start + offset_x))
+        y_start = max(0, min(height - mask_height, y_start + offset_y))
+
+        # Create the mask based on the selected shape
+        if mask_shape == "rectangle" or mask_shape == "square":
+            mask[:, :, y_start:y_start + mask_height, x_start:x_start + mask_width] = 1.
+        elif mask_shape == "circle":
+            # Draw a circular mask (simplified for the sake of demonstration)
+            radius = min(mask_width, mask_height) // 2
+            center_x = x_start + mask_width // 2
+            center_y = y_start + mask_height // 2
+            for i in range(height):
+                for j in range(width):
+                    if (i - center_y) ** 2 + (j - center_x) ** 2 <= radius ** 2:
+                        mask[:, :, i, j] = 1.
+        elif mask_shape == "oval":
+            # Draw an oval mask
+            center_x = x_start + mask_width // 2
+            center_y = y_start + mask_height // 2
+            for i in range(height):
+                for j in range(width):
+                    if ((i - center_y) ** 2) / (mask_height // 2) ** 2 + ((j - center_x) ** 2) / (mask_width // 2) ** 2 <= 1:
+                        mask[:, :, i, j] = 1.
+
+        return mask
+
 class GRMaskCreateRandom:
     def __init__(self):
         pass
