@@ -157,7 +157,7 @@ class GRPrompty:
         string_type = ("STRING", {"multiline": True, "dynamicPrompts": True})
         return {"required": {
             "clip": clip_type,
-            **{f"positive_a{i}": string_type for i in range(1, 7)},
+            **{f"positive_a{i}": string_type for i in range(1, 9)},  # Include positive_a1 to positive_a8
             "always_a1": string_type,
             "negative_a1": string_type,
             "select_prompts": ("STRING", {"default": "1", "multiline": False}),
@@ -180,13 +180,13 @@ class GRPrompty:
         # Set the seed for reproducibility if `randomize` is true
         if randomize:
             random.seed(seed)  # Seed the random generator
-            select_prompts = random.sample(range(1, 7), k=random.randint(1, 6))
+            select_prompts = random.sample(range(1, 9), k=random.randint(1, 8))  # Select from 1 to 8 prompts
         else:
             # Parse the string to get individual prompt indices
             try:
-                select_prompts = [int(i) for i in select_prompts_str.split(",") if i.strip().isdigit() and 1 <= int(i.strip()) <= 6]
+                select_prompts = [int(i) for i in select_prompts_str.split(",") if i.strip().isdigit() and 1 <= int(i.strip()) <= 8]
             except ValueError:
-                raise ValueError("select_prompts should contain comma-separated numbers between 1 and 6.")
+                raise ValueError("select_prompts should contain comma-separated numbers between 1 and 8.")
 
         # Combine the selected positive prompts
         positive_clips = [kwargs[f"positive_a{i}"] for i in select_prompts]
