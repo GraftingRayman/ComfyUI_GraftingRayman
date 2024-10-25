@@ -1,4 +1,5 @@
 import torch
+import random
 from clip import tokenize
 
 
@@ -145,3 +146,59 @@ class GRPromptHub:
         
         return (positive_result, negative_result)
 
+
+class GRPrompty:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        clip_type = ("CLIP",)
+        string_type = ("STRING", {"multiline": True, "dynamicPrompts": True})
+        return {"required": {
+            "clip": clip_type,
+            **{f"positive_a{i}": string_type for i in range(1, 7)},
+            "always_a1": string_type,
+            "negative_a1": string_type,
+            "select_prompts": ("STRING", {"default": "1", "multiline": False}),
+            "randomize": ("BOOLEAN", {"default": False}),
+            "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
+        }}
+
+    RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "STRING")
+    RETURN_NAMES = ("positive", "negative", "prompts")
+    FUNCTION = "select_prompt"
+    CATEGORY = "GraftingRayman/Prompt"
+
+    def select_prompt(self, clip, **kwargs):
+        select_prompts_str = kwargs["select_prompts"]
+        always_a1 = kwargs["always_a1"]
+        negative_a1 = kwargs["negative_a1"]
+        randomize = kwargs["randomize"]
+        seed = kwargs["seed"]
+
+        # Set the seed for reproducibility if `randomize` is true
+        if randomize:
+            random.seed(seed)  # Seed the random generator
+            select_prompts = random.sample(range(1, 7), k=random.randint(1, 6))
+        else:
+            # Parse the string to get individual prompt indices
+            try:
+                select_prompts = [int(i) for i in select_prompts_str.split(",") if i.strip().isdigit() and 1 <= int(i.strip()) <= 6]
+            except ValueError:
+                raise ValueError("select_prompts should contain comma-separated numbers between 1 and 6.")
+
+        # Combine the selected positive prompts
+        positive_clips = [kwargs[f"positive_a{i}"] for i in select_prompts]
+        combined_positive = ", ".join(positive_clips) + f", {always_a1}"
+        
+        # Formulate prompts output
+        prompts = f"positive:\n{combined_positive}\n\nnegative:\n{negative_a1}"
+
+        # Tokenization and encoding
+        tokensP = clip.tokenize(combined_positive)
+        tokensN = clip.tokenize(negative_a1)
+        condP, pooledP = clip.encode_from_tokens(tokensP, return_pooled=True)
+        condN, pooledN = clip.encode_from_tokens(tokensN, return_pooled=True)
+
+        return ([[condP, {"pooled_output": pooledP}]], [[condN, {"pooled_output": pooledN}]], prompts)

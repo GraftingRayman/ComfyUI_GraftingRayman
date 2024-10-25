@@ -26,68 +26,132 @@ class GRMask:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "height": ("INT", {"min": 1}),
-                "width": ("INT", {"min": 1}),
-                "mask_width": ("INT", {"min": 1}),  # Mask width in pixels
-                "mask_height": ("INT", {"min": 1}),  # Mask height in pixels
+                "height": ("INT", {"default": 1, "min": 1, "max": 4000, "step": 1}),
+                "width": ("INT", {"default": 1, "min": 1, "max": 4000, "step": 1}),
+                "mask_width": ("INT", {"default": 1, "min": 1, "max": 4000, "step": 1}),
+                "mask_height": ("INT", {"default": 1, "min": 1, "max": 4000, "step": 1}),
                 "mask_position_v": (["bottom", "middle", "top"],),  # Vertical position options
                 "mask_position_h": (["left", "center", "right"],),  # Horizontal position options
                 "offset_x": ("INT", {"min": -1024, "max": 1024}),  # Offset for x-axis
                 "offset_y": ("INT", {"min": -1024, "max": 1024}),  # Offset for y-axis
                 "mask_shape": (["circle", "square", "rectangle", "oval"],),  # Mask shape options
+                "randomize": ("BOOLEAN",),  # Enable or disable random placement of masks
+                "exclude_borders": ("BOOLEAN",),  # Exclude mask from borders
             },
+            "optional": {
+                "num_masks": ("INT", {"default": 1, "min": 1, "max": 100, "step": 1}),  # Number of masks to create (only used when randomize is True)
+                "min_dist": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),  # Minimum distance between mask edges (used when randomize is True)
+                "border_margin": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),  # Margin from the borders if exclude_borders is True
+            }
         }
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "create_mask"
     CATEGORY = "GraftingRayman/Mask"
 
-    def create_mask(self, height, width, mask_width, mask_height, mask_position_v, mask_position_h, offset_x, offset_y, mask_shape):
+    def create_mask(self, height, width, mask_width, mask_height, mask_position_v, mask_position_h, offset_x, offset_y, mask_shape, randomize, exclude_borders, num_masks=None, min_dist=None, border_margin=None):
         # Initialize a blank mask
         mask = torch.zeros((1, 1, height, width), dtype=torch.float32)
 
-        # Calculate mask position based on the vertical alignment
-        if mask_position_v == "top":
-            y_start = 0
-        elif mask_position_v == "middle":
-            y_start = (height - mask_height) // 2
-        else:  # "bottom"
-            y_start = height - mask_height
+        # Set border margin to 0 if not provided
+        border_margin = border_margin or 0
 
-        # Calculate mask position based on the horizontal alignment
-        if mask_position_h == "left":
-            x_start = 0
-        elif mask_position_h == "center":
-            x_start = (width - mask_width) // 2
-        else:  # "right"
-            x_start = width - mask_width
+        if randomize:
+            num_masks = num_masks or 1  # Default to 1 mask if num_masks isn't provided
+            min_dist = min_dist or 0  # Default to 0 if min_dist isn't provided
+            placed_masks = []  # To store the positions and sizes of placed masks (for edge checking)
 
-        # Apply the offsets
-        x_start = max(0, min(width - mask_width, x_start + offset_x))
-        y_start = max(0, min(height - mask_height, y_start + offset_y))
+            # Start the timer for timeout
+            start_time = time.time()
+            for _ in range(num_masks):
+                # Try to find a valid position for the new mask
+                valid_position = False
+                while not valid_position:
+                    # Check if we've exceeded the timeout
+                    if time.time() - start_time > 30:
+                        raise TimeoutError("Not enough space to generate the required number of masks within the specified constraints.")
 
-        # Create the mask based on the selected shape
+                    if exclude_borders:
+                        x_start = random.randint(border_margin, width - mask_width - border_margin)
+                        y_start = random.randint(border_margin, height - mask_height - border_margin)
+                    else:
+                        x_start = random.randint(0, width - mask_width)
+                        y_start = random.randint(0, height - mask_height)
+
+                    new_mask_info = {
+                        "x_start": x_start,
+                        "y_start": y_start,
+                        "mask_width": mask_width,
+                        "mask_height": mask_height
+                    }
+
+                    if self.is_valid_position(new_mask_info, placed_masks, min_dist):
+                        placed_masks.append(new_mask_info)
+                        valid_position = True
+
+                self.apply_mask(mask, mask_shape, mask_width, mask_height, x_start, y_start)
+        else:
+            # Calculate mask position based on the vertical alignment
+            if mask_position_v == "top":
+                y_start = border_margin if exclude_borders else 0
+            elif mask_position_v == "middle":
+                y_start = (height - mask_height) // 2
+            else:  # "bottom"
+                y_start = height - mask_height - border_margin if exclude_borders else height - mask_height
+
+            # Calculate mask position based on the horizontal alignment
+            if mask_position_h == "left":
+                x_start = border_margin if exclude_borders else 0
+            elif mask_position_h == "center":
+                x_start = (width - mask_width) // 2
+            else:  # "right"
+                x_start = width - mask_width - border_margin if exclude_borders else width - mask_width
+
+            # Apply the offsets
+            x_start = max(border_margin, min(width - mask_width - border_margin, x_start + offset_x))
+            y_start = max(border_margin, min(height - mask_height - border_margin, y_start + offset_y))
+
+            # Apply the mask
+            self.apply_mask(mask, mask_shape, mask_width, mask_height, x_start, y_start)
+
+        return mask
+
+    def is_valid_position(self, new_mask, placed_masks, min_dist):
+        """Check if the new mask's edges are at least min_dist away from the placed masks."""
+        for existing_mask in placed_masks:
+            # Calculate the distance between the edges of the two masks
+            dist_x = max(0, max(existing_mask["x_start"] - (new_mask["x_start"] + new_mask["mask_width"]),
+                                new_mask["x_start"] - (existing_mask["x_start"] + existing_mask["mask_width"])))
+
+            dist_y = max(0, max(existing_mask["y_start"] - (new_mask["y_start"] + new_mask["mask_height"]),
+                                new_mask["y_start"] - (existing_mask["y_start"] + existing_mask["mask_height"])))
+
+            # If either the x or y distance is less than min_dist, the placement is invalid
+            if dist_x < min_dist or dist_y < min_dist:
+                return False
+        return True
+
+    def apply_mask(self, mask, mask_shape, mask_width, mask_height, x_start, y_start):
+        """Helper function to apply a mask based on the shape."""
         if mask_shape == "rectangle" or mask_shape == "square":
             mask[:, :, y_start:y_start + mask_height, x_start:x_start + mask_width] = 1.
         elif mask_shape == "circle":
-            # Draw a circular mask (simplified for the sake of demonstration)
+            # Draw a circular mask
             radius = min(mask_width, mask_height) // 2
             center_x = x_start + mask_width // 2
             center_y = y_start + mask_height // 2
-            for i in range(height):
-                for j in range(width):
+            for i in range(mask.shape[2]):
+                for j in range(mask.shape[3]):
                     if (i - center_y) ** 2 + (j - center_x) ** 2 <= radius ** 2:
                         mask[:, :, i, j] = 1.
         elif mask_shape == "oval":
             # Draw an oval mask
             center_x = x_start + mask_width // 2
             center_y = y_start + mask_height // 2
-            for i in range(height):
-                for j in range(width):
+            for i in range(mask.shape[2]):
+                for j in range(mask.shape[3]):
                     if ((i - center_y) ** 2) / (mask_height // 2) ** 2 + ((j - center_x) ** 2) / (mask_width // 2) ** 2 <= 1:
                         mask[:, :, i, j] = 1.
-
-        return mask
 
 class GRMaskCreateRandom:
     def __init__(self):
