@@ -202,7 +202,7 @@ This node takes an image and tiles the image into defined columns and rows, but 
 
 # GR Stack Image
 
-This node takes two images as input and stacks one on top of the other, both images need to be of the same dimensions
+This node takes two images as input and stacks one on top of the other, both images need to be of the same dimensions. Added a new input to select horizontal or vertical stacking.
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/1f86b235-832e-497f-a23c-9865538309dc)
 
