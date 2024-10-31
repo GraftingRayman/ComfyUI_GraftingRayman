@@ -162,6 +162,7 @@ class GRPrompty:
             "negative_a1": string_type,
             "select_prompts": ("STRING", {"default": "1", "multiline": False}),
             "randomize": ("BOOLEAN", {"default": False}),
+            "multi_prompt": ("BOOLEAN", {"default": True}),  # New input
             "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
         }}
 
@@ -175,16 +176,19 @@ class GRPrompty:
         always_a1 = kwargs["always_a1"]
         negative_a1 = kwargs["negative_a1"]
         randomize = kwargs["randomize"]
+        multi_prompt = kwargs["multi_prompt"]
         seed = kwargs["seed"]
 
         # Set the seed for reproducibility if `randomize` is true
         if randomize:
-            random.seed(seed)  # Seed the random generator
-            select_prompts = random.sample(range(1, 9), k=random.randint(1, 8))  # Select from 1 to 8 prompts
+            random.seed(seed)
+            select_prompts = random.sample(range(1, 9), k=random.randint(1, 8)) if multi_prompt else [random.choice(range(1, 9))]
         else:
-            # Parse the string to get individual prompt indices
             try:
+                # Parse the prompt selection string
                 select_prompts = [int(i) for i in select_prompts_str.split(",") if i.strip().isdigit() and 1 <= int(i.strip()) <= 8]
+                if not multi_prompt:
+                    select_prompts = [random.choice(select_prompts)]  # Select only one prompt if multi_prompt is False
             except ValueError:
                 raise ValueError("select_prompts should contain comma-separated numbers between 1 and 8.")
 
