@@ -1,0 +1,192 @@
+import os
+import hashlib
+import numpy as np
+from PIL import Image, ImageOps, ImageSequence
+import torch
+from torchvision.transforms import ToPILImage, Resize, CenterCrop
+import folder_paths
+import node_helpers
+
+class LoadImageAndCrop:
+    @classmethod
+    def INPUT_TYPES(cls):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        return {
+            "required": {
+                "image": (sorted(files), {"image_upload": True}),
+                "crop_size_mult": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.001}),
+                "bbox_smooth_alpha": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01})
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE", "IMAGE", "MASK")
+    RETURN_NAMES = ("original_image", "cropped_image", "mask")
+    FUNCTION = "load_image"
+
+    CATEGORY = "image"
+
+    def load_image(self, image, crop_size_mult, bbox_smooth_alpha):
+        image_path = folder_paths.get_annotated_filepath(image)
+        img = node_helpers.pillow(Image.open, image_path)
+
+        output_images = []
+        output_masks = []
+        w, h = None, None
+
+        excluded_formats = ['MPO']
+
+        for i in ImageSequence.Iterator(img):
+            i = node_helpers.pillow(ImageOps.exif_transpose, i)
+
+            if i.mode == 'I':
+                i = i.point(lambda i: i * (1 / 255))
+            image = i.convert("RGB")
+
+            if len(output_images) == 0:
+                w = image.size[0]
+                h = image.size[1]
+
+            if image.size[0] != w or image.size[1] != h:
+                continue
+
+            image = np.array(image).astype(np.float32) / 255.0
+            image = torch.from_numpy(image)[None,]
+            if 'A' in i.getbands():
+                mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
+                mask = 1. - torch.from_numpy(mask)
+            else:
+                mask = torch.zeros((64, 64), dtype=torch.float32, device="cpu")
+            output_images.append(image)
+            output_masks.append(mask.unsqueeze(0))
+
+        if len(output_images) > 1 and img.format not in excluded_formats:
+            original_image = torch.cat(output_images, dim=0)
+            original_mask = torch.cat(output_masks, dim=0)
+        else:
+            original_image = output_images[0]
+            original_mask = output_masks[0]
+
+        # BatchCropFromMask logic
+        masks = original_mask
+
+        self.max_bbox_width = 0
+        self.max_bbox_height = 0
+
+        # Calculate the maximum bounding box size across the mask
+        curr_max_bbox_width = 0
+        curr_max_bbox_height = 0
+        for mask in masks:
+            _mask = ToPILImage()(mask.squeeze())
+            non_zero_indices = np.nonzero(np.array(_mask))
+            if len(non_zero_indices[0]) > 0 and len(non_zero_indices[1]) > 0:
+                min_x, max_x = np.min(non_zero_indices[1]), np.max(non_zero_indices[1])
+                min_y, max_y = np.min(non_zero_indices[0]), np.max(non_zero_indices[0])
+                width = max_x - min_x
+                height = max_y - min_y
+                curr_max_bbox_width = max(curr_max_bbox_width, width)
+                curr_max_bbox_height = max(curr_max_bbox_height, height)
+
+        # Smooth the changes in the bounding box size
+        self.max_bbox_width = self.smooth_bbox_size(self.max_bbox_width, curr_max_bbox_width, bbox_smooth_alpha)
+        self.max_bbox_height = self.smooth_bbox_size(self.max_bbox_height, curr_max_bbox_height, bbox_smooth_alpha)
+
+        # Apply the crop size multiplier
+        self.max_bbox_width = round(self.max_bbox_width * crop_size_mult)
+        self.max_bbox_height = round(self.max_bbox_height * crop_size_mult)
+
+        # Ensure max_bbox_height is not zero to avoid division by zero
+        if self.max_bbox_height == 0:
+            return (original_image, original_image, original_mask)
+
+        bbox_aspect_ratio = self.max_bbox_width / self.max_bbox_height
+
+        # Crop the image based on the mask
+        for i, (mask, img) in enumerate(zip(masks, original_image)):
+            _mask = ToPILImage()(mask.squeeze())
+            non_zero_indices = np.nonzero(np.array(_mask))
+            if len(non_zero_indices[0]) > 0 and len(non_zero_indices[1]) > 0:
+                min_x, max_x = np.min(non_zero_indices[1]), np.max(non_zero_indices[1])
+                min_y, max_y = np.min(non_zero_indices[0]), np.max(non_zero_indices[0])
+
+                # Calculate center of bounding box
+                center_x = np.mean(non_zero_indices[1])
+                center_y = np.mean(non_zero_indices[0])
+                curr_center = (round(center_x), round(center_y))
+
+                # Initialize prev_center with curr_center
+                if not hasattr(self, 'prev_center'):
+                    self.prev_center = curr_center
+
+                # Smooth the changes in the center coordinates
+                if i > 0:
+                    center = self.smooth_center(self.prev_center, curr_center, bbox_smooth_alpha)
+                else:
+                    center = curr_center
+
+                # Update prev_center for the next frame
+                self.prev_center = center
+
+                # Create bounding box using max_bbox_width and max_bbox_height
+                half_box_width = round(self.max_bbox_width / 2)
+                half_box_height = round(self.max_bbox_height / 2)
+                min_x = max(0, center[0] - half_box_width)
+                max_x = min(img.shape[1], center[0] + half_box_width)
+                min_y = max(0, center[1] - half_box_height)
+                max_y = min(img.shape[0], center[1] + half_box_height)
+
+                # Crop the image from the bounding box
+                cropped_img = img[min_y:max_y, min_x:max_x, :]
+
+                # Check if the cropped image has valid dimensions
+                if cropped_img.shape[0] == 0 or cropped_img.shape[1] == 0:
+                    # Return the original image and mask if the cropped image is invalid
+                    return (original_image, original_image, original_mask)
+
+                # Calculate the new dimensions while maintaining the aspect ratio
+                new_height = min(cropped_img.shape[0], self.max_bbox_height)
+                new_width = round(new_height * bbox_aspect_ratio)
+
+                # Resize the image
+                resize_transform = Resize((new_height, new_width))
+                resized_img = resize_transform(cropped_img.permute(2, 0, 1))
+
+                # Perform the center crop to the desired size
+                crop_transform = CenterCrop((self.max_bbox_height, self.max_bbox_width))
+                cropped_resized_img = crop_transform(resized_img)
+
+                cropped_image = cropped_resized_img.permute(1, 2, 0).unsqueeze(0)
+
+                return (original_image, cropped_image, original_mask)
+
+        # If no valid mask is found, return the original image and mask
+        return (original_image, original_image, original_mask)
+
+    def smooth_bbox_size(self, prev_bbox_size, curr_bbox_size, alpha):
+        if alpha == 0:
+            return prev_bbox_size
+        return round(alpha * curr_bbox_size + (1 - alpha) * prev_bbox_size)
+
+    def smooth_center(self, prev_center, curr_center, alpha=0.5):
+        if alpha == 0:
+            return prev_center
+        return (
+            round(alpha * curr_center[0] + (1 - alpha) * prev_center[0]),
+            round(alpha * curr_center[1] + (1 - alpha) * prev_center[1])
+        )
+
+    @classmethod
+    def IS_CHANGED(cls, image):
+        image_path = folder_paths.get_annotated_filepath(image)
+        m = hashlib.sha256()
+        with open(image_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, image):
+        if not folder_paths.exists_annotated_filepath(image):
+            return "Invalid image file: {}".format(image)
+        return True
+
+NODE_CLASS_MAPPINGS = {"LoadImageAndCrop": LoadImageAndCrop}
