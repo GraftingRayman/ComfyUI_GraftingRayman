@@ -18,7 +18,7 @@ class GRPanOrZoom:
                 "images": ("IMAGE",),
                 "zoom": ("FLOAT", {"default": 3.0, "min": 1.1, "max": 5.0, "step": 0.1}),
                 "frames_per_transition": ("INT", {"default": 24, "min": 1, "max": 120, "step": 1}),
-                "mode": (["pan-left", "pan-right", "pan-up", "pan-down", "zoom-in", "zoom-out", "zoom-left", "zoom-right", "zoom-up", "zoom-down"], {"default": "pan-left"}),
+                "mode": (["pan-left", "pan-right", "pan-up", "pan-down", "zoom-in", "zoom-out"], {"default": "pan-left"}),
                 "use_depth": ("BOOLEAN", {"default": False}),
                 "max_depth": ("FLOAT", {"default": 10.0, "min": 1.0, "max": 100.0, "step": 0.1}),
                 "device": (["cpu", "cuda"], {"default": "cpu"}),
@@ -74,29 +74,24 @@ class GRPanOrZoom:
         current_image = image.to(device)
         h, w = current_image.shape[1:3]
 
-        # Default zoom factor
-        zoom_factor = 1.0  # Base zoom factor
-        if mode in ["zoom-in", "zoom-out"]:
-            if mode == "zoom-out":
-                zoom_factor = 1.0 + (1.0 - 1.0 / zoom) * (i / frames_per_transition)
-            elif mode == "zoom-in":
-                zoom_factor = 1.0 + (zoom - 1.0) * (i / frames_per_transition)
+        # Determine zoom factor based on mode
+        zoom_factor = zoom  # Default zoom
+        if mode == "zoom-out":
+            zoom_factor = 1.0 + (1.0 - 1.0 / zoom) * (i / frames_per_transition)
+        elif mode == "zoom-in":
+            zoom_factor = 1.0 + (zoom - 1.0) * (i / frames_per_transition)
 
         new_h, new_w = int(h * zoom_factor), int(w * zoom_factor)
 
-        # Set the zoom positions for new zoom modes
-        zoom_y, zoom_x = h // 2, w // 2  # Default center
+        # Determine the center for zoom-in or zoom-out
+        if use_depth and mode in ["zoom-in", "zoom-out"]:
+            if self.depth_model is None:
+                self.depth_model = DepthAnythingV2().to(device)
+            depth_map = self.depth_model(current_image.unsqueeze(0), max_depth=max_depth)
+            zoom_y, zoom_x = self.compute_depth_zoom_position(depth_map)
+        else:
+            zoom_y, zoom_x = h // 2, w // 2
 
-        if mode in ["zoom-left", "zoom-right", "zoom-up", "zoom-down"]:
-            if mode == "zoom-left":
-                zoom_x = w - 1  # Start from the far right
-            elif mode == "zoom-right":
-                zoom_x = 0  # Start from the far left
-            elif mode == "zoom-up":
-                zoom_y = h - 1  # Start from the bottom
-            elif mode == "zoom-down":
-                zoom_y = 0  # Start from the top
-        
         # Perform the zoom
         zoomed = F.interpolate(
             current_image.unsqueeze(0),
@@ -109,23 +104,22 @@ class GRPanOrZoom:
         pan_step_x = (new_w - w) // frames_per_transition
         pan_step_y = (new_h - h) // frames_per_transition
 
-        # Adjust crop positions based on the mode and frame index
-        if mode in ["pan-left", "pan-right", "pan-up", "pan-down"]:
-            if mode == "pan-left":
-                crop_x = new_w - w - i * pan_step_x
-                crop_y = zoom_y - h // 2
-            elif mode == "pan-right":
-                crop_x = i * pan_step_x
-                crop_y = zoom_y - h // 2
-            elif mode == "pan-up":
-                crop_y = new_h - h - i * pan_step_y
-                crop_x = zoom_x - w // 2
-            elif mode == "pan-down":
-                crop_y = i * pan_step_y
-                crop_x = zoom_x - w // 2
-        elif mode in ["zoom-left", "zoom-right", "zoom-up", "zoom-down"]:
-            crop_x = max(0, min(new_w - w, zoom_x - w // 2))
+        # Set crop position based on the mode and frame index
+        if mode == "pan-left":
+            crop_x = new_w - w - i * pan_step_x
+            crop_y = zoom_y - h // 2
+        elif mode == "pan-right":
+            crop_x = i * pan_step_x
+            crop_y = zoom_y - h // 2
+        elif mode == "pan-up":
+            crop_y = new_h - h - i * pan_step_y
+            crop_x = zoom_x - w // 2
+        elif mode == "pan-down":
+            crop_y = i * pan_step_y
+            crop_x = zoom_x - w // 2
+        elif mode in ["zoom-in", "zoom-out"]:
             crop_y = max(0, min(new_h - h, zoom_y - h // 2))
+            crop_x = max(0, min(new_w - w, zoom_x - w // 2))
 
         # Crop the frame
         frame = zoomed[:, crop_y:crop_y + h, crop_x:crop_x + w]
@@ -138,7 +132,7 @@ class GRPanOrZoom:
         frames = []
         depth_maps = []
         pan_modes = ["pan-left", "pan-right", "pan-up", "pan-down"]
-        zoom_modes = ["zoom-in", "zoom-out", "zoom-left", "zoom-right", "zoom-up", "zoom-down"]
+        zoom_modes = ["zoom-in", "zoom-out"]
         modes = pan_modes + zoom_modes
 
         # Initialize ProgressBar with the total number of frames to process
@@ -152,7 +146,7 @@ class GRPanOrZoom:
                 if mode in pan_modes:
                     current_mode = random.choice(pan_modes)
                 elif mode in zoom_modes:
-                    current_mode = random.choice(zoom_modes)  # Randomize zoom modes
+                    current_mode = random.choice(zoom_modes)  # Randomize zoom-in/zoom-out
 
             # Compute depth map if `use_depth` is enabled
             if use_depth:
@@ -174,14 +168,12 @@ class GRPanOrZoom:
                     frame = self.process_frame(i, image, zoom, frames_per_transition, current_mode, use_depth, max_depth, device)
 
                 frames.append(frame)
-                pbar.update_absolute(idx * frames_per_transition + i)
+                pbar.update_absolute(idx * frames_per_transition + i)  # Update the progress bar
 
-        output = torch.stack(frames, dim=0)
-        output = output.permute(0, 2, 3, 1)
+        output_frames = torch.stack(frames, dim=0).permute(0, 2, 3, 1)
+        output_depth_maps = torch.stack(depth_maps, dim=0) if use_depth else []
 
-        depth_output = torch.stack(depth_maps, dim=0) if depth_maps else torch.empty(0, device=device)
-
-        return (output, self.tensor_to_image(depth_output))
+        return (output_frames, output_depth_maps)
 
 # Export the class
 __all__ = ['GRPanOrZoom']
