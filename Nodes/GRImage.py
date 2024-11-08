@@ -130,6 +130,9 @@ class GRImageResize:
                 "image": ("IMAGE",),
                 "width": ("INT", {"min": 1}),
                 "height": ("INT", {"min": 1}),
+                "image_dimensions": ("BOOLEAN",),
+                "divisible_by": ("INT", {"min": 1}),
+                "scale_factor": ("FLOAT", {"default": 1.000, "step": 0.001}),
             },
         }
 
@@ -137,11 +140,33 @@ class GRImageResize:
     FUNCTION = "resize_image"
     CATEGORY = "GraftingRayman/Images"
 
+    def resize_image(self, image, height, width, image_dimensions, divisible_by, scale_factor):
+        # Assuming image is in a batch format with shape [batch_size, height, width, channels]
+        input_image = image.permute(0, 3, 1, 2)  # Convert to [batch, channels, height, width]
+        
+        # Determine target height and width based on conditions
+        if scale_factor != 1.0:
+            # Use scaled dimensions from the input image
+            _, _, img_height, img_width = input_image.shape
+            target_height = int(img_height * scale_factor)
+            target_width = int(img_width * scale_factor)
+        elif image_dimensions:
+            # Use original dimensions from the input image
+            _, _, img_height, img_width = input_image.shape
+            target_height = img_height
+            target_width = img_width
+        else:
+            # Use specified width and height
+            target_height = height
+            target_width = width
 
-    def resize_image(self, image, height, width):
-        input_image = image.permute((0, 3, 1, 2))
-        resized_image = TF.resize(input_image, (height, width))
-        resized_image = resized_image.permute((0, 2, 3, 1))
+        # Adjust target height and width to be divisible by divisible_by
+        target_height = (target_height // divisible_by) * divisible_by
+        target_width = (target_width // divisible_by) * divisible_by
+
+        # Resize the image
+        resized_image = TF.resize(input_image, (target_height, target_width))
+        resized_image = resized_image.permute(0, 2, 3, 1)  # Convert back to [batch, height, width, channels]
         return (resized_image,)
         
 class GRStackImage:
