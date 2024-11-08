@@ -5,7 +5,6 @@ from tqdm import tqdm
 import random
 import cv2
 import numpy as np
-from custom_controlnet_aux.depth_anything_v2.dpt import DepthAnythingV2
 
 class GRPanOrZoom:
     def __init__(self):
