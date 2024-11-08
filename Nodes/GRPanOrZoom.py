@@ -32,7 +32,7 @@ class GRPanOrZoom:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("poz_frames",)
     FUNCTION = "apply_pan_or_zoom"
-    CATEGORY = "GraftingRayman/Images"
+    CATEGORY = "GraftingRayman/Video"
 
     def compute_depth_position(self, depth_map: torch.Tensor, method: str) -> Tuple[int, int]:
         depth_map_np = depth_map.squeeze().cpu().numpy()
