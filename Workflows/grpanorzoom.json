@@ -1,0 +1,382 @@
+{
+  "last_node_id": 48,
+  "last_link_id": 117,
+  "nodes": [
+    {
+      "id": 26,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 520,
+        "1": 80
+      },
+      "size": [
+        300,
+        240
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 106
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 6,
+      "type": "PreviewImage",
+      "pos": {
+        "0": 1280,
+        "1": 80
+      },
+      "size": {
+        "0": 360,
+        "1": 360
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 101
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 46,
+      "type": "VHS_VideoCombine",
+      "pos": {
+        "0": 1690,
+        "1": 80
+      },
+      "size": [
+        600,
+        721.0793650793651
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 117
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "meta_batch",
+          "type": "VHS_BatchManager",
+          "link": null,
+          "shape": 7
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": null,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "widgets_values": {
+        "frame_rate": 24,
+        "loop_count": 0,
+        "filename_prefix": "AnimateDiff",
+        "format": "video/h264-mp4",
+        "pix_fmt": "yuv420p",
+        "crf": 19,
+        "save_metadata": true,
+        "pingpong": false,
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "AnimateDiff_00004.mp4",
+            "subfolder": "",
+            "type": "output",
+            "format": "video/h264-mp4",
+            "frame_rate": 24
+          },
+          "muted": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "LeReS-DepthMapPreprocessor",
+      "pos": {
+        "0": 870,
+        "1": 80
+      },
+      "size": {
+        "0": 360,
+        "1": 120
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 95
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            101,
+            114
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LeReS-DepthMapPreprocessor"
+      },
+      "widgets_values": [
+        0,
+        0,
+        "enable",
+        512
+      ]
+    },
+    {
+      "id": 35,
+      "type": "LoadImagesFromDir //Inspire",
+      "pos": {
+        "0": 50,
+        "1": 80
+      },
+      "size": {
+        "0": 420,
+        "1": 180
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            69,
+            106
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImagesFromDir //Inspire"
+      },
+      "widgets_values": [
+        "h:\\panning",
+        0,
+        0,
+        false
+      ]
+    },
+    {
+      "id": 16,
+      "type": "GR Image Resize",
+      "pos": {
+        "0": 520,
+        "1": 400
+      },
+      "size": {
+        "0": 300,
+        "1": 120
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 69
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            95,
+            116
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GR Image Resize"
+      },
+      "widgets_values": [
+        504,
+        350
+      ]
+    },
+    {
+      "id": 48,
+      "type": "GR Pan Or Zoom",
+      "pos": {
+        "0": 960,
+        "1": 540
+      },
+      "size": {
+        "0": 300,
+        "1": 300
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 116
+        },
+        {
+          "name": "depth_maps",
+          "type": "IMAGE",
+          "link": 114
+        }
+      ],
+      "outputs": [
+        {
+          "name": "poz_frames",
+          "type": "IMAGE",
+          "links": [
+            117
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GR Pan Or Zoom"
+      },
+      "widgets_values": [
+        1.5,
+        24,
+        "pan-left",
+        true,
+        "weighted-average",
+        10,
+        0.5,
+        "cuda",
+        true
+      ]
+    }
+  ],
+  "links": [
+    [
+      69,
+      35,
+      0,
+      16,
+      0,
+      "IMAGE"
+    ],
+    [
+      95,
+      16,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      101,
+      9,
+      0,
+      6,
+      0,
+      "IMAGE"
+    ],
+    [
+      106,
+      35,
+      0,
+      26,
+      0,
+      "IMAGE"
+    ],
+    [
+      114,
+      9,
+      0,
+      48,
+      1,
+      "IMAGE"
+    ],
+    [
+      116,
+      16,
+      0,
+      48,
+      0,
+      "IMAGE"
+    ],
+    [
+      117,
+      48,
+      0,
+      46,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7513148009015778,
+      "offset": [
+        -4.0458741442263975,
+        186.0376307636025
+      ]
+    }
+  },
+  "version": 0.4
+}
