@@ -80,13 +80,30 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Scroller](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-scroller)
 
-#
+[GR Pan Or Zoom](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-pan-or-zoom)
+
+
+
 
 If you use these, follow my YouTube channel where I create ComfyUI workflows from scratch
 
 [![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
+
+# GR Pan Or Zoom
+Workflow in workflow folder
+
+![image](https://github.com/user-attachments/assets/8fe1827a-f67a-4362-856e-14511d40ffba)
+
+
+With out Depth
+https://github.com/user-attachments/assets/d7046bc0-b26e-4637-abe0-8bef1df5ebc7
+
+With Depth
+https://github.com/user-attachments/assets/5195c14d-6d5e-46e9-b544-2511c4be2938
+
+
 
 # GR Text Overlay
 
