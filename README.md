@@ -94,14 +94,15 @@ Hope this stuff is helpful
 # GR Pan Or Zoom
 Workflow in workflow folder
 
-![image](https://github.com/user-attachments/assets/8fe1827a-f67a-4362-856e-14511d40ffba)
+![image](https://github.com/user-attachments/assets/5ae49167-c4cb-4a67-bc42-e0b4bc8ce123)
+
 
 
 With out Depth
-https://github.com/user-attachments/assets/d7046bc0-b26e-4637-abe0-8bef1df5ebc7
+![AnimateDiff_00136](https://github.com/user-attachments/assets/cf913d65-7c9e-4f2b-8621-7147541df8af)
 
 With Depth
-https://github.com/user-attachments/assets/5195c14d-6d5e-46e9-b544-2511c4be2938
+![AnimateDiff_00137](https://github.com/user-attachments/assets/c6353fdc-6f71-45a5-85ef-64e09c38f49e)
 
 
 
@@ -158,7 +159,8 @@ Resizes image by height, size, divisible and scale
 
 Credit to simeonovich
 
-![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/da0c6a13-4b08-4798-9333-b7d2e34d6515)
+![image](https://github.com/user-attachments/assets/b4812b88-be01-44b9-81ed-274550fccd9b)
+
 
 # GR Mask Create
 
