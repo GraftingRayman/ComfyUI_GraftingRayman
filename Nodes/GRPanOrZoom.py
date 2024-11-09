@@ -6,6 +6,7 @@ import random
 import cv2
 import numpy as np
 
+
 class GRPanOrZoom:
     def __init__(self):
         self.depth_model = None
@@ -17,14 +18,14 @@ class GRPanOrZoom:
             "required": {
                 "images": ("IMAGE",),
                 "depth_maps": ("IMAGE",),
-                "zoom": ("FLOAT", {"default": 3.0, "min": 1.1, "max": 5.0, "step": 0.1}),
-                "frames_per_transition": ("INT", {"default": 24, "min": 1, "max": 1024, "step": 1}),
+                "zoom": ("FLOAT", {"default": 1.5, "min": 1.1, "max": 5.0, "step": 0.1}),
+                "frames_per_transition": ("INT", {"default": 24, "min": 1, "max": 1200, "step": 1}),
                 "mode": (["pan-left", "pan-right", "pan-up", "pan-down", "zoom-in", "zoom-out"], {"default": "pan-left"}),
                 "use_depth": ("BOOLEAN", {"default": False}),
                 "depth_focus_method": (["centroid", "max-point", "adaptive-region", "weighted-average", "smoothed", "weighted-singular"], {"default": "weighted-average"}),
                 "max_depth": ("FLOAT", {"default": 10.0, "min": 1.0, "max": 100.0, "step": 0.1}),
                 "parallax_strength": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1.0, "step": 0.1}),
-                "device": (["cpu", "cuda"], {"default": "cpu"}),
+                "device": (["cpu", "cuda"], {"default": "cuda"}),  # Default device set to "cuda"
                 "randomize": ("BOOLEAN", {"default": False})
             }
         }
@@ -85,37 +86,6 @@ class GRPanOrZoom:
 
         return cy, cx
 
-    def compute_depth_zoom_position(self, depth_map: torch.Tensor, side: str) -> Tuple[int, int]:
-        """Determines the depth-based starting position for panning from the opposite side."""
-        h, w = depth_map.shape[-2:]
-        
-        # Select the target region based on the side
-        if side == "left":
-            target_region = depth_map[:, : w // 2]
-        elif side == "right":
-            target_region = depth_map[:, w // 2:]
-        elif side == "top":
-            target_region = depth_map[: h // 2, :]
-        elif side == "bottom":
-            target_region = depth_map[h // 2 :, :]
-
-        # Ensure target_region is non-empty by checking its shape
-        if target_region.numel() == 0:
-            return h // 2, w // 2  # Default to the center if region is empty
-
-        # Find the maximum depth position within the target region
-        max_depth_val, max_depth_idx = torch.max(target_region.reshape(-1), dim=0)
-        max_depth_y = max_depth_idx // target_region.shape[-1]
-        max_depth_x = max_depth_idx % target_region.shape[-1]
-
-        # Adjust max_depth_x or max_depth_y based on the side to map it back to the full depth_map coordinates
-        if side in ["left", "right"]:
-            max_depth_x = max_depth_x.item() + (w // 2 if side == "right" else 0)
-        else:
-            max_depth_y = max_depth_y.item() + (h // 2 if side == "bottom" else 0)
-
-        return int(max_depth_y), int(max_depth_x)
-
     def process_frame(self, i: int, image: torch.Tensor, depth_map: torch.Tensor, zoom: float, frames_per_transition: int, mode: str, use_depth: bool, depth_focus_method: str, max_depth: float, parallax_strength: float, device: str) -> torch.Tensor:
         current_image = image.to(device)
         h, w = current_image.shape[1:3]
@@ -129,23 +99,60 @@ class GRPanOrZoom:
 
         new_h, new_w = int(h * current_zoom), int(w * current_zoom)
 
+        # Print statements to debug zoom and cropping calculations
+        print(f"Original dimensions: {h}x{w}")
+        print(f"New dimensions after zoom: {new_h}x{new_w}")
+        
         if use_depth:
-            if mode == "pan-left":
-                # Start from the farthest depth-based position on the right using depth_focus_method for y-axis
-                pan_y, _ = self.compute_depth_position(depth_map, depth_focus_method)
-                _, pan_x = self.compute_depth_zoom_position(depth_map, side="right")
+            # Calculate initial depth-based position based on depth_focus_method for zoom center
+            pan_y, pan_x = self.compute_depth_position(depth_map, depth_focus_method)
+            
+            # For zoom-in and zoom-out, center around the depth-focused position
+            if mode in ["zoom-in", "zoom-out"]:
+                pan_crop_y = max(0, min(new_h - h, pan_y - h // 2))
+                pan_crop_x = max(0, min(new_w - w, pan_x - w // 2))
+            
+            # Logic for panning modes
+            elif mode == "pan-left":
+                pan_step_x = int((new_w - w) / frames_per_transition)
+                pan_crop_x = max(0, new_w - w - i * pan_step_x)
+                pan_crop_y = min(max(0, pan_y - h // 2), new_h - h)
+
             elif mode == "pan-right":
-                pan_y, pan_x = self.compute_depth_zoom_position(depth_map, side="left")
+                pan_step_x = int((new_w - w) / frames_per_transition)
+                pan_crop_x = min(i * pan_step_x, new_w - w)
+                pan_crop_y = min(max(0, pan_y - h // 2), new_h - h)
+
             elif mode == "pan-up":
-                pan_y, pan_x = self.compute_depth_zoom_position(depth_map, side="bottom")
+                pan_step_y = int((new_h - h) / frames_per_transition)
+                pan_crop_y = max(0, new_h - h - i * pan_step_y)
+                pan_crop_x = min(max(0, pan_x - w // 2), new_w - w)
+
             elif mode == "pan-down":
-                pan_y, pan_x = self.compute_depth_zoom_position(depth_map, side="top")
-            else:
-                # Determine the zoom center based on depth for zoom-in or zoom-out
-                pan_y, pan_x = self.compute_depth_position(depth_map, depth_focus_method)
+                pan_step_y = int((new_h - h) / frames_per_transition)
+                pan_crop_y = min(i * pan_step_y, new_h - h)
+                pan_crop_x = min(max(0, pan_x - w // 2), new_w - w)
+        
         else:
-            # No depth: center the panning or zooming
-            pan_y, pan_x = h // 2, w // 2
+            # Directly calculate the center cropping coordinates for zoom modes
+            pan_crop_y = (new_h - h) // 2
+            pan_crop_x = (new_w - w) // 2
+
+            # Adjust for pan modes by shifting pan_crop_x or pan_crop_y per frame
+            pan_step_x = (new_w - w) // frames_per_transition
+            pan_step_y = (new_h - h) // frames_per_transition
+
+            if mode == "pan-left":
+                pan_crop_x = new_w - w - i * pan_step_x
+            elif mode == "pan-right":
+                pan_crop_x = i * pan_step_x
+            elif mode == "pan-up":
+                pan_crop_y = new_h - h - i * pan_step_y
+            elif mode == "pan-down":
+                pan_crop_y = i * pan_step_y
+
+        # Additional print statement to check the final crop coordinates
+        print(f"Crop starting coordinates: ({pan_crop_y}, {pan_crop_x})")
 
         zoomed = F.interpolate(
             current_image.unsqueeze(0),
@@ -153,28 +160,6 @@ class GRPanOrZoom:
             mode='bicubic',
             align_corners=False
         ).squeeze(0)
-
-        pan_step_x = (new_w - w) // frames_per_transition
-        pan_step_y = (new_h - h) // frames_per_transition
-
-        if mode == "pan-left":
-            pan_crop_x = new_w - w - i * pan_step_x
-            pan_crop_y = pan_y - h // 2
-        elif mode == "pan-right":
-            pan_crop_x = i * pan_step_x
-            pan_crop_y = pan_y - h // 2
-        elif mode == "pan-up":
-            pan_crop_y = new_h - h - i * pan_step_y
-            pan_crop_x = pan_x - w // 2
-        elif mode == "pan-down":
-            pan_crop_y = i * pan_step_y
-            pan_crop_x = pan_x - w // 2
-        else:
-            pan_crop_y = max(0, min(new_h - h, pan_y - h // 2))
-            pan_crop_x = max(0, min(new_w - w, pan_x - w // 2))
-
-        pan_crop_x = max(0, min(new_w - w, pan_crop_x))
-        pan_crop_y = max(0, min(new_h - h, pan_crop_y))
 
         frame = zoomed[:, pan_crop_y:pan_crop_y + h, pan_crop_x:pan_crop_x + w]
         return frame.cpu()
