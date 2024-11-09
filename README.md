@@ -92,7 +92,9 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 Hope this stuff is helpful
 
 # GR Pan Or Zoom
-Workflow in workflow folder
+Workflow in workflow folder.
+
+The GR Pan Or Zoom node, takes an image of your choice and using the depth map can zoom or pan the image using 6 different depth focusing methods.
 
 ![image](https://github.com/user-attachments/assets/5ae49167-c4cb-4a67-bc42-e0b4bc8ce123)
 
