@@ -154,7 +154,7 @@ This is a simple prompt combiner, will take 6 positives and 6 negatives and comb
 
 # GR Image Resizer
 
-Resizes image by height and size
+Resizes image by height, size, divisible and scale
 
 Credit to simeonovich
 
