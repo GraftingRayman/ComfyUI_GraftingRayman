@@ -111,14 +111,8 @@ With Depth
 
 # GR Text Overlay
 
-This node creates a text overlay, this can be single or multi line. Placement includes left, right, center, middle, top, bottom. Justification can be manually set. Lots of default colours selectable from the list. All your system TTF and OTF fonts available dynamically. Line spacing as well as letter spacing can be controlled in steps of 0.01. Text without stroke thickness can be used as a mask.
-
-![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4bcd7c03-a53e-48fa-b7b3-fe7341e6ba83)
-
+This node creates a text overlay, this can be single or multi line. Placement includes left, right, center, middle, top, bottom. Justification can be manually set. Lots of default colours selectable from the list. All your system TTF and OTF fonts available dynamically. Line spacing as well as letter spacing can be controlled in steps of 0.01. Text without stroke thickness can be used as a mask. 
 A second mask includes the stroke thickness
-
-![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
-
 Added a background box that can be used to highlight the text, the edge styles for the box can be selected as well as its opacity
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4d3f5cfa-bfd7-418b-8f74-40600b3f35d7)
