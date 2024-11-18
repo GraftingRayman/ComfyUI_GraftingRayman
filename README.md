@@ -92,29 +92,27 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 Hope this stuff is helpful
 
 # GR Pan Or Zoom
-Workflow in workflow folder
+Workflow in workflow folder.
 
-![image](https://github.com/user-attachments/assets/8fe1827a-f67a-4362-856e-14511d40ffba)
+The GR Pan Or Zoom node, takes an image of your choice and using the depth map can zoom or pan the image using 6 different depth focusing methods.
+
+![image](https://github.com/user-attachments/assets/5ae49167-c4cb-4a67-bc42-e0b4bc8ce123)
 
 
 With out Depth
-https://github.com/user-attachments/assets/d7046bc0-b26e-4637-abe0-8bef1df5ebc7
+
+![AnimateDiff_00136](https://github.com/user-attachments/assets/cf913d65-7c9e-4f2b-8621-7147541df8af)
 
 With Depth
-https://github.com/user-attachments/assets/5195c14d-6d5e-46e9-b544-2511c4be2938
+
+![AnimateDiff_00137](https://github.com/user-attachments/assets/c6353fdc-6f71-45a5-85ef-64e09c38f49e)
 
 
 
 # GR Text Overlay
 
-This node creates a text overlay, this can be single or multi line. Placement includes left, right, center, middle, top, bottom. Justification can be manually set. Lots of default colours selectable from the list. All your system TTF and OTF fonts available dynamically. Line spacing as well as letter spacing can be controlled in steps of 0.01. Text without stroke thickness can be used as a mask.
-
-![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4bcd7c03-a53e-48fa-b7b3-fe7341e6ba83)
-
+This node creates a text overlay, this can be single or multi line. Placement includes left, right, center, middle, top, bottom. Justification can be manually set. Lots of default colours selectable from the list. All your system TTF and OTF fonts available dynamically. Line spacing as well as letter spacing can be controlled in steps of 0.01. Text without stroke thickness can be used as a mask. 
 A second mask includes the stroke thickness
-
-![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/261a9b47-18b6-4b17-9b23-075b2b2303e1)
-
 Added a background box that can be used to highlight the text, the edge styles for the box can be selected as well as its opacity
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/4d3f5cfa-bfd7-418b-8f74-40600b3f35d7)
@@ -154,11 +152,12 @@ This is a simple prompt combiner, will take 6 positives and 6 negatives and comb
 
 # GR Image Resizer
 
-Resizes image by height and size
+Resizes image by height, size, divisible and scale
 
 Credit to simeonovich
 
-![image](https://github.com/GraftingRayman/ComfyUI_GR_PromptSelector/assets/156515434/da0c6a13-4b08-4798-9333-b7d2e34d6515)
+![image](https://github.com/user-attachments/assets/b4812b88-be01-44b9-81ed-274550fccd9b)
+
 
 # GR Mask Create
 
