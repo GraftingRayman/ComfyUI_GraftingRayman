@@ -1034,21 +1034,51 @@ class HyperComplexImageDescriptionGenerator:
             "an origami-inspired design with sharp folds and geometric patterns"
         ]
 
-    def generate_prompt(self, category=None):
-        # Fetch a random entry for each category
-        subject = random.choice(self.subjects)
-        mood = random.choice(self.moods)
-        color = random.choice(self.colors)
-        composition = random.choice(self.compositions)
-        detail = random.choice(self.details)
-        weather = random.choice(self.weather)
-        time_of_day = random.choice(self.time_of_day)
-        obj = random.choice(self.objects)
-        style = random.choice(self.styles)
+        self.types_of_images = sorted([
+            "random",  # Random selection of image type
+            "3D Render", "Anime-style", "Black and White", "Cartoon", 
+            "Charcoal Drawing", "Chiaroscuro", "Cinematic", "Claymation", 
+            "Concept Art", "Cubist", "Cyberpunk", "Doodle", "Double Exposure", 
+            "Embossed", "Engraving", "Etching", "Expressionist", "Fantasy", 
+            "Flat Design", "Glitch Art", "Gothic", "Grainy", "Grunge", 
+            "Hand-drawn", "High Contrast", "Holographic", "Hyper-realistic", 
+            "Illustrative", "Impressionistic", "Infrared", "Ink Drawing", 
+            "Isometric", "Low Poly", "Macro", "Metallic", "Minimalist", 
+            "Neon-lit", "Oil Painting", "Old", "Panoramic", "Papercut", 
+            "Pastel Drawing", "Photographic", "Pixel Art", "Pointillism", 
+            "Pop Art", "Realistic", "Renaissance", "Retro-futuristic", 
+            "Sepia", "Sketch", "Soft Focus", "Stained Glass", "Steampunk", 
+            "Stylized", "Surreal", "Synthwave", "Textured Collage", 
+            "Vaporwave", "Vintage", "Watercolor", "Woodcut"
+        ], key=str.casefold)
 
-        # Full prompt
+    def generate_prompt(self, seed, category=None, replacement=None, image_type=None):
+        """
+        Generate a detailed prompt with emphasis on the selected type of image.
+        Replacement text can be provided for a specific category.
+        The seed ensures replicable randomness.
+        """
+        # Set the random seed for reproducibility
+        random.seed(seed)
+
+        # Replace the specified category or select randomly
+        subject = replacement if category == "subjects" else random.choice(self.subjects)
+        mood = replacement if category == "moods" else random.choice(self.moods)
+        color = replacement if category == "colors" else random.choice(self.colors)
+        composition = replacement if category == "compositions" else random.choice(self.compositions)
+        detail = replacement if category == "details" else random.choice(self.details)
+        weather = replacement if category == "weather" else random.choice(self.weather)
+        time_of_day = replacement if category == "time_of_day" else random.choice(self.time_of_day)
+        obj = replacement if category == "objects" else random.choice(self.objects)
+        style = replacement if category == "styles" else random.choice(self.styles)
+
+        # Handle "random" selection for type_of_image
+        if image_type == "random" or not image_type:
+            image_type = random.choice(self.types_of_images[1:])  # Exclude "random" itself
+
+        # Generate the prompt with the type of image emphasized
         return (
-            f"The scene captures {subject}. The mood is {mood}, complemented by {color}. "
+            f"This is a {image_type} image. It captures {subject}. The mood is {mood}, complemented by {color}. "
             f"The composition features {composition}, enhanced by {detail}. "
             f"The weather is described as {weather}, and the time of day is {time_of_day}. "
             f"In the foreground, {obj} stands out, drawing the eye. "
@@ -1057,16 +1087,46 @@ class HyperComplexImageDescriptionGenerator:
 
 
 class GRPromptGen:
+    """Integration with input system for generating prompts."""
+    
+    _categories = [
+        "subjects", "moods", "colors", "compositions", "details",
+        "weather", "time_of_day", "objects", "styles"
+    ]
+    _types_of_images = sorted([
+        "random", "3D Render", "Anime-style", "Black and White", "Cartoon", 
+        "Charcoal Drawing", "Chiaroscuro", "Cinematic", "Claymation", 
+        "Concept Art", "Cubist", "Cyberpunk", "Doodle", "Double Exposure", 
+        "Embossed", "Engraving", "Etching", "Expressionist", "Fantasy", 
+        "Flat Design", "Glitch Art", "Gothic", "Grainy", "Grunge", 
+        "Hand-drawn", "High Contrast", "Holographic", "Hyper-realistic", 
+        "Illustrative", "Impressionistic", "Infrared", "Ink Drawing", 
+        "Isometric", "Low Poly", "Macro", "Metallic", "Minimalist", 
+        "Neon-lit", "Oil Painting", "Old", "Panoramic", "Papercut", 
+        "Pastel Drawing", "Photographic", "Pixel Art", "Pointillism", 
+        "Pop Art", "Realistic", "Renaissance", "Retro-futuristic", 
+        "Sepia", "Sketch", "Soft Focus", "Stained Glass", "Steampunk", 
+        "Stylized", "Surreal", "Synthwave", "Textured Collage", 
+        "Vaporwave", "Vintage", "Watercolor", "Woodcut"
+    ], key=str.casefold)
+
     def __init__(self):
         self.prompt_generator = HyperComplexImageDescriptionGenerator()
 
     @classmethod
     def INPUT_TYPES(cls):
-        string_type = ("STRING", {"multiline": True, "dynamicPrompts": True, "default": ","})
-        int_type = ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}) 
+        string_type = ("STRING", {"multiline": True, "dynamicPrompts": True, "default": ""})  # Default is empty
+        int_type = ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1})  # 14-digit random seed
+        boolean_type = ("BOOLEAN", {"default": False})  # Boolean input for expansion
+        list_category = (cls._categories, {"default": "subjects"})
+        list_type_of_image = (cls._types_of_images, {"default": "random"})
         return {"required": {
             "positive": string_type,
+            "short_text": string_type,
             "seed": int_type,
+            "expand": boolean_type,
+            "category": list_category,
+            "type_of_image": list_type_of_image,
         }}
 
     RETURN_TYPES = ("STRING", "INT")
@@ -1074,12 +1134,23 @@ class GRPromptGen:
     FUNCTION = "select_prompt"
     CATEGORY = "GraftingRayman/Prompt"
 
-    def select_prompt(self, positive, seed):
-        # Generate dynamic prompts
-        generated_prompt = self.prompt_generator.generate_prompt()
+    def select_prompt(self, positive, short_text, seed, expand, category, type_of_image):
+        """Generates the prompt based on the provided inputs."""
+        if expand:
+            # Generate prompt with a specific category and replacement text
+            expanded_text = self.prompt_generator.generate_prompt(
+                seed=seed,
+                category=category, 
+                replacement=short_text, 
+                image_type=type_of_image
+            )
+            combined_prompts = f"{expanded_text}\n{positive}"
+        else:
+            # Generate a standard prompt
+            generated_prompt = self.prompt_generator.generate_prompt(
+                seed=seed,
+                image_type=type_of_image
+            )
+            combined_prompts = f"{generated_prompt}\n{positive}"
 
-        # Combine the dynamically generated prompt with user input
-        combined_prompts = f"{generated_prompt}\n{positive}"
-
-        # Return the generated prompt and seed
         return (combined_prompts, seed)
