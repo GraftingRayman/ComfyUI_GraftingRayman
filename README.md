@@ -95,11 +95,13 @@ Hope this stuff is helpful
 
 # GR Prompt Generator
 
-If like me, your prompts are very bland and can't seem to get the right amount of details in, this node is for you. This node generates the positive prompt for scenes. You can add your own details to be appended to the prompt as well.
+If like me, your prompts are very bland and can't seem to get the right amount of details in, this node is for you. This node generates the positive prompt for scenes. You can add your own details to be appended to the prompt as well. Short text can be used to describe the image, and this can be then expanded automatically. A vast array of the type of image can be selected, images can also be replicated using the seed.
 
-![image](https://github.com/user-attachments/assets/2d627e23-0d37-482a-9dd4-d8d552967c22)
-![image](https://github.com/user-attachments/assets/a86dc220-dc73-4f9c-b479-4e110a1a0f38)
-![image](https://github.com/user-attachments/assets/47af215b-bec5-4045-a0ee-2d004fd108f1)
+![image](https://github.com/user-attachments/assets/d1233605-0844-424e-8507-688e187b4eb0)
+![image](https://github.com/user-attachments/assets/206b6a30-d4ae-4ed8-95e7-e3dce8ffa4fd)
+![image](https://github.com/user-attachments/assets/06af39bc-0214-4b8c-b4fb-d29b001f1198)
+![image](https://github.com/user-attachments/assets/700c45f3-fb84-4842-999f-228ab2aa79e2)
+
 
 
 # GR Pan Or Zoom
