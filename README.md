@@ -37,6 +37,8 @@ For comfyui portable run the following command in your comyfui folder
 
 [GR Prompt Hub](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-hub)
 
+[GR Prompt Generator](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-generator)
+
 # Image Utils:
 [GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
 
@@ -90,6 +92,16 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 [![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
+
+# GR Prompt Generator
+
+If like me, your prompts are very bland and can't seem to get the right amount of details in, this node is for you. This node generates the positive prompt for scenes. You can add your own details to be appended to the prompt as well. Short text can be used to describe the image, and this can be then expanded automatically. A vast array of the type of image can be selected, images can also be replicated using the seed.
+
+![image](https://github.com/user-attachments/assets/206b6a30-d4ae-4ed8-95e7-e3dce8ffa4fd)
+![image](https://github.com/user-attachments/assets/06af39bc-0214-4b8c-b4fb-d29b001f1198)
+![image](https://github.com/user-attachments/assets/700c45f3-fb84-4842-999f-228ab2aa79e2)
+
+
 
 # GR Pan Or Zoom
 Workflow in workflow folder.
