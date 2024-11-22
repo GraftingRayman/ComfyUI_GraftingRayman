@@ -101,6 +101,7 @@ If like me, your prompts are very bland and can't seem to get the right amount o
 ![image](https://github.com/user-attachments/assets/06af39bc-0214-4b8c-b4fb-d29b001f1198)
 ![image](https://github.com/user-attachments/assets/700c45f3-fb84-4842-999f-228ab2aa79e2)
 
+There is a new Extended version of the Prompt Generator with over 10 Quintillion+ combinations for prompts. You can choose from more than 120 different subjects to generate prompts
 
 
 # GR Pan Or Zoom
