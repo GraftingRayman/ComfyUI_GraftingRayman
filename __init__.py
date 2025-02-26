@@ -11,7 +11,7 @@ from .Nodes.GRCounter import GRCounterVideo
 from .Nodes.GRScroller import GRScrollerVideo
 from .Nodes.GRPanOrZoom import GRPanOrZoom
 from .Nodes.GRPromptGenExtended import GRPromptGenExtended
-from .Nodes.GRBLIPL2CaptionGenerator import GRBLIP2CaptionGenerator
+from .Nodes.GRBLIP2CaptionGenerator import GRBLIP2CaptionGenerator
 
 import time
 
