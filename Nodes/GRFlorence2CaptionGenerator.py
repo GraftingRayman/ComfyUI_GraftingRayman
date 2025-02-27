@@ -89,7 +89,7 @@ class Florence2PromptGenerator:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING")  # Three outputs: prompt, image type description, and media description
     RETURN_NAMES = ("prompt", "image_type_description", "media_description","ollama")
     FUNCTION = "generate_prompt"
-    CATEGORY = "WAS Suite/Image Processing"
+    CATEGORY = "Grafting Rayman/Image Processing"
 
     def hash_seed(self, seed):
         """Hash the seed for reproducibility."""
