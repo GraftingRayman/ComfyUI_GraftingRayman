@@ -28,7 +28,7 @@ class BLIP2TextExpander:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("expanded_text",)
     FUNCTION = "expand_text"
-    CATEGORY = "Grafting Rayman/Text Processing"
+    CATEGORY = "GraftingRayman/Text Processing"
 
     def load_model(self, device):
         """Load the BLIP-2 processor and model."""
