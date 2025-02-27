@@ -26,7 +26,7 @@ class GRBLIP2CaptionGenerator:
     RETURN_NAMES = ("caption",)
     FUNCTION = "generate_caption"
 
-    CATEGORY = "Grafting Rayman/Image Processing"
+    CATEGORY = "GraftingRayman/Image Processing"
 
     def generate_caption(self, image, max_length, num_beams, temperature, top_k):
         """Generate a caption for the given image using BLIP-2."""
