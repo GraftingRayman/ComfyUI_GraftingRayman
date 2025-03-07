@@ -8,9 +8,7 @@ from fontTools.ttLib import TTFont
 from comfy.utils import ProgressBar
 
 def get_font_name(font_path):
-    """
-    Extracts the actual font name from a .ttf or .otf file.
-    """
+
     try:
         font = TTFont(font_path)
         # Access the 'name' table, which contains font metadata
@@ -49,13 +47,11 @@ class GRTextOverlay:
         # Scan all font directories
         for path in font_paths:
             if os.path.isdir(path):
-                print(f"Scanning directory: {path}")
                 for root, _, files in os.walk(path):
                     for file in files:
                         if file.endswith(".ttf") or file.endswith(".otf"):
                             font_path = os.path.join(root, file)
                             font_name = get_font_name(font_path)  # Extract the actual font name
-                            print(f"Found font: {font_name} at {font_path}")
                             fonts.add((font_name, font_path))  # Store both name and path
         return sorted(list(fonts), key=lambda x: x[0])  # Sort by font name
 
