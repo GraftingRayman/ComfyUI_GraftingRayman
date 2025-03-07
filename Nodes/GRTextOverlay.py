@@ -4,7 +4,24 @@ import torch
 import numpy as np
 import math
 import random
+from fontTools.ttLib import TTFont
 from comfy.utils import ProgressBar
+
+# Define get_font_name as a standalone function
+def get_font_name(font_path):
+    """
+    Extracts the actual font name from a .ttf or .otf file.
+    """
+    try:
+        font = TTFont(font_path)
+        # Access the 'name' table, which contains font metadata
+        for record in font['name'].names:
+            # Check for the font's full name (nameID 4)
+            if record.nameID == 4 and record.platformID == 3 and record.platEncID == 1:
+                return record.toUnicode()
+    except Exception as e:
+        print(f"Error reading font {font_path}: {e}")
+    return os.path.basename(font_path)  # Fallback to filename if name cannot be extracted
 
 class GRTextOverlay:
     _horizontal_alignments = ["left", "center", "right"]
@@ -13,6 +30,10 @@ class GRTextOverlay:
     _edge_styles = ["straight", "curved", "rounded", "wavy", "zigzag", "double_line", "dashed_line", "beveled"]
 
     @staticmethod
+
+
+
+
     def _populate_fonts_from_os():
         fonts = set()
         font_paths = [
@@ -34,9 +55,10 @@ class GRTextOverlay:
                     for file in files:
                         if file.endswith(".ttf") or file.endswith(".otf"):
                             font_path = os.path.join(root, file)
-                            print(f"Found font: {font_path}")
-                            fonts.add(font_path)
-        return sorted(list(fonts))
+                            font_name = get_font_name(font_path)  # Extract the actual font name
+                            print(f"Found font: {font_name} at {font_path}")
+                            fonts.add((font_name, font_path))  # Store both name and path
+        return sorted(list(fonts), key=lambda x: x[0])  # Sort by font name
 
     _available_fonts = _populate_fonts_from_os()
     
@@ -176,6 +198,9 @@ class GRTextOverlay:
     RETURN_TYPES = ("IMAGE", "MASK", "MASK")
     FUNCTION = "batch_process"
     CATEGORY = "GraftingRayman/Overlays"
+
+
+
 
     def hex_to_rgb(self, hex_color):
         hex_color = hex_color.lstrip("#")
