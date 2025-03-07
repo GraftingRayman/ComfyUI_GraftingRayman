@@ -12,3 +12,4 @@ packaging
 setuptools
 rembg
 transformers
+fonttools
