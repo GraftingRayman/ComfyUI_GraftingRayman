@@ -25,7 +25,7 @@ For comfyui portable run the following command in your comyfui folder
 
 # Captions
 
-[GR Florence 2 Caption Generator for Ollama](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#GR-Florence-2-Caption-Generator-for Ollama)
+[GR Florence 2 Caption Generator for Ollama](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#GR-Florence-2-Caption-Generator-for-Ollama)
 
 # Overlays:
 [GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
