@@ -23,7 +23,9 @@ For comfyui portable run the following command in your comyfui folder
 
  Without this the nodes will fail to be imported
 
+# Captions
 
+[GR Florence 2 Caption Generator for Ollama](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#GR-Florence-2-Caption-Generator-for Ollama)
 
 # Overlays:
 [GR Text Overlay](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-text-overlay)
@@ -92,6 +94,11 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 [![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
+
+# GR Florence 2 Caption Generator for Ollama
+
+![image](https://github.com/user-attachments/assets/0ab41137-ba8a-46d7-8a7f-7ec2700384b5)
+
 
 # GR Prompt Generator
 
