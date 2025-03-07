@@ -22,12 +22,20 @@ class GRTextOverlay:
             "/System/Library/Fonts",
             "C:\\Windows\\Fonts"
         ]
+        # Add user-specific font directory for Windows
+        user_fonts_path = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Microsoft", "Windows", "Fonts")
+        if os.path.isdir(user_fonts_path):
+            font_paths.append(user_fonts_path)
+        
         for path in font_paths:
             if os.path.isdir(path):
+                print(f"Scanning directory: {path}")
                 for root, _, files in os.walk(path):
                     for file in files:
                         if file.endswith(".ttf") or file.endswith(".otf"):
-                            fonts.add(os.path.join(root, file))
+                            font_path = os.path.join(root, file)
+                            print(f"Found font: {font_path}")
+                            fonts.add(font_path)
         return sorted(list(fonts))
 
     _available_fonts = _populate_fonts_from_os()
