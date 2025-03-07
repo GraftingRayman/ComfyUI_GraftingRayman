@@ -46,13 +46,18 @@ class GRImageSize:
                 "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
                 "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
                 "standard": ([
-                    "custom", "(SD) 512x512", "(SD2) 768x768", "(SD2) 768x512", "(SD2) 512x768 (Portrait)", 
-                    "(SDXL) 1024x1024", "640x480 (VGA)", "800x600 (SVGA)", "960x544 (Half HD)", "1024x768 (XGA)", 
-                    "1280x720 (HD)", "1366x768 (HD)", "1600x900 (HD+)", "1920x1080 (Full HD or 1080p)", 
-                    "2560x1440 (Quad HD or 1440p)", "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", 
-                    "7680x4320 (8K)", "480x640 (VGA, Portrait)", "600x800 (SVGA, Portrait)", 
-                    "544x960 (Half HD, Portrait)", "768x1024 (XGA, Portrait)", "720x1280 (HD, Portrait)", 
-                    "768x1366 (HD, Portrait)", "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
+                    "custom",  # Custom stays at the top
+                    # Landscape sizes (sorted smallest to largest)
+                    "(SD) 512x512", "640x480 (VGA)", "(SD2) 768x512", 
+                    "(SD2) 768x768", "800x600 (SVGA)", "960x544 (Half HD)", 
+                    "1024x768 (XGA)", "(SDXL) 1024x1024", "1280x720 (HD)", "1366x768 (HD)", 
+                    "1600x900 (HD+)", "1920x1080 (Full HD or 1080p)", "2560x1440 (Quad HD or 1440p)", 
+                    "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", "7680x4320 (8K)",
+                    # Portrait sizes (sorted smallest to largest)
+                    "480x640 (VGA, Portrait)", "480x832 (Portrait)", 
+                    "(SD2) 512x768 (Portrait)", "544x960 (Half HD, Portrait)", "600x800 (SVGA, Portrait)", 
+                    "720x1280 (HD, Portrait)", "768x1024 (XGA, Portrait)", "768x1366 (HD, Portrait)", 
+                    "832x480 (Portrait)", "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
                     "1440x2560 (Quad HD or 1440p, Portrait)", "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
                     "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"
                 ],),
@@ -95,15 +100,20 @@ class GRImageSize:
             width = width
         else:
             standard_sizes = {
-                "(SD) 512x512": (512, 512), "(SD2) 768x768": (768, 768), "(SD2) 768x512": (512, 768),
-                "(SD2) 512x768 (Portrait)": (768, 512), "(SDXL) 1024x1024": (1024, 1024), "640x480 (VGA)": (480, 640),
-                "800x600 (SVGA)": (600, 800), "960x544 (Half HD)": (544, 960), "1024x768 (XGA)": (768, 1024),
-                "1280x720 (HD)": (720, 1280), "1366x768 (HD)": (768, 1366), "1600x900 (HD+)": (900, 1600),
-                "1920x1080 (Full HD or 1080p)": (1080, 1920), "2560x1440 (Quad HD or 1440p)": (1440, 2560),
-                "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840), "5120x2880 (5K)": (2880, 5120),
-                "7680x4320 (8K)": (4320, 7680), "480x640 (VGA, Portrait)": (640, 480), "600x800 (SVGA, Portrait)": (800, 600),
-                "544x960 (Half HD, Portrait)": (960, 544), "768x1024 (XGA, Portrait)": (1024, 768),
-                "720x1280 (HD, Portrait)": (1280, 720), "768x1366 (HD, Portrait)": (1366, 768),
+                # Landscape sizes
+                "(SD) 512x512": (512, 512), "640x480 (VGA)": (480, 640),
+                "768x512": (512, 768), "(SD2) 768x512": (512, 768), 
+                "(SD2) 768x768": (768, 768), "800x600 (SVGA)": (600, 800), "960x544 (Half HD)": (544, 960),
+                "1024x768 (XGA)": (768, 1024), "(SDXL) 1024x1024": (1024, 1024), "1280x720 (HD)": (720, 1280),
+                "1366x768 (HD)": (768, 1366), "1600x900 (HD+)": (900, 1600), "1920x1080 (Full HD or 1080p)": (1080, 1920),
+                "2560x1440 (Quad HD or 1440p)": (1440, 2560), "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840),
+                "5120x2880 (5K)": (2880, 5120), "7680x4320 (8K)": (4320, 7680),
+                # Portrait sizes
+                "480x640 (VGA, Portrait)": (640, 480), "480x832 (Portrait)": (832, 480),
+                "(SD2) 512x768 (Portrait)": (768, 512),
+                "544x960 (Half HD, Portrait)": (960, 544), "600x800 (SVGA, Portrait)": (800, 600),
+                "720x1280 (HD, Portrait)": (1280, 720), "768x1024 (XGA, Portrait)": (1024, 768),
+                "768x1366 (HD, Portrait)": (1366, 768), "832x480 (Portrait)": (480, 832),
                 "900x1600 (HD+, Portrait)": (1600, 900), "1080x1920 (Full HD or 1080p, Portrait)": (1920, 1080),
                 "1440x2560 (Quad HD or 1440p, Portrait)": (2560, 1440), "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (3840, 2160),
                 "2880x5120 (5K, Portrait)": (5120, 2880), "4320x7680 (8K, Portrait)": (7680, 4320)
@@ -128,10 +138,12 @@ class GRImageResize:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "width": ("INT", {"min": 1}),
-                "height": ("INT", {"min": 1}),
+                "width": ("INT", {"default": 100, "min": 1}),  # Default width set to 100
+                "height": ("INT", {"default": 100, "min": 1}),  # Default height set to 100
                 "image_dimensions": ("BOOLEAN",),
-                "divisible_by": ("INT", {"min": 1}),
+                "longest_side": ("BOOLEAN", {"default": False}),  # Boolean to enable longest side resizing
+                "longest_side_value": ("INT", {"default": 256, "min": 1}),  # New input for longest side value
+                "divisible_by": ("INT", {"default": 1, "min": 1}),
                 "scale_factor": ("FLOAT", {"default": 1.000, "step": 0.001}),
             },
         }
@@ -140,7 +152,7 @@ class GRImageResize:
     FUNCTION = "resize_image"
     CATEGORY = "GraftingRayman/Images"
 
-    def resize_image(self, image, height, width, image_dimensions, divisible_by, scale_factor):
+    def resize_image(self, image, height, width, image_dimensions, longest_side, longest_side_value, divisible_by, scale_factor):
         # Assuming image is in a batch format with shape [batch_size, height, width, channels]
         input_image = image.permute(0, 3, 1, 2)  # Convert to [batch, channels, height, width]
         
@@ -155,8 +167,20 @@ class GRImageResize:
             _, _, img_height, img_width = input_image.shape
             target_height = img_height
             target_width = img_width
+        elif longest_side:
+            # Resize based on the longest side while maintaining aspect ratio
+            _, _, img_height, img_width = input_image.shape
+            aspect_ratio = img_width / img_height
+            if img_width > img_height:
+                # Width is the longest side
+                target_width = longest_side_value
+                target_height = int(longest_side_value / aspect_ratio)
+            else:
+                # Height is the longest side
+                target_height = longest_side_value
+                target_width = int(longest_side_value * aspect_ratio)
         else:
-            # Use specified width and height
+            # Use specified width and height directly
             target_height = height
             target_width = width
 
