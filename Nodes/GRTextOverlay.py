@@ -4,7 +4,23 @@ import torch
 import numpy as np
 import math
 import random
+from fontTools.ttLib import TTFont
 from comfy.utils import ProgressBar
+
+def get_font_name(font_path):
+    """
+    Extracts the actual font name from a .ttf or .otf file.
+    """
+    try:
+        font = TTFont(font_path)
+        # Access the 'name' table, which contains font metadata
+        for record in font['name'].names:
+            # Check for the font's full name (nameID 4)
+            if record.nameID == 4 and record.platformID == 3 and record.platEncID == 1:
+                return record.toUnicode()
+    except Exception as e:
+        print(f"Error reading font {font_path}: {e}")
+    return os.path.basename(font_path)  # Fallback to filename if name cannot be extracted
 
 class GRTextOverlay:
     _horizontal_alignments = ["left", "center", "right"]
@@ -15,6 +31,8 @@ class GRTextOverlay:
     @staticmethod
     def _populate_fonts_from_os():
         fonts = set()
+        
+        # System-wide font directories
         font_paths = [
             "/usr/share/fonts/truetype",
             "/usr/local/share/fonts",
@@ -22,11 +40,13 @@ class GRTextOverlay:
             "/System/Library/Fonts",
             "C:\\Windows\\Fonts"
         ]
+        
         # Add user-specific font directory for Windows
         user_fonts_path = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Microsoft", "Windows", "Fonts")
         if os.path.isdir(user_fonts_path):
             font_paths.append(user_fonts_path)
         
+        # Scan all font directories
         for path in font_paths:
             if os.path.isdir(path):
                 print(f"Scanning directory: {path}")
@@ -34,9 +54,10 @@ class GRTextOverlay:
                     for file in files:
                         if file.endswith(".ttf") or file.endswith(".otf"):
                             font_path = os.path.join(root, file)
-                            print(f"Found font: {font_path}")
-                            fonts.add(font_path)
-        return sorted(list(fonts))
+                            font_name = get_font_name(font_path)  # Extract the actual font name
+                            print(f"Found font: {font_name} at {font_path}")
+                            fonts.add((font_name, font_path))  # Store both name and path
+        return sorted(list(fonts), key=lambda x: x[0])  # Sort by font name
 
     _available_fonts = _populate_fonts_from_os()
     
@@ -83,6 +104,7 @@ class GRTextOverlay:
 
     @classmethod
     def INPUT_TYPES(cls):
+        font_names = [name for name, _ in cls._available_fonts]
         return {
             "required": {
                 "text": (
@@ -90,8 +112,8 @@ class GRTextOverlay:
                     {"multiline": True, "default": "Hello"},
                 ),
                 "font": (
-                    cls._available_fonts,
-                    {"default": cls._available_fonts[0] if cls._available_fonts else "arial.ttf"},
+                    font_names,  # Display font names in the dropdown
+                    {"default": font_names[0] if font_names else "Arial"},  # Default to the first font name
                 ),
                 "font_size": (
                     "INT",
@@ -187,11 +209,17 @@ class GRTextOverlay:
         r, g, b = self.hex_to_rgb(hex_color)
         return (r, g, b, int((100 - alpha) * 255 / 100))
 
-    def load_font(self, font, font_size):
+    def load_font(self, font_name, font_size):
+        # Find the file path corresponding to the selected font name
+        font_path = next((path for name, path in self._available_fonts if name == font_name), None)
+        if font_path is None:
+            print(f"Font {font_name} not found. Using default font.")
+            return ImageFont.load_default()
+        
         try:
-            return ImageFont.truetype(font, font_size)
+            return ImageFont.truetype(font_path, font_size)
         except Exception as e:
-            print(f"Error loading font: {e}... Using default font")
+            print(f"Error loading font {font_path}: {e}... Using default font")
             return ImageFont.load_default()
 
     def draw_text_with_letter_spacing(
