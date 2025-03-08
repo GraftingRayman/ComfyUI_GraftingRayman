@@ -2,7 +2,7 @@
 name = "comfyui_graftingrayman"
 description = "Prompt and Masking nodes."
 version = "1.0.0"
-license = "LICENSE"
+license = { file = "LICENSE" }
 
 [project.urls]
 Repository = "https://github.com/GraftingRayman/ComfyUI_GraftingRayman"
