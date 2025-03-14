@@ -15,7 +15,7 @@ from .Nodes.GRBLIP2CaptionGenerator import GRBLIP2CaptionGenerator
 from .Nodes.GRFlorence2CaptionGenerator import Florence2PromptGenerator
 from .Nodes.GRBLIP2TextExpander import BLIP2TextExpander
 from .Nodes.GRLora import GRLora
-from .GRINTIncrement import GRINTIncrement
+from .Nodes.GRINTIncrement import GRINTIncrement
 
 import time
 
