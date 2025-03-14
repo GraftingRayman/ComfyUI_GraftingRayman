@@ -129,6 +129,7 @@ class GRImageSize:
         return (height, width, batch_size, {"samples": latent}, seed, empty_image)
 
 
+
 class GRImageResize:
     def __init__(self):
         pass
@@ -148,28 +149,31 @@ class GRImageResize:
             },
         }
 
-    RETURN_TYPES = ("IMAGE",)
+    RETURN_TYPES = ("IMAGE", "INT", "INT", "FLOAT")  # Added height, width, and scale_factor as return types
+    RETURN_NAMES = ("image", "height", "width", "scale_factor")  # Names for the return values
     FUNCTION = "resize_image"
     CATEGORY = "GraftingRayman/Images"
 
     def resize_image(self, image, height, width, image_dimensions, longest_side, longest_side_value, divisible_by, scale_factor):
         # Assuming image is in a batch format with shape [batch_size, height, width, channels]
         input_image = image.permute(0, 3, 1, 2)  # Convert to [batch, channels, height, width]
-        
+        _, _, img_height, img_width = input_image.shape  # Get original image dimensions
+
+        # Initialize target height and width
+        target_height = height
+        target_width = width
+
+        # Initialize calculated scale factor
+        calculated_scale_factor = scale_factor
+
         # Determine target height and width based on conditions
-        if scale_factor != 1.0:
-            # Use scaled dimensions from the input image
-            _, _, img_height, img_width = input_image.shape
-            target_height = int(img_height * scale_factor)
-            target_width = int(img_width * scale_factor)
-        elif image_dimensions:
+        if image_dimensions:
             # Use original dimensions from the input image
-            _, _, img_height, img_width = input_image.shape
             target_height = img_height
             target_width = img_width
+            calculated_scale_factor = 1.0  # No scaling applied
         elif longest_side:
             # Resize based on the longest side while maintaining aspect ratio
-            _, _, img_height, img_width = input_image.shape
             aspect_ratio = img_width / img_height
             if img_width > img_height:
                 # Width is the longest side
@@ -179,10 +183,22 @@ class GRImageResize:
                 # Height is the longest side
                 target_height = longest_side_value
                 target_width = int(longest_side_value * aspect_ratio)
+            # Calculate scale factor based on the longest side resizing
+            if img_width > img_height:
+                calculated_scale_factor = target_width / img_width
+            else:
+                calculated_scale_factor = target_height / img_height
+        elif scale_factor != 1.0:
+            # Use scaled dimensions from the input image
+            target_height = int(img_height * scale_factor)
+            target_width = int(img_width * scale_factor)
+            calculated_scale_factor = scale_factor
         else:
             # Use specified width and height directly
             target_height = height
             target_width = width
+            # Calculate scale factor based on the input height and width
+            calculated_scale_factor = (target_height / img_height + target_width / img_width) / 2
 
         # Adjust target height and width to be divisible by divisible_by
         target_height = (target_height // divisible_by) * divisible_by
@@ -191,7 +207,9 @@ class GRImageResize:
         # Resize the image
         resized_image = TF.resize(input_image, (target_height, target_width))
         resized_image = resized_image.permute(0, 2, 3, 1)  # Convert back to [batch, height, width, channels]
-        return (resized_image,)
+
+        # Return the resized image, height, width, and calculated scale factor
+        return (resized_image, target_height, target_width, calculated_scale_factor)
         
 class GRStackImage:
     def __init__(self):
