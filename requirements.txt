@@ -13,3 +13,4 @@ setuptools
 rembg
 transformers
 fonttools
+watchdog
