@@ -42,7 +42,9 @@ For comfyui portable run the following command in your comyfui folder
 [GR Prompt Generator](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-generator)
 
 # Image Utils:
-[GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-iamge-resizer)
+[GR Image Multiplier](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-multiplier)
+
+[GR Image Resizer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-resizer)
 
 [GR Image Size](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-image-size)
 
@@ -168,6 +170,12 @@ All the features of Prompt Selector, this time you can use all 6 prompt styles a
 This is a simple prompt combiner, will take 6 positives and 6 negatives and combine them
 
 ![image](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/e1815752-a20d-4505-b6f0-35bdb6d2b2b6)
+
+# GR Image Multiplier
+
+Created this because VHS VideoCombine does not go below 1, what if we wanted each frame to be 0.5 seconds long, then incorporate this node in between your image output and the vhs video combine input and voila!  you have 0.5 if the multiplier is set to 2 in this node. Added interleave and randomize just incase anyone wants it
+
+![image](https://github.com/user-attachments/assets/c0ec65e3-dabb-42a8-abf3-287e3a516955)
 
 
 # GR Image Resizer
