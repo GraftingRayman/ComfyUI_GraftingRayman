@@ -175,7 +175,7 @@ This is a simple prompt combiner, will take 6 positives and 6 negatives and comb
 
 Created this because VHS VideoCombine does not go below 1, what if we wanted each frame to be 0.5 seconds long, then incorporate this node in between your image output and the vhs video combine input and voila!  you have 0.5 if the multiplier is set to 2 in this node. Added interleave and randomize just incase anyone wants it
 
-![image](https://github.com/user-attachments/assets/c0ec65e3-dabb-42a8-abf3-287e3a516955)
+![image](https://github.com/user-attachments/assets/b53e75f2-0aaa-470f-a9da-d9231738eb80)
 
 
 # GR Image Resizer
