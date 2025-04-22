@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 from torchvision import transforms as T
-
+from torchvision.transforms import InterpolationMode
 import matplotlib.pyplot as plt
 import latent_preview
 from clip import tokenize, model
@@ -43,17 +43,15 @@ class GRImageSize:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
                 "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
+                "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
                 "standard": ([
-                    "custom",  # Custom stays at the top
-                    # Landscape sizes (sorted smallest to largest)
+                    "custom",
                     "(SD) 512x512", "640x480 (VGA)", "(SD2) 768x512", 
                     "(SD2) 768x768", "800x600 (SVGA)", "960x544 (Half HD)", 
                     "1024x768 (XGA)", "(SDXL) 1024x1024", "1280x720 (HD)", "1366x768 (HD)", 
                     "1600x900 (HD+)", "1920x1080 (Full HD or 1080p)", "2560x1440 (Quad HD or 1440p)", 
                     "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", "7680x4320 (8K)",
-                    # Portrait sizes (sorted smallest to largest)
                     "480x640 (VGA, Portrait)", "480x832 (Portrait)", 
                     "(SD2) 512x768 (Portrait)", "544x960 (Half HD, Portrait)", "600x800 (SVGA, Portrait)", 
                     "720x1280 (HD, Portrait)", "768x1024 (XGA, Portrait)", "768x1366 (HD, Portrait)", 
@@ -62,72 +60,123 @@ class GRImageSize:
                     "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"
                 ],),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
+                "length": ("INT", {"default": 1, "min": 1}),
                 "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
-                "color": (list(sorted(cls._available_colours.keys())), {"default": "white"})
+                "color": (list(sorted(cls._available_colours.keys())), {"default": "white"}),
+                "resize": ("BOOLEAN", {"default": False}),
             },
             "optional": {
-                "dimensions": ("IMAGE",)
+                "dimensions": ("IMAGE",),
+                "longest_side": ("BOOLEAN", {"default": False}),
+                "longest_side_value": ("INT", {"default": 256, "min": 1}),
+                "divisible_by": ("INT", {"default": 1, "min": 1}),
+                "scale_factor": ("FLOAT", {"default": 1.000, "step": 0.001}),
             }
         }
 
-    RETURN_TYPES = ("INT", "INT", "INT", "LATENT", "INT", "IMAGE")
-    RETURN_NAMES = ("height", "width", "batch_size", "samples", "seed", "empty_image")
+    RETURN_TYPES = ("INT", "INT", "INT", "INT", "LATENT", "INT", "IMAGE", "IMAGE")
+    RETURN_NAMES = ("width", "height", "batch_size", "length", "samples", "seed", "empty_image", "resized")
     FUNCTION = "image_size"
     CATEGORY = "GraftingRayman/Images"
 
     def hex_to_rgb(self, hex_color):
-        """Convert hex color to RGB."""
         hex_color = hex_color.lstrip("#")
         if len(hex_color) == 3:
             hex_color = hex_color * 2
         return tuple(int(hex_color[i: i + 2], 16) for i in (0, 2, 4))
 
     def generate_empty_image(self, width, height, batch_size, color):
-        """Generate an empty image filled with the specified color."""
         color_value = int(self._available_colours[color].lstrip("#"), 16)
         r = torch.full([batch_size, height, width, 1], ((color_value >> 16) & 0xFF) / 0xFF)
         g = torch.full([batch_size, height, width, 1], ((color_value >> 8) & 0xFF) / 0xFF)
-        b = torch.full([batch_size, height, width, 1], ((color_value) & 0xFF) / 0xFF)
+        b = torch.full([batch_size, height, width, 1], (color_value & 0xFF) / 0xFF)
         return torch.cat((r, g, b), dim=-1)
 
-    def image_size(self, height, width, standard, batch_size=1, seed=None, color="white", dimensions=None):
-        if dimensions is not None:
-            standard = "custom"
-            height, width, channels = dimensions.shape[-3:]
+    def image_size(
+        self, 
+        height, 
+        width, 
+        standard, 
+        batch_size, 
+        length,
+        seed, 
+        color, 
+        resize, 
+        dimensions=None, 
+        longest_side=False, 
+        longest_side_value=256, 
+        divisible_by=1, 
+        scale_factor=1.0
+    ):
+        computed_height = height
+        computed_width = width
 
-        if standard == "custom":
-            height = height
-            width = width
-        else:
+        if standard != "custom":
             standard_sizes = {
-                # Landscape sizes
                 "(SD) 512x512": (512, 512), "640x480 (VGA)": (480, 640),
-                "768x512": (512, 768), "(SD2) 768x512": (512, 768), 
-                "(SD2) 768x768": (768, 768), "800x600 (SVGA)": (600, 800), "960x544 (Half HD)": (544, 960),
-                "1024x768 (XGA)": (768, 1024), "(SDXL) 1024x1024": (1024, 1024), "1280x720 (HD)": (720, 1280),
-                "1366x768 (HD)": (768, 1366), "1600x900 (HD+)": (900, 1600), "1920x1080 (Full HD or 1080p)": (1080, 1920),
-                "2560x1440 (Quad HD or 1440p)": (1440, 2560), "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840),
+                "(SD2) 768x512": (512, 768), "(SD2) 768x768": (768, 768), 
+                "800x600 (SVGA)": (600, 800), "960x544 (Half HD)": (544, 960),
+                "1024x768 (XGA)": (768, 1024), "(SDXL) 1024x1024": (1024, 1024), 
+                "1280x720 (HD)": (720, 1280), "1366x768 (HD)": (768, 1366), 
+                "1600x900 (HD+)": (900, 1600), "1920x1080 (Full HD or 1080p)": (1080, 1920),
+                "2560x1440 (Quad HD or 1440p)": (1440, 2560), 
+                "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840),
                 "5120x2880 (5K)": (2880, 5120), "7680x4320 (8K)": (4320, 7680),
-                # Portrait sizes
                 "480x640 (VGA, Portrait)": (640, 480), "480x832 (Portrait)": (832, 480),
                 "(SD2) 512x768 (Portrait)": (768, 512),
                 "544x960 (Half HD, Portrait)": (960, 544), "600x800 (SVGA, Portrait)": (800, 600),
                 "720x1280 (HD, Portrait)": (1280, 720), "768x1024 (XGA, Portrait)": (1024, 768),
                 "768x1366 (HD, Portrait)": (1366, 768), "832x480 (Portrait)": (480, 832),
-                "900x1600 (HD+, Portrait)": (1600, 900), "1080x1920 (Full HD or 1080p, Portrait)": (1920, 1080),
-                "1440x2560 (Quad HD or 1440p, Portrait)": (2560, 1440), "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (3840, 2160),
+                "900x1600 (HD+, Portrait)": (1600, 900), 
+                "1080x1920 (Full HD or 1080p, Portrait)": (1920, 1080),
+                "1440x2560 (Quad HD or 1440p, Portrait)": (2560, 1440), 
+                "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (3840, 2160),
                 "2880x5120 (5K, Portrait)": (5120, 2880), "4320x7680 (8K, Portrait)": (7680, 4320)
             }
-            height, width = standard_sizes.get(standard, (height, width))
+            computed_height, computed_width = standard_sizes.get(standard, (height, width))
+
+        resized_output = None
+        if resize and dimensions is not None:
+            original_image = dimensions
+            img_height = original_image.shape[1]
+            img_width = original_image.shape[2]
+
+            if longest_side:
+                aspect_ratio = img_width / img_height
+                if img_width > img_height:
+                    target_width = longest_side_value
+                    target_height = int(target_width / aspect_ratio)
+                else:
+                    target_height = longest_side_value
+                    target_width = int(target_height * aspect_ratio)
+            elif scale_factor != 1.0:
+                target_height = int(img_height * scale_factor)
+                target_width = int(img_width * scale_factor)
+            else:
+                target_height = computed_height
+                target_width = computed_width
+
+            target_height = (target_height // divisible_by) * divisible_by
+            target_width = (target_width // divisible_by) * divisible_by
+
+            input_image = original_image.permute(0, 3, 1, 2)
+            resized_image = TF.resize(input_image, (target_height, target_width))
+            resized_image = resized_image.permute(0, 2, 3, 1)
+            resized_output = resized_image
+
+            computed_height = target_height
+            computed_width = target_width
+
+        latent = torch.zeros([batch_size, 4, computed_height // 8, computed_width // 8])
+        empty_image = self.generate_empty_image(computed_width, computed_height, batch_size, color)
+
+        if resized_output is None:
+            resized_output = empty_image
 
         if seed is None:
             seed = random.randint(10**14, 10**15 - 1)
-            
-        latent = torch.zeros([batch_size, 4, height // 8, width // 8])
-        empty_image = self.generate_empty_image(width, height, batch_size, color)
-    
-        return (height, width, batch_size, {"samples": latent}, seed, empty_image)
 
+        return (computed_width, computed_height , batch_size, length, {"samples": latent}, seed, empty_image, resized_output)
 
 
 class GRImageResize:
