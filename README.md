@@ -33,6 +33,8 @@ For comfyui portable run the following command in your comyfui folder
 [GR Onomatopoeia](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-onomatopoeia)
 
 # Prompts:
+[GR Prompt Viewer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-viewer)
+
 [GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
 
 [GR Prompt Selector Multi](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector-multi)
@@ -96,6 +98,21 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 [![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
+
+# GR Prompt Viewer
+
+A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
+
+<img width="1218" height="594" alt="image" src="https://github.com/user-attachments/assets/b6876f14-8c60-4d1e-9f6a-3134a0384573" />
+
+All prompts are saved in the node directory inside a folder called prompts comfyui/custom_nodes/ComfyUI_GraftingRayman/Nodes/prompts
+
+Prompts can be sorted by folders
+
+<img width="1108" height="454" alt="image" src="https://github.com/user-attachments/assets/61ccba90-8b42-4f96-a848-36b7b9f865b1" />
+
+<img width="1164" height="528" alt="image" src="https://github.com/user-attachments/assets/062ac885-c2fd-4d59-98a7-1812904ef899" />
+
 
 # GR Florence 2 Caption Generator for Ollama
 
