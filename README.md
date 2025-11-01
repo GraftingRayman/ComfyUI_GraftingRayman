@@ -109,6 +109,8 @@ All prompts are saved in the node directory inside a folder called prompts comfy
 
 Prompts can be sorted by folders
 
+All executed prompts are autosaved when it is queued
+
 <img width="1108" height="454" alt="image" src="https://github.com/user-attachments/assets/61ccba90-8b42-4f96-a848-36b7b9f865b1" />
 
 <img width="1164" height="528" alt="image" src="https://github.com/user-attachments/assets/062ac885-c2fd-4d59-98a7-1812904ef899" />
