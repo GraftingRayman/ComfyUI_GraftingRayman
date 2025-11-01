@@ -2,9 +2,6 @@ import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 import os
-import logging
-import folder_paths
-import comfy.utils
 import comfy.model_management as mm
 import hashlib
 

@@ -1,0 +1,393 @@
+import { app } from "/scripts/app.js";
+import { ComfyWidgets } from "/scripts/widgets.js";
+import { api } from "/scripts/api.js";
+
+app.registerExtension({
+    name: "PromptViewerExtension",
+
+    async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        if (nodeData.name === "GRPromptViewer") {
+            console.log("=== Registering   GRPromptViewer extension ===");
+
+            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            
+            nodeType.prototype.onNodeCreated = function() {
+                console.log("=== GRPromptViewer onNodeCreated START ===");
+                
+                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+                
+                console.log("Widgets after original onNodeCreated:", this.widgets);
+                
+                // Create preview widget
+                try {
+                    console.log("Creating preview widget...");
+                    
+                    const result = ComfyWidgets["STRING"](
+                        this, 
+                        "content_preview", 
+                        ["STRING", { multiline: true }], 
+                        app
+                    );
+                    
+                    console.log("ComfyWidgets.STRING returned:", result);
+                    
+                    if (result && result.widget) {
+                        const previewWidget = result.widget;
+                        
+                        previewWidget.inputEl.readOnly = false;
+                        previewWidget.inputEl.style.opacity = 1.0;
+                        previewWidget.inputEl.style.fontFamily = "monospace";
+                        previewWidget.inputEl.style.fontSize = "11px";
+                        previewWidget.inputEl.rows = 15;
+                        previewWidget.value = "Select a folder and file to view contents...";
+                        
+                        this.contentPreview = previewWidget;
+                        this.originalContent = "";
+                        this.isModified = false;
+                        this.currentFolder = "";
+                        this.currentFile = "";
+                        
+                        // Track changes to enable/disable save button
+                        previewWidget.inputEl.addEventListener('input', () => {
+                            this.isModified = (previewWidget.value !== this.originalContent);
+                            if (this.saveButton) {
+                                this.saveButton.disabled = !this.isModified;
+                            }
+                        });
+                        
+                        console.log("Preview widget created successfully");
+                        console.log("Total widgets now:", this.widgets.length);
+                        
+                        // Create HTML container for buttons
+                        const buttonContainer = document.createElement("div");
+                        buttonContainer.style.display = "flex";
+                        buttonContainer.style.gap = "10px";
+                        buttonContainer.style.padding = "10px";
+                        buttonContainer.style.width = "100%";
+                        buttonContainer.style.boxSizing = "border-box";
+                        
+                        // Save button
+                        const saveBtn = document.createElement("button");
+                        saveBtn.textContent = "Save";
+                        saveBtn.style.flex = "1";
+                        saveBtn.style.height = "35px";
+                        saveBtn.style.padding = "0";
+                        saveBtn.style.cursor = "pointer";
+                        saveBtn.style.fontSize = "14px";
+                        saveBtn.disabled = true;
+                        saveBtn.onclick = () => {
+                            console.log("Save button clicked");
+                            this.saveFile(false);
+                        };
+                        
+                        // Save As button
+                        const saveAsBtn = document.createElement("button");
+                        saveAsBtn.textContent = "Save As";
+                        saveAsBtn.style.flex = "1";
+                        saveAsBtn.style.height = "35px";
+                        saveAsBtn.style.padding = "0";
+                        saveAsBtn.style.cursor = "pointer";
+                        saveAsBtn.style.fontSize = "14px";
+                        saveAsBtn.onclick = () => {
+                            console.log("Save As button clicked");
+                            this.saveFile(true);
+                        };
+                        
+                        // Clear button
+                        const clearBtn = document.createElement("button");
+                        clearBtn.textContent = "Clear";
+                        clearBtn.style.flex = "1";
+                        clearBtn.style.height = "35px";
+                        clearBtn.style.padding = "0";
+                        clearBtn.style.cursor = "pointer";
+                        clearBtn.style.fontSize = "14px";
+                        clearBtn.onclick = () => {
+                            console.log("Clear button clicked");
+                            this.clearContent();
+                        };
+                        
+                        buttonContainer.appendChild(saveBtn);
+                        buttonContainer.appendChild(saveAsBtn);
+                        buttonContainer.appendChild(clearBtn);
+                        
+                        // Add HTML widget with minimal size
+                        const htmlWidget = this.addDOMWidget("buttons", "div", buttonContainer, {
+                            getValue: () => null,
+                            setValue: () => {},
+                        });
+                        htmlWidget.computeSize = () => [0, 55]; // Fixed small height
+                        
+                        this.saveButton = saveBtn;
+                        this.saveAsButton = saveAsBtn;
+                        this.clearButton = clearBtn;
+                        
+                        this.setSize([450, 500]);
+                        this.setDirtyCanvas(true, true);
+                        
+                    } else {
+                        console.error("ComfyWidgets.STRING did not return a widget");
+                    }
+                } catch (e) {
+                    console.error("Error creating preview widget:", e);
+                }
+                
+                // Find the folder and file widgets
+                const folderWidget = this.widgets.find(w => w.name === "folder");
+                const fileWidget = this.widgets.find(w => w.name === "file");
+                
+                console.log("Folder widget found:", folderWidget);
+                console.log("File widget found:", fileWidget);
+                
+                // Function to update file list based on selected folder
+                const updateFileList = async (folderName) => {
+                    console.log("Updating file list for folder:", folderName);
+                    
+                    try {
+                        const response = await api.fetchApi(`/prompt_viewer/list_files?folder=${encodeURIComponent(folderName)}`);
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log("Files received:", data.files);
+                            
+                            if (fileWidget) {
+                                fileWidget.options.values = data.files;
+                                fileWidget.value = data.files[0] || "No files found";
+                                
+                                // Trigger file load if there are files
+                                if (data.files.length > 0 && data.files[0] !== "No files found") {
+                                    loadFileContent(folderName, data.files[0]);
+                                } else {
+                                    if (this.contentPreview) {
+                                        this.contentPreview.value = "No files found in this folder";
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error updating file list:", error);
+                    }
+                };
+                
+                // Function to load file content
+                const loadFileContent = async (folderName, fileName) => {
+                    console.log("Loading file:", fileName, "from folder:", folderName);
+                    
+                    if (!fileName || fileName === "No files found" || fileName === "Select folder first") {
+                        if (this.contentPreview) {
+                            this.contentPreview.value = "No file selected";
+                        }
+                        return;
+                    }
+                    
+                    // Store current file info
+                    this.currentFolder = folderName;
+                    this.currentFile = fileName;
+                    
+                    if (this.contentPreview) {
+                        this.contentPreview.value = "Loading...";
+                    }
+                    
+                    try {
+                        const response = await api.fetchApi(`/prompt_viewer/read?folder=${encodeURIComponent(folderName)}&filename=${encodeURIComponent(fileName)}`);
+                        
+                        if (response.ok) {
+                            const text = await response.text();
+                            console.log("Loaded file, length:", text.length);
+                            
+                            if (this.contentPreview) {
+                                this.contentPreview.value = text;
+                                this.originalContent = text;
+                                this.isModified = false;
+                                
+                                if (this.saveButton) {
+                                    this.saveButton.disabled = true;
+                                }
+                                
+                                const lines = text.split('\n').length;
+                                this.contentPreview.inputEl.rows = Math.min(Math.max(lines, 10), 30);
+                                
+                                this.setDirtyCanvas(true, true);
+                                app.graph.setDirtyCanvas(true, true);
+                            }
+                        } else {
+                            const errorText = await response.text();
+                            if (this.contentPreview) {
+                                this.contentPreview.value = `Error: ${errorText}`;
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error fetching file:", error);
+                        if (this.contentPreview) {
+                            this.contentPreview.value = "Error loading file: " + error.message;
+                        }
+                    }
+                };
+                
+                // Function to save file
+                this.saveFile = async (saveAs) => {
+                    if (!this.contentPreview) {
+                        alert("No content to save");
+                        return;
+                    }
+                    
+                    let targetFolder = this.currentFolder || "(root)";
+                    let targetFile = this.currentFile;
+                    
+                    // If no current file or saveAs, prompt for filename
+                    if (saveAs || !targetFile) {
+                        const folderName = targetFolder === "(root)" ? "root prompts folder" : `folder: ${targetFolder}`;
+                        const defaultName = targetFile || "new_file.txt";
+                        const newName = prompt(`Enter filename (will be saved in ${folderName}):`, defaultName);
+                        if (!newName) return; // User cancelled
+                        
+                        // Ensure it has a valid extension
+                        if (!newName.match(/\.(txt|log|json|csv|md)$/i)) {
+                            alert("Filename must end with .txt, .log, .json, .csv, or .md");
+                            return;
+                        }
+                        
+                        targetFile = newName;
+                    }
+                    
+                    if (!targetFile) {
+                        alert("No filename provided");
+                        return;
+                    }
+                    
+                    const content = this.contentPreview.value;
+                    
+                    console.log("Saving file:", targetFile, "to folder:", targetFolder);
+                    
+                    try {
+                        const response = await api.fetchApi("/prompt_viewer/save", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                folder: targetFolder,
+                                filename: targetFile,
+                                content: content
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            alert(result.message || "File saved successfully");
+                            
+                            // Update current file info
+                            this.currentFile = targetFile;
+                            
+                            // Refresh file list to show new file
+                            const folderWidget = this.widgets.find(w => w.name === "folder");
+                            if (folderWidget) {
+                                updateFileList(folderWidget.value);
+                            }
+                            
+                            // Mark as unmodified
+                            this.originalContent = content;
+                            this.isModified = false;
+                            if (this.saveButton) {
+                                this.saveButton.disabled = true;
+                            }
+                        } else {
+                            const errorText = await response.text();
+                            alert("Error saving file: " + errorText);
+                        }
+                    } catch (error) {
+                        console.error("Error saving file:", error);
+                        alert("Error saving file: " + error.message);
+                    }
+                };
+                
+                // Function to clear content
+                this.clearContent = () => {
+                    if (!this.contentPreview) {
+                        return;
+                    }
+                    
+                    // Clear the text area
+                    this.contentPreview.value = "";
+                    this.originalContent = "";
+                    this.isModified = true; // Mark as modified so save button activates
+                    
+                    // Keep the current folder but clear the file name
+                    // So Save As will prompt for a new name in the same folder
+                    this.currentFile = "";
+                    
+                    console.log("Content cleared, folder preserved:", this.currentFolder);
+                    
+                    // Enable save button since content changed
+                    if (this.saveButton) {
+                        this.saveButton.disabled = false;
+                    }
+                };
+                
+                // Hook folder widget callback
+                if (folderWidget) {
+                    const originalFolderCallback = folderWidget.callback;
+                    const node = this;
+                    
+                    folderWidget.callback = function(value) {
+                        if (originalFolderCallback) {
+                            originalFolderCallback.call(folderWidget, value);
+                        }
+                        
+                        console.log("Folder selected:", value);
+                        node.currentFolder = value;
+                        console.log("node.currentFolder set to:", node.currentFolder);
+                        updateFileList(value);
+                    };
+                    
+                    // Set initial folder value
+                    this.currentFolder = folderWidget.value || "(root)";
+                    console.log("Initial folder set to:", this.currentFolder);
+                    
+                    console.log("Folder callback hooked");
+                }
+                
+                // Hook file widget callback
+                if (fileWidget) {
+                    const originalFileCallback = fileWidget.callback;
+                    const node = this;
+                    
+                    fileWidget.callback = function(value) {
+                        if (originalFileCallback) {
+                            originalFileCallback.call(fileWidget, value);
+                        }
+                        
+                        console.log("File selected:", value);
+                        node.currentFile = value;
+                        
+                        const currentFolder = folderWidget ? folderWidget.value : "(root)";
+                        node.currentFolder = currentFolder;
+                        console.log("node.currentFolder updated to:", node.currentFolder);
+                        console.log("node.currentFile updated to:", node.currentFile);
+                        loadFileContent(currentFolder, value);
+                    };
+                    
+                    // Set initial file value
+                    this.currentFile = fileWidget.value || "";
+                    console.log("Initial file set to:", this.currentFile);
+                    
+                    console.log("File callback hooked");
+                }
+                
+                console.log("===   GRPromptViewer onNodeCreated END ===");
+                return r;
+            };
+            
+            // Handle execution updates
+            const onExecuted = nodeType.prototype.onExecuted;
+            nodeType.prototype.onExecuted = function(message) {
+                onExecuted?.apply(this, arguments);
+                console.log("Node executed, message:", message);
+                
+                if (message?.text && message.text[0] && this.contentPreview) {
+                    this.contentPreview.value = message.text[0];
+                    const lines = message.text[0].split('\n').length;
+                    this.contentPreview.inputEl.rows = Math.min(Math.max(lines, 10), 30);
+                    this.setDirtyCanvas(true, true);
+                }
+            };
+        }
+    }
+});

@@ -1,10 +1,6 @@
 import torch
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
-import os
-import logging
-import folder_paths
-import comfy.utils
 
 class GRBLIP2CaptionGenerator:
     def __init__(self):

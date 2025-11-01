@@ -18,11 +18,13 @@ from .Nodes.GRLora import GRLora
 from .Nodes.GRINTIncrement import GRINTIncrement
 from .Nodes.GRImageMultiplier import GRImageMultiplier
 from .Nodes.GRSigmas import GRSigmas
+from .Nodes.GRPromptViewer import GRPromptViewer
+from .Nodes import routes
 
 import time
 
 
-NODE_CLASS_MAPPINGS = { "GR Prompt Selector" : GRPromptSelector , "GR Image Resize" : GRImageResize, "GR Mask Resize" : GRMaskResize, "GR Mask Create" : GRMaskCreate, "GR Multi Mask Create" : GRMultiMaskCreate, "GR Image Size": GRImageSize, "GR Tile and Border Image": GRTileImage, "GR Prompt Selector Multi": GRPromptSelectorMulti, "GR Tile and Border Image Random Flip" : GRTileFlipImage, "GR Mask Create Random": GRMaskCreateRandom, "GR Stack Image": GRStackImage, "GR Image Resize Methods" : GRResizeImageMethods,"GR Image Details Displayer": GRImageDetailsDisplayer, "GR Image Details Saver": GRImageDetailsSave, "GR Flip Tile Random Red Ring": GRFlipTileRedRing, "GR Flip Tile Random Inverted": GRFlipTileInverted,"GR Text Overlay": GRTextOverlay,"GR Image/Depth Mask": GRImageMask,"GR Checkered Board":GRCheckeredBoard, "GR Onomatopoeia": GROnomatopoeia, "GR Image Paste": GRImagePaste, "GR Prompt HUB": GRPromptHub, "GR Image Paste With Mask": GRImagePasteWithMask, "GR Counter": GRCounterVideo, "GR Background Remover REMBG": GRBackgroundRemoverREMBG, "GR Scroller": GRScrollerVideo, "GR Mask Create Random Multi": GRMaskCreateRandomMulti, "GR Mask": GRMask, "GR Prompty": GRPrompty, "GR Pan Or Zoom":GRPanOrZoom, "GR Prompt Generator": GRPromptGen, "GR Prompt Generator Extended": GRPromptGenExtended, "GR BLIP 2 Caption Generator": GRBLIP2CaptionGenerator, "GR Florence 2 Caption Generator": Florence2PromptGenerator, "GR BLIP 2 Text Expander": BLIP2TextExpander, "GR Lora Randomizer": GRLora, "GR INT Incremetor": GRINTIncrement, "GR Image Multiplier": GRImageMultiplier, "GR Sigmas": GRSigmas }
+NODE_CLASS_MAPPINGS = { "GR Prompt Selector" : GRPromptSelector , "GR Image Resize" : GRImageResize, "GR Mask Resize" : GRMaskResize, "GR Mask Create" : GRMaskCreate, "GR Multi Mask Create" : GRMultiMaskCreate, "GR Image Size": GRImageSize, "GR Tile and Border Image": GRTileImage, "GR Prompt Selector Multi": GRPromptSelectorMulti, "GR Tile and Border Image Random Flip" : GRTileFlipImage, "GR Mask Create Random": GRMaskCreateRandom, "GR Stack Image": GRStackImage, "GR Image Resize Methods" : GRResizeImageMethods,"GR Image Details Displayer": GRImageDetailsDisplayer, "GR Image Details Saver": GRImageDetailsSave, "GR Flip Tile Random Red Ring": GRFlipTileRedRing, "GR Flip Tile Random Inverted": GRFlipTileInverted,"GR Text Overlay": GRTextOverlay,"GR Image/Depth Mask": GRImageMask,"GR Checkered Board":GRCheckeredBoard, "GR Onomatopoeia": GROnomatopoeia, "GR Image Paste": GRImagePaste, "GR Prompt HUB": GRPromptHub, "GR Image Paste With Mask": GRImagePasteWithMask, "GR Counter": GRCounterVideo, "GR Background Remover REMBG": GRBackgroundRemoverREMBG, "GR Scroller": GRScrollerVideo, "GR Mask Create Random Multi": GRMaskCreateRandomMulti, "GR Mask": GRMask, "GR Prompty": GRPrompty, "GR Pan Or Zoom":GRPanOrZoom, "GR Prompt Generator": GRPromptGen, "GR Prompt Generator Extended": GRPromptGenExtended, "GR BLIP 2 Caption Generator": GRBLIP2CaptionGenerator, "GR Florence 2 Caption Generator": Florence2PromptGenerator, "GR BLIP 2 Text Expander": BLIP2TextExpander, "GR Lora Randomizer": GRLora, "GR INT Incremetor": GRINTIncrement, "GR Image Multiplier": GRImageMultiplier, "GR Sigmas": GRSigmas, "GRPromptViewer": GRPromptViewer, }
 
 NODE_DISPLAY_NAME_MAPPINGS = { }
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
@@ -34,3 +36,5 @@ for i in range(10):
 print(f"\b\b\b\b\b\b\b\b\b\b\b\b\b\b*\33[0m     39 Grafting Nodes Loaded     \33[31m*")
 print(f"*\33[0m           Get Grafting           \33[31m*")
 print(f"\33[31m************************************\33[0m\n\n")
+
+WEB_DIRECTORY = "./web"

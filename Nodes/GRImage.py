@@ -41,24 +41,33 @@ class GRImageSize:
 
     @classmethod
     def INPUT_TYPES(cls):
+        resolution_list = [
+            "240x240", "320x240", "320x320", "480x480", "640x480 (VGA)", "640x640",
+            "(SD) 512x512", "(SD2) 512x768", "512x768 (Portrait)", "544x544", 
+            "544x960 (Half HD, Portrait)", "600x600", "600x800 (SVGA, Portrait)", 
+            "640x640", "720x720", "720x1280 (HD, Portrait)", 
+            "768x768", "(SD2) 768x512", "768x1024 (XGA, Portrait)", "768x1366 (HD, Portrait)",
+            "800x600 (SVGA)", "800x800", "832x480 (Portrait)", "832x832",
+            "900x900", "900x1600 (HD+, Portrait)", "960x544 (Half HD)", "960x960",
+            "1024x768 (XGA)", "(SDXL) 1024x1024", "1080x1080", "1080x1920 (Full HD or 1080p, Portrait)",
+            "1280x720 (HD)", "1280x1280", "1366x768 (HD)", "1366x1366",
+            "1440x1440", "1440x2560 (Quad HD or 1440p, Portrait)",
+            "1600x900 (HD+)", "1600x1600", "1920x1080 (Full HD or 1080p)", "1920x1920",
+            "2160x2160", "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)",
+            "2560x1440 (Quad HD or 1440p)", "2560x2560", "2880x2880", "2880x5120 (5K, Portrait)",
+            "3840x2160 (Ultra HD, 4K, or 2160p)", "3840x3840",
+            "4320x4320", "4320x7680 (8K, Portrait)", "5120x2880 (5K)", "5120x5120",
+            "7680x4320 (8K)", "7680x7680"
+        ]
+        
         return {
             "required": {
                 "width": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
                 "height": ("INT", {"default": 512, "min": 16, "max": 16000, "step": 8}),
-                "standard": ([
-                    "custom",
-                    "(SD) 512x512", "640x480 (VGA)", "(SD2) 768x512", 
-                    "(SD2) 768x768", "800x600 (SVGA)", "960x544 (Half HD)", 
-                    "1024x768 (XGA)", "(SDXL) 1024x1024", "1280x720 (HD)", "1366x768 (HD)", 
-                    "1600x900 (HD+)", "1920x1080 (Full HD or 1080p)", "2560x1440 (Quad HD or 1440p)", 
-                    "3840x2160 (Ultra HD, 4K, or 2160p)", "5120x2880 (5K)", "7680x4320 (8K)",
-                    "480x640 (VGA, Portrait)", "480x832 (Portrait)", 
-                    "(SD2) 512x768 (Portrait)", "544x960 (Half HD, Portrait)", "600x800 (SVGA, Portrait)", 
-                    "720x1280 (HD, Portrait)", "768x1024 (XGA, Portrait)", "768x1366 (HD, Portrait)", 
-                    "832x480 (Portrait)", "900x1600 (HD+, Portrait)", "1080x1920 (Full HD or 1080p, Portrait)", 
-                    "1440x2560 (Quad HD or 1440p, Portrait)", "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)", 
-                    "2880x5120 (5K, Portrait)", "4320x7680 (8K, Portrait)"
-                ],),
+                "standard": (["custom", "random"] + resolution_list,),
+                "orientation": (["all", "portrait", "landscape", "square"],),
+                "min_res": (["custom"] + resolution_list,),
+                "max_res": (["custom"] + resolution_list,),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 4096}),
                 "length": ("INT", {"default": 1, "min": 1}),
                 "seed": ("INT", {"default": random.randint(10**14, 10**15 - 1), "min": 10**14, "max": 10**15 - 1}),
@@ -92,11 +101,44 @@ class GRImageSize:
         b = torch.full([batch_size, height, width, 1], (color_value & 0xFF) / 0xFF)
         return torch.cat((r, g, b), dim=-1)
 
+    def get_standard_sizes(self):
+        return {
+            "240x240": (240, 240), "320x240": (240, 320), "320x320": (320, 320),
+            "480x480": (480, 480), "640x480 (VGA)": (480, 640), "640x640": (640, 640),
+            "(SD) 512x512": (512, 512), "(SD2) 512x768": (768, 512), "512x768 (Portrait)": (768, 512),
+            "544x544": (544, 544), "544x960 (Half HD, Portrait)": (960, 544),
+            "600x600": (600, 600), "600x800 (SVGA, Portrait)": (800, 600),
+            "720x720": (720, 720), "720x1280 (HD, Portrait)": (1280, 720),
+            "768x768": (768, 768), "(SD2) 768x512": (512, 768), 
+            "768x1024 (XGA, Portrait)": (1024, 768), "768x1366 (HD, Portrait)": (1366, 768),
+            "800x600 (SVGA)": (600, 800), "800x800": (800, 800),
+            "832x480 (Portrait)": (480, 832), "832x832": (832, 832),
+            "900x900": (900, 900), "900x1600 (HD+, Portrait)": (1600, 900),
+            "960x544 (Half HD)": (544, 960), "960x960": (960, 960),
+            "1024x768 (XGA)": (768, 1024), "(SDXL) 1024x1024": (1024, 1024),
+            "1080x1080": (1080, 1080), "1080x1920 (Full HD or 1080p, Portrait)": (1920, 1080),
+            "1280x720 (HD)": (720, 1280), "1280x1280": (1280, 1280),
+            "1366x768 (HD)": (768, 1366), "1366x1366": (1366, 1366),
+            "1440x1440": (1440, 1440), "1440x2560 (Quad HD or 1440p, Portrait)": (2560, 1440),
+            "1600x900 (HD+)": (900, 1600), "1600x1600": (1600, 1600),
+            "1920x1080 (Full HD or 1080p)": (1080, 1920), "1920x1920": (1920, 1920),
+            "2160x2160": (2160, 2160), "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (3840, 2160),
+            "2560x1440 (Quad HD or 1440p)": (1440, 2560), "2560x2560": (2560, 2560),
+            "2880x2880": (2880, 2880), "2880x5120 (5K, Portrait)": (5120, 2880),
+            "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840), "3840x3840": (3840, 3840),
+            "4320x4320": (4320, 4320), "4320x7680 (8K, Portrait)": (7680, 4320),
+            "5120x2880 (5K)": (2880, 5120), "5120x5120": (5120, 5120),
+            "7680x4320 (8K)": (4320, 7680), "7680x7680": (7680, 7680)
+        }
+
     def image_size(
         self, 
         height, 
         width, 
-        standard, 
+        standard,
+        orientation,
+        min_res,
+        max_res,
         batch_size, 
         length,
         seed, 
@@ -111,28 +153,47 @@ class GRImageSize:
         computed_height = height
         computed_width = width
 
-        if standard != "custom":
-            standard_sizes = {
-                "(SD) 512x512": (512, 512), "640x480 (VGA)": (480, 640),
-                "(SD2) 768x512": (512, 768), "(SD2) 768x768": (768, 768), 
-                "800x600 (SVGA)": (600, 800), "960x544 (Half HD)": (544, 960),
-                "1024x768 (XGA)": (768, 1024), "(SDXL) 1024x1024": (1024, 1024), 
-                "1280x720 (HD)": (720, 1280), "1366x768 (HD)": (768, 1366), 
-                "1600x900 (HD+)": (900, 1600), "1920x1080 (Full HD or 1080p)": (1080, 1920),
-                "2560x1440 (Quad HD or 1440p)": (1440, 2560), 
-                "3840x2160 (Ultra HD, 4K, or 2160p)": (2160, 3840),
-                "5120x2880 (5K)": (2880, 5120), "7680x4320 (8K)": (4320, 7680),
-                "480x640 (VGA, Portrait)": (640, 480), "480x832 (Portrait)": (832, 480),
-                "(SD2) 512x768 (Portrait)": (768, 512),
-                "544x960 (Half HD, Portrait)": (960, 544), "600x800 (SVGA, Portrait)": (800, 600),
-                "720x1280 (HD, Portrait)": (1280, 720), "768x1024 (XGA, Portrait)": (1024, 768),
-                "768x1366 (HD, Portrait)": (1366, 768), "832x480 (Portrait)": (480, 832),
-                "900x1600 (HD+, Portrait)": (1600, 900), 
-                "1080x1920 (Full HD or 1080p, Portrait)": (1920, 1080),
-                "1440x2560 (Quad HD or 1440p, Portrait)": (2560, 1440), 
-                "2160x3840 (Ultra HD, 4K, or 2160p, Portrait)": (3840, 2160),
-                "2880x5120 (5K, Portrait)": (5120, 2880), "4320x7680 (8K, Portrait)": (7680, 4320)
-            }
+        standard_sizes = self.get_standard_sizes()
+
+        if standard == "random":
+            # Get min resolution pixel count
+            if min_res == "custom":
+                min_pixels = 0
+            else:
+                min_h, min_w = standard_sizes.get(min_res, (0, 0))
+                min_pixels = min_h * min_w
+            
+            # Get max resolution pixel count
+            if max_res == "custom":
+                max_pixels = width * height
+            else:
+                max_h, max_w = standard_sizes.get(max_res, (height, width))
+                max_pixels = max_h * max_w
+            
+            # Filter resolutions that are between min_res and max_res
+            valid_resolutions = []
+            for res_name, (res_h, res_w) in standard_sizes.items():
+                res_pixels = res_h * res_w
+                if min_pixels <= res_pixels <= max_pixels:
+                    # Check orientation filter
+                    if orientation == "portrait" and res_h <= res_w:
+                        continue
+                    elif orientation == "landscape" and res_w <= res_h:
+                        continue
+                    elif orientation == "square" and res_h != res_w:
+                        continue
+                    
+                    valid_resolutions.append((res_name, res_h, res_w))
+            
+            # Select random resolution
+            if valid_resolutions:
+                random.seed(seed)
+                _, computed_height, computed_width = random.choice(valid_resolutions)
+            else:
+                # Fallback to custom dimensions if no valid resolutions
+                computed_height = height
+                computed_width = width
+        elif standard != "custom":
             computed_height, computed_width = standard_sizes.get(standard, (height, width))
 
         resized_output = None

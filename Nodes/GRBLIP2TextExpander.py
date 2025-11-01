@@ -2,10 +2,6 @@ import torch
 from transformers import Blip2Processor, Blip2ForConditionalGeneration
 import comfy.model_management as mm
 from PIL import Image  # Import PIL to create a dummy image
-import os
-import logging
-import folder_paths
-import comfy.utils
 
 class BLIP2TextExpander:
     def __init__(self):
