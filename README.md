@@ -101,7 +101,7 @@ Hope this stuff is helpful
 
 # GR Prompt Viewer
 
-A node to save, edit and load your prompts, never lose a prompt
+A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
 
 <img width="1218" height="594" alt="image" src="https://github.com/user-attachments/assets/b6876f14-8c60-4d1e-9f6a-3134a0384573" />
 
