@@ -1,6 +1,7 @@
 import os
+from datetime import datetime
 
-class   GRPromptViewer:
+class GRPromptViewer:
     
     @classmethod
     def IS_CHANGED(cls, **kwargs):
@@ -77,6 +78,35 @@ class   GRPromptViewer:
                 except Exception as e:
                     content = f"Error reading file: {str(e)}"
         
+        # Auto-save the content
+        self._auto_save(content)
+        
         # Return both as output AND send to UI for display
         return {"ui": {"text": [content]}, "result": (content,)}
-
+    
+    def _auto_save(self, content):
+        """
+        Auto-save the content to auto-save folder with timestamp filename
+        """
+        try:
+            # Get current directory and create auto-save folder path
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            prompts_dir = os.path.join(current_dir, "prompts")
+            autosave_dir = os.path.join(prompts_dir, "auto-save")
+            
+            # Create auto-save directory if it doesn't exist
+            if not os.path.exists(autosave_dir):
+                os.makedirs(autosave_dir)
+            
+            # Generate filename with timestamp: dd-mm-yy-hh-mm-ss.autosave.txt
+            timestamp = datetime.now().strftime("%d-%m-%y-%H-%M-%S")
+            filename = f"{timestamp}.autosave.txt"
+            filepath = os.path.join(autosave_dir, filename)
+            
+            # Write content to file
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            print(f"Auto-saved to: {filename}")
+        except Exception as e:
+            print(f"Auto-save failed: {str(e)}")
