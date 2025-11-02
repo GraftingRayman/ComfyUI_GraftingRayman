@@ -97,6 +97,22 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 
 Hope this stuff is helpful
 
+GR Prompt Viewer
+A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
+
+<img width="1218" height="594" alt="image" src="https://github.com/user-attachments/assets/1291dd3f-a799-4a07-bed3-c0f8d566d357" />
+
+All prompts are saved in the node directory inside a folder called prompts comfyui/custom_nodes/ComfyUI_GraftingRayman/Nodes/prompts
+
+Prompts can be sorted by folders
+
+All executed prompts are autosaved when it is queued
+
+<img width="1108" height="454" alt="image" src="https://github.com/user-attachments/assets/e3e8b456-a8fe-46df-9250-ef6972885997" />
+
+<img width="1164" height="528" alt="image" src="https://github.com/user-attachments/assets/0cb21e54-7b89-4e3a-bebf-33cabccb383c" />
+
+
 # GR Florence 2 Caption Generator for Ollama
 
 ![image](https://github.com/user-attachments/assets/0ab41137-ba8a-46d7-8a7f-7ec2700384b5)
