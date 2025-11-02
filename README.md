@@ -106,8 +106,9 @@ Hope this stuff is helpful
 A LoRA loader node, that dynamically updates as LoRA's are added to the node.
 LoRA's can be randomized along with their weights or done manually
 
-<img width="668" height="796" alt="image" src="https://github.com/user-attachments/assets/9020e322-e53b-45f4-9dfa-d2fa69a82820" />
-<img width="633" height="775" alt="image" src="https://github.com/user-attachments/assets/3c67a4ff-1a00-4cd2-b41d-9fad42c61a45" />
+<img width="610" height="511" alt="image" src="https://github.com/user-attachments/assets/111b2575-73a9-48e6-986f-dd9596f55b08" />
+<img width="606" height="540" alt="image" src="https://github.com/user-attachments/assets/887b5efc-0485-41c9-851d-547142b504f6" />
+
 
 # GR Prompt Viewer
 
