@@ -7,12 +7,12 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "GRLoraLoader") {
-            console.log("=== Registering GRLoraLoader extension ===");
+            // console.log("=== Registering GRLoraLoader extension ===");
 
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             
             nodeType.prototype.onNodeCreated = function() {
-                console.log("=== GRLoraLoader onNodeCreated START ===");
+                // console.log("=== GRLoraLoader onNodeCreated START ===");
                 
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
                 
@@ -21,7 +21,7 @@ app.registerExtension({
                 this.numLorasToEnable = 1;
                 
                 // Set minimum width for the node
-                this.size[0] = Math.max(this.size[0] || 0, 500);
+                this.size[0] = Math.max(this.size[0] || 0, 300);
                 
                 // Try to load saved configuration
                 this.loadConfiguration();
@@ -30,19 +30,19 @@ app.registerExtension({
                 const addLoraContainer = document.createElement("div");
                 addLoraContainer.style.display = "flex";
                 addLoraContainer.style.gap = "10px";
-                addLoraContainer.style.padding = "0px 10px 5px 10px";
+                addLoraContainer.style.padding = "0px 5px 2px 5px";
                 addLoraContainer.style.width = "100%";
                 addLoraContainer.style.boxSizing = "border-box";
                 
                 const addLoraBtn = document.createElement("button");
                 addLoraBtn.textContent = "Add LoRA";
                 addLoraBtn.style.flex = "1";
-                addLoraBtn.style.height = "28px";
+                addLoraBtn.style.height = "20px";
                 addLoraBtn.style.padding = "0";
                 addLoraBtn.style.cursor = "pointer";
                 addLoraBtn.style.fontSize = "12px";
                 addLoraBtn.onclick = () => {
-                    console.log("Add LoRA button clicked");
+                    // console.log("Add LoRA button clicked");
                     this.showLoraChooser();
                 };
                 
@@ -52,13 +52,13 @@ app.registerExtension({
                     getValue: () => null,
                     setValue: () => {},
                 });
-                addLoraWidget.computeSize = () => [0, 33];
+                addLoraWidget.computeSize = () => [0, 28];
                 
                 // ROW 2: Enable input and Randomize LoRAs button
                 const randomizeContainer = document.createElement("div");
                 randomizeContainer.style.display = "flex";
                 randomizeContainer.style.gap = "10px";
-                randomizeContainer.style.padding = "0px 10px 5px 10px";
+                randomizeContainer.style.padding = "0px 5px 2px 5px";
                 randomizeContainer.style.width = "100%";
                 randomizeContainer.style.boxSizing = "border-box";
  
@@ -75,7 +75,7 @@ app.registerExtension({
                 numLorasInput.min = "0";
                 numLorasInput.step = "1";
                 numLorasInput.style.width = "60px";
-                numLorasInput.style.height = "24px";
+                numLorasInput.style.height = "20px";
                 numLorasInput.style.padding = "2px 5px";
                 numLorasInput.style.backgroundColor = "#1a1a1a";
                 numLorasInput.style.color = "#ffffff";
@@ -84,18 +84,18 @@ app.registerExtension({
                 numLorasInput.style.fontSize = "12px";
                 numLorasInput.onchange = () => {
                     this.numLorasToEnable = parseInt(numLorasInput.value) || 1;
-                    console.log("Number of LoRAs to enable set to:", this.numLorasToEnable);
+                    // console.log("Number of LoRAs to enable set to:", this.numLorasToEnable);
                 };
                 
                 const randomizeBtn = document.createElement("button");
                 randomizeBtn.textContent = "🎲 Randomize LoRAs";
                 randomizeBtn.style.flex = "1";
-                randomizeBtn.style.height = "28px";
+                randomizeBtn.style.height = "20px";
                 randomizeBtn.style.padding = "0";
                 randomizeBtn.style.cursor = "pointer";
                 randomizeBtn.style.fontSize = "12px";
                 randomizeBtn.onclick = () => {
-                    console.log("Randomize LoRAs button clicked");
+                    // console.log("Randomize LoRAs button clicked");
                     this.randomizeLoras();
                 };
                 
@@ -110,7 +110,7 @@ app.registerExtension({
                         numLorasInput.value = this.numLorasToEnable;
                     },
                 });
-                randomizeWidget.computeSize = () => [0, 33];
+                randomizeWidget.computeSize = () => [0, 28];
                 
                 this.numLorasInput = numLorasInput;
                 
@@ -118,31 +118,31 @@ app.registerExtension({
                 const enabledControlsContainer = document.createElement("div");
                 enabledControlsContainer.style.display = "flex";
                 enabledControlsContainer.style.gap = "10px";
-                enabledControlsContainer.style.padding = "0px 10px 5px 10px";
+                enabledControlsContainer.style.padding = "0px 5px 2px 5px";
                 enabledControlsContainer.style.width = "100%";
                 enabledControlsContainer.style.boxSizing = "border-box";
                 
                 const randomizeEnabledBtn = document.createElement("button");
                 randomizeEnabledBtn.textContent = "🎲 Randomize Enabled";
                 randomizeEnabledBtn.style.flex = "1";
-                randomizeEnabledBtn.style.height = "28px";
+                randomizeEnabledBtn.style.height = "20px";
                 randomizeEnabledBtn.style.padding = "0";
                 randomizeEnabledBtn.style.cursor = "pointer";
                 randomizeEnabledBtn.style.fontSize = "12px";
                 randomizeEnabledBtn.onclick = () => {
-                    console.log("Randomize Enabled button clicked");
+                    // console.log("Randomize Enabled button clicked");
                     this.randomizeEnabledWeights();
                 };
                 
                 const normalizeEnabledBtn = document.createElement("button");
                 normalizeEnabledBtn.textContent = "⚖️ Normalize Enabled";
                 normalizeEnabledBtn.style.flex = "1";
-                normalizeEnabledBtn.style.height = "28px";
+                normalizeEnabledBtn.style.height = "20px";
                 normalizeEnabledBtn.style.padding = "0";
                 normalizeEnabledBtn.style.cursor = "pointer";
                 normalizeEnabledBtn.style.fontSize = "12px";
                 normalizeEnabledBtn.onclick = () => {
-                    console.log("Normalize Enabled button clicked");
+                    // console.log("Normalize Enabled button clicked");
                     this.normalizeEnabledWeights();
                 };
                 
@@ -153,12 +153,12 @@ app.registerExtension({
                     getValue: () => null,
                     setValue: () => {},
                 });
-                enabledControlsWidget.computeSize = () => [0, 33];
+                enabledControlsWidget.computeSize = () => [0, 28];
                 
-                this.setSize([Math.max(500, this.size[0]), Math.max(200, this.size[1])]);
+                this.setSize([Math.max(200, this.size[0]), Math.max(140, this.size[1])]);
                 this.setDirtyCanvas(true, true);
                 
-                console.log("=== GRLoraLoader onNodeCreated END ===");
+                // console.log("=== GRLoraLoader onNodeCreated END ===");
                 return r;
             };
             
@@ -200,9 +200,9 @@ app.registerExtension({
                     node_pos: this.pos
                 };
                 
-                console.log("=== SAVING CONFIGURATION ===");
-                console.log("Node ID:", this.id);
-                console.log("Config:", JSON.stringify(config, null, 2));
+                // console.log("=== SAVING CONFIGURATION ===");
+                // console.log("Node ID:", this.id);
+                // console.log("Config:", JSON.stringify(config, null, 2));
                 
                 try {
                     const response = await api.fetchApi("/gr_lora_loader/save_config", {
@@ -217,7 +217,7 @@ app.registerExtension({
                     const result = await response.json();
                     
                     if (response.ok) {
-                        console.log("✓ Configuration saved successfully:", result);
+                        // console.log("✓ Configuration saved successfully:", result);
                     } else {
                         console.error("✗ Failed to save configuration:", result);
                     }
@@ -233,18 +233,18 @@ app.registerExtension({
                     return;
                 }
                 
-                console.log("=== LOADING CONFIGURATION ===");
-                console.log("Node ID:", this.id);
+                // console.log("=== LOADING CONFIGURATION ===");
+                // console.log("Node ID:", this.id);
                 
                 try {
                     const response = await api.fetchApi(`/gr_lora_loader/load_config?node_id=${this.id}`);
                     
                     if (response.ok) {
                         const data = await response.json();
-                        console.log("Received data:", data);
+                        // console.log("Received data:", data);
                         
                         if (data.config && data.config.lora_widgets) {
-                            console.log("Found saved configuration with", data.config.lora_widgets.length, "LoRAs");
+                            // console.log("Found saved configuration with", data.config.lora_widgets.length, "LoRAs");
                             
                             if (data.config.num_loras_to_enable !== undefined) {
                                 this.numLorasToEnable = data.config.num_loras_to_enable;
@@ -256,17 +256,17 @@ app.registerExtension({
                             // Restore node size and position
                             if (data.config.node_size) {
                                 this.size = [...data.config.node_size];
-                                console.log("Restored node size:", this.size);
+                                // console.log("Restored node size:", this.size);
                             }
                             if (data.config.node_pos) {
                                 this.pos = [...data.config.node_pos];
-                                console.log("Restored node position:", this.pos);
+                                // console.log("Restored node position:", this.pos);
                             }
                             
                             setTimeout(() => {
                                 for (const loraData of data.config.lora_widgets) {
                                     if (loraData && loraData.lora) {
-                                        console.log("Restoring LoRA:", loraData.lora);
+                                        // console.log("Restoring LoRA:", loraData.lora);
                                         this.addLoraWidget(loraData.lora, true);
                                         const lastWidget = this.loraWidgets[this.loraWidgets.length - 1];
                                         if (lastWidget) {
@@ -286,12 +286,12 @@ app.registerExtension({
                                 }
                                 // Don't auto-resize after loading - keep saved size
                                 if (!data.config.node_size) {
-                                    this.setSize([Math.max(500, this.size[0]), this.computeSize()[1]]);
+                                    this.setSize([Math.max(300, this.size[0]), this.computeSize()[1]]);
                                 }
                                 this.setDirtyCanvas(true, true);
                             }, 100);
                         } else {
-                            console.log("No saved configuration found");
+                            // console.log("No saved configuration found");
                         }
                     }
                 } catch (error) {
@@ -306,7 +306,7 @@ app.registerExtension({
                     
                     if (response.ok) {
                         const loras = await response.json();
-                        console.log("Available LoRAs:", loras);
+                        // console.log("Available LoRAs:", loras);
                         
                         this.showLoraSearchDialog(loras);
                     } else {
@@ -339,8 +339,9 @@ app.registerExtension({
                 dialog.style.backgroundColor = "#2a2a2a";
                 dialog.style.border = "2px solid #555";
                 dialog.style.borderRadius = "8px";
-                dialog.style.padding = "20px";
-                dialog.style.width = "500px";
+                dialog.style.padding = "10px";
+                dialog.style.width = "720px";
+                dialog.style.height = "700px";
                 dialog.style.maxHeight = "80vh";
                 dialog.style.display = "flex";
                 dialog.style.flexDirection = "column";
@@ -360,11 +361,12 @@ app.registerExtension({
                 searchInput.style.color = "#ffffff";
                 searchInput.style.border = "1px solid #444";
                 searchInput.style.borderRadius = "4px";
-                searchInput.style.fontSize = "14px";
+                searchInput.style.fontSize = "12px";
                 searchInput.style.boxSizing = "border-box";
                 
                 const resultsContainer = document.createElement("div");
-                resultsContainer.style.maxHeight = "400px";
+                resultsContainer.style.maxHeight = "680px";
+                resultsContainer.style.maxWidth = "700px";
                 resultsContainer.style.overflowY = "auto";
                 resultsContainer.style.border = "1px solid #444";
                 resultsContainer.style.borderRadius = "4px";
@@ -400,7 +402,7 @@ app.registerExtension({
                         };
                         
                         item.onclick = () => {
-                            console.log("Selected LoRA:", lora);
+                            // console.log("Selected LoRA:", lora);
                             node.addLoraWidget(lora);
                             document.body.removeChild(overlay);
                         };
@@ -485,10 +487,10 @@ app.registerExtension({
                 });
                 
                 this.setDirtyCanvas(true, true);
-                console.log("LoRAs randomized successfully");
-                
-                console.log("Randomize LoRAs complete, auto-saving");
-                this.saveConfiguration();
+                // console.log("LoRAs randomized successfully");
+                this.randomizeEnabledWeights()
+                // console.log("Randomize LoRAs complete, auto-saving");
+//                this.saveConfiguration();
             };
             
             // Method to randomize enabled LoRA weights (sum to 1.0)
@@ -525,9 +527,9 @@ app.registerExtension({
                 });
                 
                 this.setDirtyCanvas(true, true);
-                console.log("Enabled LoRA weights randomized successfully (sum = 1.0)");
+                // console.log("Enabled LoRA weights randomized successfully (sum = 1.0)");
                 
-                console.log("Randomize Enabled complete, auto-saving");
+                // console.log("Randomize Enabled complete, auto-saving");
                 this.saveConfiguration();
             };
             
@@ -563,7 +565,7 @@ app.registerExtension({
                 this.setDirtyCanvas(true, true);
                 console.log(`Enabled LoRA weights normalized to ${equalWeight.toFixed(4)} each`);
                 
-                console.log("Normalize Enabled complete, auto-saving");
+                // console.log("Normalize Enabled complete, auto-saving");
                 this.saveConfiguration();
             };
             
@@ -572,12 +574,12 @@ app.registerExtension({
                 this.loraCounter++;
                 const widgetName = `lora_${this.loraCounter}`;
                 
-                console.log("Adding LoRA widget:", widgetName, "with lora:", loraName);
+                // console.log("Adding LoRA widget:", widgetName, "with lora:", loraName);
                 
                 const loraContainer = document.createElement("div");
                 loraContainer.style.display = "flex";
-                loraContainer.style.gap = "8px";
-                loraContainer.style.padding = "4px 10px";
+                loraContainer.style.gap = "2px";
+                loraContainer.style.padding = "4px 5px";
                 loraContainer.style.alignItems = "center";
                 loraContainer.style.backgroundColor = "#2a2a2a";
                 loraContainer.style.marginBottom = "2px";
@@ -586,11 +588,11 @@ app.registerExtension({
                 const checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
                 checkbox.checked = true;
-                checkbox.style.width = "16px";
-                checkbox.style.height = "16px";
+                checkbox.style.width = "14px";
+                checkbox.style.height = "14px";
                 checkbox.style.cursor = "pointer";
                 checkbox.onchange = () => {
-                    console.log("Checkbox changed, auto-saving");
+                    // console.log("Checkbox changed, auto-saving");
                     this.saveConfiguration();
                 };
                 
@@ -609,8 +611,8 @@ app.registerExtension({
                 strengthInput.step = "0.05";
                 strengthInput.min = "0";
                 strengthInput.max = "5";
-                strengthInput.style.width = "70px";
-                strengthInput.style.height = "24px";
+                strengthInput.style.width = "50px";
+                strengthInput.style.height = "18px";
                 strengthInput.style.padding = "2px 5px";
                 strengthInput.style.backgroundColor = "#1a1a1a";
                 strengthInput.style.color = "#ffffff";
@@ -618,27 +620,27 @@ app.registerExtension({
                 strengthInput.style.borderRadius = "3px";
                 strengthInput.style.fontSize = "12px";
                 strengthInput.onchange = () => {
-                    console.log("Strength changed, auto-saving");
+                    // console.log("Strength changed, auto-saving");
                     this.saveConfiguration();
                 };
                 strengthInput.oninput = () => {
-                    console.log("Strength input changed, auto-saving");
+                    // console.log("Strength input changed, auto-saving");
                     this.saveConfiguration();
                 };
                 
                 const removeBtn = document.createElement("button");
                 removeBtn.textContent = "×";
-                removeBtn.style.width = "22px";
-                removeBtn.style.height = "22px";
+                removeBtn.style.width = "16px";
+                removeBtn.style.height = "16px";
                 removeBtn.style.padding = "0";
                 removeBtn.style.cursor = "pointer";
-                removeBtn.style.fontSize = "16px";
+                removeBtn.style.fontSize = "12px";
                 removeBtn.style.backgroundColor = "#c44";
                 removeBtn.style.color = "#fff";
                 removeBtn.style.border = "none";
                 removeBtn.style.borderRadius = "3px";
                 removeBtn.onclick = () => {
-                    console.log("Removing LoRA widget:", widgetName);
+                    // console.log("Removing LoRA widget:", widgetName);
                     const widgetIndex = this.widgets.findIndex(w => w.loraContainer === loraContainer);
                     if (widgetIndex !== -1) {
                         this.widgets.splice(widgetIndex, 1);
@@ -648,10 +650,10 @@ app.registerExtension({
                         this.loraWidgets.splice(loraIndex, 1);
                     }
                     loraContainer.remove();
-                    this.setSize([Math.max(500, this.size[0]), this.computeSize()[1]]);
+//                    this.setSize([Math.max(300, this.size[0]), this.computeSize()[1]]);
                     this.setDirtyCanvas(true, true);
                     
-                    console.log("LoRA removed, auto-saving");
+                    // console.log("LoRA removed, auto-saving");
                     this.saveConfiguration();
                 };
                 
@@ -687,7 +689,7 @@ app.registerExtension({
                     getValue: () => widgetData.getValue(),
                     setValue: (v) => widgetData.setValue(v),
                 });
-                htmlWidget.computeSize = () => [0, 32];
+                htmlWidget.computeSize = () => [0, 20];
                 htmlWidget.loraContainer = loraContainer;
                 
                 htmlWidget.getValue = widgetData.getValue;
@@ -695,12 +697,12 @@ app.registerExtension({
                 
                 this.loraWidgets.push(htmlWidget);
                 
-                const currentSize = this.computeSize();
-                this.setSize([Math.max(500, this.size[0]), currentSize[1]]);
+//                const currentSize = this.computeSize();
+//                this.setSize([Math.max(300, this.size[0]), currentSize[1]]);
                 this.setDirtyCanvas(true, true);
                 
                 if (!skipSave) {
-                    console.log("Auto-saving after adding LoRA");
+                    // console.log("Auto-saving after adding LoRA");
                     this.saveConfiguration();
                 }
             };
@@ -735,10 +737,10 @@ app.registerExtension({
             
             const onConfigure = nodeType.prototype.onConfigure;
             nodeType.prototype.onConfigure = function(o) {
-                console.log("=== Configuring node, data:", o);
+                // console.log("=== Configuring node, data:", o);
                 
                 if (this.loraWidgets && this.loraWidgets.length > 0) {
-                    console.log("Clearing existing lora widgets");
+                    // console.log("Clearing existing lora widgets");
                     const existingLoraWidgets = [...this.loraWidgets];
                     existingLoraWidgets.forEach(widget => {
                         const idx = this.widgets.indexOf(widget);
@@ -757,7 +759,7 @@ app.registerExtension({
                 }
                 
                 if (o.lora_widgets && Array.isArray(o.lora_widgets)) {
-                    console.log("Restoring lora widgets:", o.lora_widgets);
+                    // console.log("Restoring lora widgets:", o.lora_widgets);
                     for (const loraData of o.lora_widgets) {
                         if (loraData && loraData.lora) {
                             this.addLoraWidget(loraData.lora, true);
@@ -779,7 +781,7 @@ app.registerExtension({
                     }
                 }
                 else if (o.widgets_values && Array.isArray(o.widgets_values)) {
-                    console.log("Restoring from widgets_values:", o.widgets_values);
+                    // console.log("Restoring from widgets_values:", o.widgets_values);
                     for (const value of o.widgets_values) {
                         if (value && typeof value === "object" && value.lora) {
                             this.addLoraWidget(value.lora, true);
@@ -801,7 +803,7 @@ app.registerExtension({
                     }
                 }
                 
-                console.log("Final lora widgets count:", this.loraWidgets.length);
+                // console.log("Final lora widgets count:", this.loraWidgets.length);
                 
                 if (onConfigure) {
                     onConfigure.apply(this, arguments);
