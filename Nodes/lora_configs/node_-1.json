@@ -1,0 +1,12 @@
+{
+  "num_loras_to_enable": 1,
+  "lora_widgets": [],
+  "node_size": {
+    "0": 500,
+    "1": 200
+  },
+  "node_pos": {
+    "0": 10,
+    "1": 10
+  }
+}

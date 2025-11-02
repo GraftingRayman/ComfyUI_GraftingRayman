@@ -1,0 +1,31 @@
+{
+  "num_loras_to_enable": 1,
+  "lora_widgets": [
+    {
+      "on": true,
+      "lora": "celebsown\\Michaela Strachan.safetensors",
+      "strength": 0.5,
+      "strengthTwo": 0.5
+    },
+    {
+      "on": true,
+      "lora": "customfav\\dark\\flux_10_Akzaara17.safetensors",
+      "strength": 0.5,
+      "strengthTwo": 0.5
+    },
+    {
+      "on": true,
+      "lora": "celebsown\\flux_10_lauren german.safetensors",
+      "strength": 1,
+      "strengthTwo": 1
+    }
+  ],
+  "node_size": {
+    "0": 500,
+    "1": 273
+  },
+  "node_pos": {
+    "0": -510,
+    "1": 480
+  }
+}

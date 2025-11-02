@@ -20,7 +20,6 @@ class GRImageMultiplier:
                     "max": 0x7FFFFFFFFFFFFFFF,
                     "step": 1
                 }),
-                "reverse": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -28,7 +27,7 @@ class GRImageMultiplier:
     FUNCTION = "multiply"
     CATEGORY = "GraftingRayman/Image"
 
-    def multiply(self, images, multiplier, interleave, random_order, seed, reverse):
+    def multiply(self, images, multiplier, interleave, random_order, seed):
         if random_order:
             # Create sequential copies first
             multiplied = images.repeat_interleave(multiplier, dim=0)
@@ -49,10 +48,6 @@ class GRImageMultiplier:
             else:
                 # Sequential repetition
                 result = images.repeat_interleave(multiplier, dim=0)
-        
-        # Apply reverse if enabled
-        if reverse:
-            result = torch.flip(result, [0])
         
         return (result,)
 
