@@ -23,8 +23,10 @@ For comfyui portable run the following command in your comyfui folder
 
  Without this the nodes will fail to be imported
 
-# Captions
+# Loras
+[GR Lora Loader](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-lora-loader)
 
+# Captions
 [GR Florence 2 Caption Generator for Ollama](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#GR-Florence-2-Caption-Generator-for-Ollama)
 
 # Overlays:
@@ -98,6 +100,14 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 [![Youtube Badge](https://img.shields.io/badge/Youtube-FF0000?style=for-the-badge&logo=Youtube&logoColor=white&link=https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)](https://www.youtube.com/channel/UCK4AxxjpeECN4GKojVMqL5g)
 
 Hope this stuff is helpful
+
+# GR Lora Loader
+
+A LoRA loader node, that dynamically updates as LoRA's are added to the node.
+LoRA's can be randomized along with their weights or done manually
+
+<img width="668" height="796" alt="image" src="https://github.com/user-attachments/assets/9020e322-e53b-45f4-9dfa-d2fa69a82820" />
+<img width="633" height="775" alt="image" src="https://github.com/user-attachments/assets/3c67a4ff-1a00-4cd2-b41d-9fad42c61a45" />
 
 # GR Prompt Viewer
 
