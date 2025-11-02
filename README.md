@@ -33,7 +33,7 @@ For comfyui portable run the following command in your comyfui folder
 [GR Onomatopoeia](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-onomatopoeia)
 
 # Prompts:
-[GR Prompt Selector](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector)
+[GR Prompt Viewer](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-viewer)
 
 [GR Prompt Selector Multi](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/README.md#gr-prompt-selector-multi)
 
@@ -97,7 +97,8 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 
 Hope this stuff is helpful
 
-GR Prompt Viewer
+# GR Prompt Viewer
+
 A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
 
 <img width="1218" height="594" alt="image" src="https://github.com/user-attachments/assets/1291dd3f-a799-4a07-bed3-c0f8d566d357" />
