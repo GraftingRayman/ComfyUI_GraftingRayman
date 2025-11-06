@@ -30,14 +30,6 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 
 Hope this stuff is helpful
 
-# GR Lora Loader
-
-A LoRA loader node, that dynamically updates as LoRA's are added to the node.
-LoRA's can be randomized along with their weights or done manually
-
-<img width="610" height="511" alt="image" src="https://github.com/user-attachments/assets/111b2575-73a9-48e6-986f-dd9596f55b08" />
-<img width="606" height="540" alt="image" src="https://github.com/user-attachments/assets/887b5efc-0485-41c9-851d-547142b504f6" />
-
 
 # GR Prompt Viewer
 
@@ -54,6 +46,15 @@ All executed prompts are autosaved when it is queued
 <img width="1108" height="454" alt="image" src="https://github.com/user-attachments/assets/e3e8b456-a8fe-46df-9250-ef6972885997" />
 
 <img width="1164" height="528" alt="image" src="https://github.com/user-attachments/assets/0cb21e54-7b89-4e3a-bebf-33cabccb383c" />
+
+
+# GR Lora Loader
+
+A LoRA loader node, that dynamically updates as LoRA's are added to the node.
+LoRA's can be randomized along with their weights or done manually
+
+<img width="610" height="511" alt="image" src="https://github.com/user-attachments/assets/111b2575-73a9-48e6-986f-dd9596f55b08" />
+<img width="606" height="540" alt="image" src="https://github.com/user-attachments/assets/887b5efc-0485-41c9-851d-547142b504f6" />
 
 
 # GR Florence 2 Caption Generator for Ollama
