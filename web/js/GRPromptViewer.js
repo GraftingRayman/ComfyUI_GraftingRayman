@@ -3,37 +3,62 @@ import { ComfyWidgets } from "/scripts/widgets.js";
 import { api } from "/scripts/api.js";
 
 app.registerExtension({
-    name: "PromptViewerExtension",
+    name: "GRPromptViewerExtension",
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "GRPromptViewer") {
-            console.log("=== Registering   GRPromptViewer extension ===");
+            console.log("=== Registering GRPromptViewer extension ===");
 
-            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            // Store the original node prototype
+            const originalNodeCreated = nodeType.prototype.onNodeCreated;
+            const originalOnExecuted = nodeType.prototype.onExecuted;
             
             nodeType.prototype.onNodeCreated = function() {
                 console.log("=== GRPromptViewer onNodeCreated START ===");
                 
-                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+                const r = originalNodeCreated ? originalNodeCreated.apply(this, arguments) : undefined;
                 
                 console.log("Widgets after original onNodeCreated:", this.widgets);
+                
+                // Find the content input widget (it's now an optional input, not hidden)
+                this.contentWidget = this.widgets.find(w => w.name === "content");
+                this.editedWidget = this.widgets.find(w => w.name === "edited");
+                
+                // Debug widgets
+                console.log("Content widget:", this.contentWidget);
+                console.log("Edited widget:", this.editedWidget);
+                
+                // Hide the content widget if it exists (since we have content_preview)
+                if (this.contentWidget) {
+                    this.contentWidget.computeSize = () => [0, -4];
+                    if (this.contentWidget.inputEl) {
+                        this.contentWidget.inputEl.style.display = "none";
+                    }
+                }
+                
+                // Hide the edited widget
+                if (this.editedWidget) {
+                    this.editedWidget.computeSize = () => [0, -4];
+                    if (this.editedWidget.inputEl) {
+                        this.editedWidget.inputEl.style.display = "none";
+                    }
+                    // Ensure edited widget is properly initialized as boolean false
+                    this.editedWidget.value = false;
+                    console.log("Initialized edited widget value:", this.editedWidget.value, "type:", typeof this.editedWidget.value);
+                }
                 
                 // Create preview widget
                 try {
                     console.log("Creating preview widget...");
                     
-                    const result = ComfyWidgets["STRING"](
+                    const previewWidget = ComfyWidgets["STRING"](
                         this, 
                         "content_preview", 
                         ["STRING", { multiline: true }], 
                         app
-                    );
+                    )?.widget;
                     
-                    console.log("ComfyWidgets.STRING returned:", result);
-                    
-                    if (result && result.widget) {
-                        const previewWidget = result.widget;
-                        
+                    if (previewWidget) {
                         previewWidget.inputEl.readOnly = false;
                         previewWidget.inputEl.style.opacity = 1.0;
                         previewWidget.inputEl.style.fontFamily = "monospace";
@@ -42,101 +67,189 @@ app.registerExtension({
                         previewWidget.value = "Select a folder and file to view contents...";
                         
                         this.contentPreview = previewWidget;
-                        this.originalContent = "";
+                        this.originalContent = previewWidget.value;
                         this.isModified = false;
                         this.currentFolder = "";
                         this.currentFile = "";
+                        this.contentFromInput = false; // Track if content came from input connection
                         
-                        // Track changes to enable/disable save button
+                        // Track changes to enable/disable save button and sync content
                         previewWidget.inputEl.addEventListener('input', () => {
-                            this.isModified = (previewWidget.value !== this.originalContent);
+                            const isNowModified = (previewWidget.value !== this.originalContent);
+                            
+                            // Only update if changed to avoid infinite loops
+                            if (this.isModified !== isNowModified) {
+                                this.isModified = isNowModified;
+                                console.log("Content modification state changed to:", this.isModified);
+                            }
+                            
+                            // Update save button state
                             if (this.saveButton) {
                                 this.saveButton.disabled = !this.isModified;
                             }
+                            
+                            // Sync content to content widget if it exists (not connected)
+                            if (this.contentWidget && !this.isInputConnected("content")) {
+                                this.contentWidget.value = previewWidget.value;
+                                console.log("Synced content to content widget, length:", previewWidget.value.length);
+                            }
+                            
+                            // Update edited flag - THIS IS CRITICAL FOR AUTO-SAVE
+                            if (this.editedWidget) {
+                                // Force boolean value
+                                this.editedWidget.value = Boolean(this.isModified);
+                                console.log("Edited flag set to:", this.editedWidget.value, "(type:", typeof this.editedWidget.value + ")");
+                                
+                                // Force the widget to update the node's input value
+                                if (this.editedWidget.callback) {
+                                    this.editedWidget.callback(this.editedWidget.value);
+                                }
+                            }
+                            
+                            console.log("Content modified:", this.isModified, "Length:", previewWidget.value.length);
+                            
+                            // Mark node as dirty to force re-execution
+                            this.setDirtyCanvas(true, true);
                         });
                         
                         console.log("Preview widget created successfully");
-                        console.log("Total widgets now:", this.widgets.length);
-                        
-                        // Create HTML container for buttons
-                        const buttonContainer = document.createElement("div");
-                        buttonContainer.style.display = "flex";
-                        buttonContainer.style.gap = "10px";
-                        buttonContainer.style.padding = "10px";
-                        buttonContainer.style.width = "100%";
-                        buttonContainer.style.boxSizing = "border-box";
-                        
-                        // Save button
-                        const saveBtn = document.createElement("button");
-                        saveBtn.textContent = "Save";
-                        saveBtn.style.flex = "1";
-                        saveBtn.style.height = "35px";
-                        saveBtn.style.padding = "0";
-                        saveBtn.style.cursor = "pointer";
-                        saveBtn.style.fontSize = "14px";
-                        saveBtn.disabled = true;
-                        saveBtn.onclick = () => {
-                            console.log("Save button clicked");
-                            this.saveFile(false);
-                        };
-                        
-                        // Save As button
-                        const saveAsBtn = document.createElement("button");
-                        saveAsBtn.textContent = "Save As";
-                        saveAsBtn.style.flex = "1";
-                        saveAsBtn.style.height = "35px";
-                        saveAsBtn.style.padding = "0";
-                        saveAsBtn.style.cursor = "pointer";
-                        saveAsBtn.style.fontSize = "14px";
-                        saveAsBtn.onclick = () => {
-                            console.log("Save As button clicked");
-                            this.saveFile(true);
-                        };
-                        
-                        // Clear button
-                        const clearBtn = document.createElement("button");
-                        clearBtn.textContent = "Clear";
-                        clearBtn.style.flex = "1";
-                        clearBtn.style.height = "35px";
-                        clearBtn.style.padding = "0";
-                        clearBtn.style.cursor = "pointer";
-                        clearBtn.style.fontSize = "14px";
-                        clearBtn.onclick = () => {
-                            console.log("Clear button clicked");
-                            this.clearContent();
-                        };
-                        
-                        buttonContainer.appendChild(saveBtn);
-                        buttonContainer.appendChild(saveAsBtn);
-                        buttonContainer.appendChild(clearBtn);
-                        
-                        // Add HTML widget with minimal size
-                        const htmlWidget = this.addDOMWidget("buttons", "div", buttonContainer, {
-                            getValue: () => null,
-                            setValue: () => {},
-                        });
-                        htmlWidget.computeSize = () => [0, 55]; // Fixed small height
-                        
-                        this.saveButton = saveBtn;
-                        this.saveAsButton = saveAsBtn;
-                        this.clearButton = clearBtn;
-                        
-                        this.setSize([450, 500]);
-                        this.setDirtyCanvas(true, true);
-                        
                     } else {
-                        console.error("ComfyWidgets.STRING did not return a widget");
+                        console.error("Failed to create preview widget");
                     }
                 } catch (e) {
                     console.error("Error creating preview widget:", e);
                 }
                 
-                // Find the folder and file widgets
-                const folderWidget = this.widgets.find(w => w.name === "folder");
-                const fileWidget = this.widgets.find(w => w.name === "file");
+                // Create HTML container for buttons
+                const buttonContainer = document.createElement("div");
+                buttonContainer.style.display = "flex";
+                buttonContainer.style.gap = "10px";
+                buttonContainer.style.padding = "10px";
+                buttonContainer.style.width = "100%";
+                buttonContainer.style.boxSizing = "border-box";
                 
-                console.log("Folder widget found:", folderWidget);
-                console.log("File widget found:", fileWidget);
+                // Save button
+                const saveBtn = document.createElement("button");
+                saveBtn.textContent = "Save";
+                saveBtn.style.flex = "1";
+                saveBtn.style.height = "35px";
+                saveBtn.style.padding = "0";
+                saveBtn.style.cursor = "pointer";
+                saveBtn.style.fontSize = "14px";
+                saveBtn.disabled = true;
+                saveBtn.onclick = () => {
+                    console.log("Save button clicked");
+                    this.saveFile(false);
+                };
+                
+                // Save As button
+                const saveAsBtn = document.createElement("button");
+                saveAsBtn.textContent = "Save As";
+                saveAsBtn.style.flex = "1";
+                saveAsBtn.style.height = "35px";
+                saveAsBtn.style.padding = "0";
+                saveAsBtn.style.cursor = "pointer";
+                saveAsBtn.style.fontSize = "14px";
+                saveAsBtn.onclick = () => {
+                    console.log("Save As button clicked");
+                    this.saveFile(true);
+                };
+                
+                // Clear button
+                const clearBtn = document.createElement("button");
+                clearBtn.textContent = "Clear";
+                clearBtn.style.flex = "1";
+                clearBtn.style.height = "35px";
+                clearBtn.style.padding = "0";
+                clearBtn.style.cursor = "pointer";
+                clearBtn.style.fontSize = "14px";
+                clearBtn.onclick = () => {
+                    console.log("Clear button clicked");
+                    this.clearContent();
+                };
+                
+                buttonContainer.appendChild(saveBtn);
+                buttonContainer.appendChild(saveAsBtn);
+                buttonContainer.appendChild(clearBtn);
+                
+                // Add HTML widget with minimal size
+                const htmlWidget = this.addDOMWidget("buttons", "div", buttonContainer, {
+                    getValue: () => null,
+                    setValue: () => {},
+                });
+                htmlWidget.computeSize = () => [0, 55]; // Fixed small height
+                
+                this.saveButton = saveBtn;
+                this.saveAsButton = saveAsBtn;
+                this.clearButton = clearBtn;
+                
+                // Helper function to check if an input is connected
+                this.isInputConnected = function(inputName) {
+                    if (!this.inputs) return false;
+                    const input = this.inputs.find(i => i.name === inputName);
+                    return input && input.link != null;
+                };
+                
+                // Override onExecute to ensure proper synchronization
+                const originalOnExecute = this.onExecute;
+                this.onExecute = function() {
+                    console.log("=== onExecute called ===");
+                    console.log("Current state - isModified:", this.isModified, "content length:", this.contentPreview?.value.length);
+                    console.log("Content input connected:", this.isInputConnected("content"));
+                    
+                    // Check if content is coming from an input connection
+                    const contentConnected = this.isInputConnected("content");
+                    
+                    // If content input is connected, don't sync from preview
+                    // The connected input will provide the content
+                    if (!contentConnected) {
+                        // CRITICAL: Ensure all widget values are properly synchronized
+                        // Sync preview content to content widget
+                        if (this.contentPreview && this.contentWidget) {
+                            this.contentWidget.value = this.contentPreview.value;
+                            console.log("Synced content to widget, length:", this.contentPreview.value.length);
+                            
+                            // Force content widget callback
+                            if (this.contentWidget.callback) {
+                                this.contentWidget.callback(this.contentWidget.value);
+                            }
+                        }
+                        
+                        // Sync edited flag - THIS TRIGGERS AUTO-SAVE for manual edits
+                        if (this.editedWidget) {
+                            // Force boolean value
+                            this.editedWidget.value = Boolean(this.isModified);
+                            console.log("Synced edited flag for execution:", this.editedWidget.value, "(type:", typeof this.editedWidget.value + ")");
+                            
+                            // Force edited widget callback
+                            if (this.editedWidget.callback) {
+                                this.editedWidget.callback(this.editedWidget.value);
+                            }
+                        }
+                    } else {
+                        console.log("Content input is connected - will use input value, not preview");
+                        // Reset edited flag when content comes from input
+                        if (this.editedWidget) {
+                            this.editedWidget.value = false;
+                            if (this.editedWidget.callback) {
+                                this.editedWidget.callback(this.editedWidget.value);
+                            }
+                            console.log("Reset edited flag - content from input connection");
+                        }
+                    }
+                    
+                    // Force the node to update its inputs
+                    if (this.onInputChanged) {
+                        this.onInputChanged();
+                    }
+                    
+                    // Mark the node as dirty to ensure execution
+                    this.setDirtyCanvas(true, true);
+                    
+                    if (originalOnExecute) {
+                        return originalOnExecute.apply(this, arguments);
+                    }
+                };
                 
                 // Function to update file list based on selected folder
                 const updateFileList = async (folderName) => {
@@ -159,6 +272,17 @@ app.registerExtension({
                                 } else {
                                     if (this.contentPreview) {
                                         this.contentPreview.value = "No files found in this folder";
+                                        this.originalContent = this.contentPreview.value;
+                                        this.isModified = false;
+                                        this.updateButtonStates();
+                                        // Reset edited flag when no files
+                                        if (this.editedWidget) {
+                                            this.editedWidget.value = false;
+                                            if (this.editedWidget.callback) {
+                                                this.editedWidget.callback(this.editedWidget.value);
+                                            }
+                                            console.log("Reset edited flag - no files found");
+                                        }
                                     }
                                 }
                             }
@@ -175,6 +299,17 @@ app.registerExtension({
                     if (!fileName || fileName === "No files found" || fileName === "Select folder first") {
                         if (this.contentPreview) {
                             this.contentPreview.value = "No file selected";
+                            this.originalContent = this.contentPreview.value;
+                            this.isModified = false;
+                            this.updateButtonStates();
+                            // Reset edited flag when no file selected
+                            if (this.editedWidget) {
+                                this.editedWidget.value = false;
+                                if (this.editedWidget.callback) {
+                                    this.editedWidget.callback(this.editedWidget.value);
+                                }
+                                console.log("Reset edited flag - no file selected");
+                            }
                         }
                         return;
                     }
@@ -199,26 +334,61 @@ app.registerExtension({
                                 this.originalContent = text;
                                 this.isModified = false;
                                 
-                                if (this.saveButton) {
-                                    this.saveButton.disabled = true;
+                                this.updateButtonStates();
+                                
+                                // Reset edited flag and sync content when loading new file
+                                if (this.editedWidget) {
+                                    this.editedWidget.value = false;
+                                    if (this.editedWidget.callback) {
+                                        this.editedWidget.callback(this.editedWidget.value);
+                                    }
+                                    console.log("Reset edited flag after loading file");
+                                }
+                                if (this.contentWidget && !this.isInputConnected("content")) {
+                                    this.contentWidget.value = text;
+                                    if (this.contentWidget.callback) {
+                                        this.contentWidget.callback(this.contentWidget.value);
+                                    }
+                                    console.log("Synced content widget after loading file");
                                 }
                                 
                                 const lines = text.split('\n').length;
                                 this.contentPreview.inputEl.rows = Math.min(Math.max(lines, 10), 30);
                                 
                                 this.setDirtyCanvas(true, true);
-                                app.graph.setDirtyCanvas(true, true);
                             }
                         } else {
                             const errorText = await response.text();
                             if (this.contentPreview) {
                                 this.contentPreview.value = `Error: ${errorText}`;
+                                this.originalContent = this.contentPreview.value;
+                                this.isModified = false;
+                                this.updateButtonStates();
+                                // Reset edited flag on error
+                                if (this.editedWidget) {
+                                    this.editedWidget.value = false;
+                                    if (this.editedWidget.callback) {
+                                        this.editedWidget.callback(this.editedWidget.value);
+                                    }
+                                    console.log("Reset edited flag - error loading file");
+                                }
                             }
                         }
                     } catch (error) {
                         console.error("Error fetching file:", error);
                         if (this.contentPreview) {
                             this.contentPreview.value = "Error loading file: " + error.message;
+                            this.originalContent = this.contentPreview.value;
+                            this.isModified = false;
+                            this.updateButtonStates();
+                            // Reset edited flag on error
+                            if (this.editedWidget) {
+                                this.editedWidget.value = false;
+                                if (this.editedWidget.callback) {
+                                    this.editedWidget.callback(this.editedWidget.value);
+                                }
+                                console.log("Reset edited flag - fetch error");
+                            }
                         }
                     }
                 };
@@ -285,8 +455,15 @@ app.registerExtension({
                             // Mark as unmodified
                             this.originalContent = content;
                             this.isModified = false;
-                            if (this.saveButton) {
-                                this.saveButton.disabled = true;
+                            this.updateButtonStates();
+                            
+                            // Reset edited flag after save
+                            if (this.editedWidget) {
+                                this.editedWidget.value = false;
+                                if (this.editedWidget.callback) {
+                                    this.editedWidget.callback(this.editedWidget.value);
+                                }
+                                console.log("Reset edited flag after manual save");
                             }
                         } else {
                             const errorText = await response.text();
@@ -315,11 +492,41 @@ app.registerExtension({
                     
                     console.log("Content cleared, folder preserved:", this.currentFolder);
                     
-                    // Enable save button since content changed
+                    this.updateButtonStates();
+                    
+                    // Mark as edited and sync - THIS WILL TRIGGER AUTO-SAVE
+                    if (this.editedWidget) {
+                        this.editedWidget.value = true;
+                        if (this.editedWidget.callback) {
+                            this.editedWidget.callback(this.editedWidget.value);
+                        }
+                        console.log("Set edited flag after clear for auto-save");
+                    }
+                    if (this.contentWidget && !this.isInputConnected("content")) {
+                        this.contentWidget.value = "";
+                        if (this.contentWidget.callback) {
+                            this.contentWidget.callback(this.contentWidget.value);
+                        }
+                        console.log("Cleared content widget");
+                    }
+                    
+                    // Force node update
+                    this.setDirtyCanvas(true, true);
+                };
+                
+                // Helper function to update button states
+                this.updateButtonStates = () => {
                     if (this.saveButton) {
-                        this.saveButton.disabled = false;
+                        this.saveButton.disabled = !this.isModified;
                     }
                 };
+                
+                // Find the folder and file widgets
+                const folderWidget = this.widgets.find(w => w.name === "folder");
+                const fileWidget = this.widgets.find(w => w.name === "file");
+                
+                console.log("Folder widget found:", folderWidget);
+                console.log("File widget found:", fileWidget);
                 
                 // Hook folder widget callback
                 if (folderWidget) {
@@ -371,21 +578,41 @@ app.registerExtension({
                     console.log("File callback hooked");
                 }
                 
-                console.log("===   GRPromptViewer onNodeCreated END ===");
+                // Initialize button states
+                this.updateButtonStates();
+                
+                console.log("=== GRPromptViewer onNodeCreated END ===");
                 return r;
             };
             
             // Handle execution updates
-            const onExecuted = nodeType.prototype.onExecuted;
             nodeType.prototype.onExecuted = function(message) {
-                onExecuted?.apply(this, arguments);
+                originalOnExecuted?.apply(this, arguments);
                 console.log("Node executed, message:", message);
                 
-                if (message?.text && message.text[0] && this.contentPreview) {
-                    this.contentPreview.value = message.text[0];
-                    const lines = message.text[0].split('\n').length;
-                    this.contentPreview.inputEl.rows = Math.min(Math.max(lines, 10), 30);
-                    this.setDirtyCanvas(true, true);
+                // After execution, update the original content to match current
+                if (this.contentPreview) {
+                    // Check if content came from an input connection
+                    const contentConnected = this.isInputConnected("content");
+                    
+                    if (contentConnected) {
+                        console.log("Execution completed with content from input - auto-save should have triggered");
+                    }
+                    
+                    this.originalContent = this.contentPreview.value;
+                    this.isModified = false;
+                    this.updateButtonStates();
+                    
+                    // Reset edited flag after execution (content has been auto-saved if needed)
+                    if (this.editedWidget) {
+                        this.editedWidget.value = false;
+                        if (this.editedWidget.callback) {
+                            this.editedWidget.callback(this.editedWidget.value);
+                        }
+                        console.log("Reset edited flag after execution");
+                    }
+                    
+                    console.log("Content synchronized after execution, length:", this.originalContent.length);
                 }
             };
         }
