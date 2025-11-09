@@ -20,7 +20,7 @@ app.registerExtension({
                 
                 console.log("Widgets after original onNodeCreated:", this.widgets);
                 
-                // Find the content input widget (it's now an optional input, not hidden)
+                // Find the content input widget
                 this.contentWidget = this.widgets.find(w => w.name === "content");
                 this.editedWidget = this.widgets.find(w => w.name === "edited");
                 
@@ -28,7 +28,7 @@ app.registerExtension({
                 console.log("Content widget:", this.contentWidget);
                 console.log("Edited widget:", this.editedWidget);
                 
-                // Hide the content widget if it exists (since we have content_preview)
+                // Hide the content widget if it exists
                 if (this.contentWidget) {
                     this.contentWidget.computeSize = () => [0, -4];
                     if (this.contentWidget.inputEl) {
@@ -38,7 +38,7 @@ app.registerExtension({
                 
                 // Hide the edited widget
                 if (this.editedWidget) {
-                    this.editedWidget.computeSize = () => [0, -4];
+                    this.editedWidget.computeSize = () => [0, -15];
                     if (this.editedWidget.inputEl) {
                         this.editedWidget.inputEl.style.display = "none";
                     }
@@ -71,13 +71,11 @@ app.registerExtension({
                         this.isModified = false;
                         this.currentFolder = "";
                         this.currentFile = "";
-                        this.contentFromInput = false; // Track if content came from input connection
                         
-                        // Track changes to enable/disable save button and sync content
+                        // Track changes to enable/disable save button
                         previewWidget.inputEl.addEventListener('input', () => {
                             const isNowModified = (previewWidget.value !== this.originalContent);
                             
-                            // Only update if changed to avoid infinite loops
                             if (this.isModified !== isNowModified) {
                                 this.isModified = isNowModified;
                                 console.log("Content modification state changed to:", this.isModified);
@@ -88,22 +86,19 @@ app.registerExtension({
                                 this.saveButton.disabled = !this.isModified;
                             }
                             
-                            // Sync content to content widget if it exists (not connected)
-                            if (this.contentWidget && !this.isInputConnected("content")) {
-                                this.contentWidget.value = previewWidget.value;
-                                console.log("Synced content to content widget, length:", previewWidget.value.length);
-                            }
-                            
-                            // Update edited flag - THIS IS CRITICAL FOR AUTO-SAVE
+                            // Update edited flag
                             if (this.editedWidget) {
-                                // Force boolean value
                                 this.editedWidget.value = Boolean(this.isModified);
-                                console.log("Edited flag set to:", this.editedWidget.value, "(type:", typeof this.editedWidget.value + ")");
+                                console.log("Edited flag set to:", this.editedWidget.value);
                                 
-                                // Force the widget to update the node's input value
                                 if (this.editedWidget.callback) {
                                     this.editedWidget.callback(this.editedWidget.value);
                                 }
+                            }
+                            
+                            // CRITICAL: Update the content widget with preview value
+                            if (this.contentWidget) {
+                                this.contentWidget.value = previewWidget.value;
                             }
                             
                             console.log("Content modified:", this.isModified, "Length:", previewWidget.value.length);
@@ -190,65 +185,24 @@ app.registerExtension({
                     return input && input.link != null;
                 };
                 
-                // Override onExecute to ensure proper synchronization
-                const originalOnExecute = this.onExecute;
-                this.onExecute = function() {
-                    console.log("=== onExecute called ===");
-                    console.log("Current state - isModified:", this.isModified, "content length:", this.contentPreview?.value.length);
-                    console.log("Content input connected:", this.isInputConnected("content"));
-                    
-                    // Check if content is coming from an input connection
-                    const contentConnected = this.isInputConnected("content");
-                    
-                    // If content input is connected, don't sync from preview
-                    // The connected input will provide the content
-                    if (!contentConnected) {
-                        // CRITICAL: Ensure all widget values are properly synchronized
-                        // Sync preview content to content widget
-                        if (this.contentPreview && this.contentWidget) {
-                            this.contentWidget.value = this.contentPreview.value;
-                            console.log("Synced content to widget, length:", this.contentPreview.value.length);
-                            
-                            // Force content widget callback
-                            if (this.contentWidget.callback) {
-                                this.contentWidget.callback(this.contentWidget.value);
-                            }
+                // Override getInputData to return correct content based on connection state
+                const originalGetInputData = this.getInputData;
+                this.getInputData = function(slot) {
+                    // Check if this is the content input slot
+                    const input = this.inputs?.[slot];
+                    if (input && input.name === "content") {
+                        // If content input is connected, use the original behavior (get from connected node)
+                        if (input.link != null) {
+                            console.log("Content input connected - using linked node data");
+                            return originalGetInputData ? originalGetInputData.call(this, slot) : undefined;
                         }
-                        
-                        // Sync edited flag - THIS TRIGGERS AUTO-SAVE for manual edits
-                        if (this.editedWidget) {
-                            // Force boolean value
-                            this.editedWidget.value = Boolean(this.isModified);
-                            console.log("Synced edited flag for execution:", this.editedWidget.value, "(type:", typeof this.editedWidget.value + ")");
-                            
-                            // Force edited widget callback
-                            if (this.editedWidget.callback) {
-                                this.editedWidget.callback(this.editedWidget.value);
-                            }
-                        }
-                    } else {
-                        console.log("Content input is connected - will use input value, not preview");
-                        // Reset edited flag when content comes from input
-                        if (this.editedWidget) {
-                            this.editedWidget.value = false;
-                            if (this.editedWidget.callback) {
-                                this.editedWidget.callback(this.editedWidget.value);
-                            }
-                            console.log("Reset edited flag - content from input connection");
+                        // If content input is NOT connected, use the preview content
+                        else if (this.contentPreview) {
+                            console.log("Content input NOT connected - using preview content, length:", this.contentPreview.value.length);
+                            return this.contentPreview.value;
                         }
                     }
-                    
-                    // Force the node to update its inputs
-                    if (this.onInputChanged) {
-                        this.onInputChanged();
-                    }
-                    
-                    // Mark the node as dirty to ensure execution
-                    this.setDirtyCanvas(true, true);
-                    
-                    if (originalOnExecute) {
-                        return originalOnExecute.apply(this, arguments);
-                    }
+                    return originalGetInputData ? originalGetInputData.call(this, slot) : undefined;
                 };
                 
                 // Function to update file list based on selected folder
@@ -275,13 +229,15 @@ app.registerExtension({
                                         this.originalContent = this.contentPreview.value;
                                         this.isModified = false;
                                         this.updateButtonStates();
-                                        // Reset edited flag when no files
                                         if (this.editedWidget) {
                                             this.editedWidget.value = false;
                                             if (this.editedWidget.callback) {
                                                 this.editedWidget.callback(this.editedWidget.value);
                                             }
-                                            console.log("Reset edited flag - no files found");
+                                        }
+                                        // Update content widget
+                                        if (this.contentWidget) {
+                                            this.contentWidget.value = this.contentPreview.value;
                                         }
                                     }
                                 }
@@ -302,13 +258,15 @@ app.registerExtension({
                             this.originalContent = this.contentPreview.value;
                             this.isModified = false;
                             this.updateButtonStates();
-                            // Reset edited flag when no file selected
                             if (this.editedWidget) {
                                 this.editedWidget.value = false;
                                 if (this.editedWidget.callback) {
                                     this.editedWidget.callback(this.editedWidget.value);
                                 }
-                                console.log("Reset edited flag - no file selected");
+                            }
+                            // Update content widget
+                            if (this.contentWidget) {
+                                this.contentWidget.value = this.contentPreview.value;
                             }
                         }
                         return;
@@ -336,20 +294,19 @@ app.registerExtension({
                                 
                                 this.updateButtonStates();
                                 
-                                // Reset edited flag and sync content when loading new file
+                                // Reset edited flag when loading a NEW file
                                 if (this.editedWidget) {
                                     this.editedWidget.value = false;
+                                    console.log("Reset edited flag to false after loading file");
                                     if (this.editedWidget.callback) {
                                         this.editedWidget.callback(this.editedWidget.value);
                                     }
-                                    console.log("Reset edited flag after loading file");
                                 }
-                                if (this.contentWidget && !this.isInputConnected("content")) {
+                                
+                                // CRITICAL: Update content widget with loaded text
+                                if (this.contentWidget) {
                                     this.contentWidget.value = text;
-                                    if (this.contentWidget.callback) {
-                                        this.contentWidget.callback(this.contentWidget.value);
-                                    }
-                                    console.log("Synced content widget after loading file");
+                                    console.log("Updated content widget with file content, length:", text.length);
                                 }
                                 
                                 const lines = text.split('\n').length;
@@ -364,13 +321,15 @@ app.registerExtension({
                                 this.originalContent = this.contentPreview.value;
                                 this.isModified = false;
                                 this.updateButtonStates();
-                                // Reset edited flag on error
                                 if (this.editedWidget) {
                                     this.editedWidget.value = false;
                                     if (this.editedWidget.callback) {
                                         this.editedWidget.callback(this.editedWidget.value);
                                     }
-                                    console.log("Reset edited flag - error loading file");
+                                }
+                                // Update content widget
+                                if (this.contentWidget) {
+                                    this.contentWidget.value = this.contentPreview.value;
                                 }
                             }
                         }
@@ -381,13 +340,15 @@ app.registerExtension({
                             this.originalContent = this.contentPreview.value;
                             this.isModified = false;
                             this.updateButtonStates();
-                            // Reset edited flag on error
                             if (this.editedWidget) {
                                 this.editedWidget.value = false;
                                 if (this.editedWidget.callback) {
                                     this.editedWidget.callback(this.editedWidget.value);
                                 }
-                                console.log("Reset edited flag - fetch error");
+                            }
+                            // Update content widget
+                            if (this.contentWidget) {
+                                this.contentWidget.value = this.contentPreview.value;
                             }
                         }
                     }
@@ -457,13 +418,11 @@ app.registerExtension({
                             this.isModified = false;
                             this.updateButtonStates();
                             
-                            // Reset edited flag after save
                             if (this.editedWidget) {
                                 this.editedWidget.value = false;
                                 if (this.editedWidget.callback) {
                                     this.editedWidget.callback(this.editedWidget.value);
                                 }
-                                console.log("Reset edited flag after manual save");
                             }
                         } else {
                             const errorText = await response.text();
@@ -484,33 +443,25 @@ app.registerExtension({
                     // Clear the text area
                     this.contentPreview.value = "";
                     this.originalContent = "";
-                    this.isModified = true; // Mark as modified so save button activates
-                    
-                    // Keep the current folder but clear the file name
-                    // So Save As will prompt for a new name in the same folder
+                    this.isModified = true;
                     this.currentFile = "";
                     
                     console.log("Content cleared, folder preserved:", this.currentFolder);
                     
                     this.updateButtonStates();
                     
-                    // Mark as edited and sync - THIS WILL TRIGGER AUTO-SAVE
                     if (this.editedWidget) {
                         this.editedWidget.value = true;
                         if (this.editedWidget.callback) {
                             this.editedWidget.callback(this.editedWidget.value);
                         }
-                        console.log("Set edited flag after clear for auto-save");
-                    }
-                    if (this.contentWidget && !this.isInputConnected("content")) {
-                        this.contentWidget.value = "";
-                        if (this.contentWidget.callback) {
-                            this.contentWidget.callback(this.contentWidget.value);
-                        }
-                        console.log("Cleared content widget");
                     }
                     
-                    // Force node update
+                    // Update content widget
+                    if (this.contentWidget) {
+                        this.contentWidget.value = "";
+                    }
+                    
                     this.setDirtyCanvas(true, true);
                 };
                 
@@ -590,30 +541,9 @@ app.registerExtension({
                 originalOnExecuted?.apply(this, arguments);
                 console.log("Node executed, message:", message);
                 
-                // After execution, update the original content to match current
-                if (this.contentPreview) {
-                    // Check if content came from an input connection
-                    const contentConnected = this.isInputConnected("content");
-                    
-                    if (contentConnected) {
-                        console.log("Execution completed with content from input - auto-save should have triggered");
-                    }
-                    
-                    this.originalContent = this.contentPreview.value;
-                    this.isModified = false;
-                    this.updateButtonStates();
-                    
-                    // Reset edited flag after execution (content has been auto-saved if needed)
-                    if (this.editedWidget) {
-                        this.editedWidget.value = false;
-                        if (this.editedWidget.callback) {
-                            this.editedWidget.callback(this.editedWidget.value);
-                        }
-                        console.log("Reset edited flag after execution");
-                    }
-                    
-                    console.log("Content synchronized after execution, length:", this.originalContent.length);
-                }
+                // DON'T reset the edited flag or sync content after execution
+                // The preview content is the source of truth
+                console.log("Execution complete, preserving current state");
             };
         }
     }
