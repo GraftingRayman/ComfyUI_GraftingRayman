@@ -368,16 +368,39 @@ app.registerExtension({
                     if (saveAs || !targetFile) {
                         const folderName = targetFolder === "(root)" ? "root prompts folder" : `folder: ${targetFolder}`;
                         const defaultName = targetFile || "new_file.txt";
-                        const newName = prompt(`Enter filename (will be saved in ${folderName}):`, defaultName);
+                        const newName = prompt(`Enter filename (will be saved in ${folderName}).\nUse folder\\filename.txt to create new folder:`, defaultName);
                         if (!newName) return; // User cancelled
-                        
-                        // Ensure it has a valid extension
-                        if (!newName.match(/\.(txt|log|json|csv|md)$/i)) {
-                            alert("Filename must end with .txt, .log, .json, .csv, or .md");
-                            return;
+    
+                        // Check if user included a folder path (e.g., "modified\face001.txt")
+                        if (newName.includes('\\') || newName.includes('/')) {
+                            const separator = newName.includes('\\') ? '\\' : '/';
+                            const parts = newName.split(separator);
+        
+                            if (parts.length === 2) {
+                                const [newFolder, fileName] = parts;
+            
+                                // Ensure filename has a valid extension
+                                if (!fileName.match(/\.(txt|log|json|csv|md)$/i)) {
+                                    alert("Filename must end with .txt, .log, .json, .csv, or .md");
+                                    return;
+                                }
+            
+                                // Update target folder and file
+                                targetFolder = newFolder;
+                                targetFile = fileName;
+                            } else {
+                                alert("Invalid path format. Use: folder\\filename.txt");
+                                return;
+                            }
+                        } else {
+                            // Ensure it has a valid extension
+                            if (!newName.match(/\.(txt|log|json|csv|md)$/i)) {
+                                alert("Filename must end with .txt, .log, .json, .csv, or .md");
+                                return;
+                            }
+                            
+                            targetFile = newName;
                         }
-                        
-                        targetFile = newName;
                     }
                     
                     if (!targetFile) {
@@ -403,21 +426,36 @@ app.registerExtension({
                         if (response.ok) {
                             const result = await response.json();
                             alert(result.message || "File saved successfully");
-                            
+    
                             // Update current file info
+                            this.currentFolder = targetFolder;
                             this.currentFile = targetFile;
-                            
+    
                             // Refresh file list to show new file
                             const folderWidget = this.widgets.find(w => w.name === "folder");
                             if (folderWidget) {
-                                updateFileList(folderWidget.value);
+                                // If we created a new folder, update the folder widget options first
+                                if (result.folder_created) {
+                                    // Fetch updated folder list
+                                    try {
+                                        const foldersResponse = await api.fetchApi('/prompt_viewer/list_folders');
+                                        if (foldersResponse.ok) {
+                                            const foldersData = await foldersResponse.json();
+                                            folderWidget.options.values = foldersData.folders;
+                                            folderWidget.value = targetFolder;
+                                        }
+                                    } catch (error) {
+                                        console.error("Error refreshing folder list:", error);
+                                    }
+                                }
+                                updateFileList(targetFolder);
                             }
-                            
+    
                             // Mark as unmodified
                             this.originalContent = content;
                             this.isModified = false;
                             this.updateButtonStates();
-                            
+    
                             if (this.editedWidget) {
                                 this.editedWidget.value = false;
                                 if (this.editedWidget.callback) {
