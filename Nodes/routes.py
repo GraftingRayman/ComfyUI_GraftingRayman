@@ -105,6 +105,9 @@ async def save_prompt_file(request):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     prompts_dir = os.path.join(current_dir, "prompts")
     
+    # Track if we created a new folder
+    folder_created = False
+    
     # Build file path based on folder
     if folder == "(root)":
         file_path = os.path.join(prompts_dir, filename)
@@ -115,6 +118,7 @@ async def save_prompt_file(request):
         # Create folder if it doesn't exist
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
+            folder_created = True
     
     # Security check: ensure the file is within the prompts directory
     if not os.path.abspath(file_path).startswith(os.path.abspath(prompts_dir)):
@@ -123,9 +127,33 @@ async def save_prompt_file(request):
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        return web.json_response({"message": "File saved successfully", "filename": filename}, status=200)
+        return web.json_response({
+            "message": "File saved successfully", 
+            "filename": filename,
+            "folder_created": folder_created
+        }, status=200)
     except Exception as e:
         return web.Response(text=f"Error saving file: {str(e)}", status=500)
+
+@server.PromptServer.instance.routes.get("/prompt_viewer/list_folders")
+async def list_folders(request):
+    """
+    API endpoint to list all folders in the prompts directory
+    """
+    # Get the custom node directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompts_dir = os.path.join(current_dir, "prompts")
+    
+    folders = ["(root)"]  # Default option for files in root prompts folder
+    
+    if os.path.exists(prompts_dir):
+        # Get folders
+        for item in os.listdir(prompts_dir):
+            item_path = os.path.join(prompts_dir, item)
+            if os.path.isdir(item_path):
+                folders.append(item)
+    
+    return web.json_response({"folders": sorted(folders)}, status=200)
 
 
 @server.PromptServer.instance.routes.get("/dynamic_lora/list_loras")
@@ -192,74 +220,74 @@ async def save_lora_stack_config(request):
         node_id = data.get("node_id")
         config = data.get("config")
         
-        print(f"[GRLoraLoader] Save request received")
-        print(f"[GRLoraLoader] Node ID: {node_id}")
-        print(f"[GRLoraLoader] Config: {json.dumps(config, indent=2)}")
+        # print(f"[GRLoraLoader] Save request received")
+        # print(f"[GRLoraLoader] Node ID: {node_id}")
+        # print(f"[GRLoraLoader] Config: {json.dumps(config, indent=2)}")
         
         if not node_id or not config:
-            print(f"[GRLoraLoader] ERROR: Missing node_id or config")
+            # print(f"[GRLoraLoader] ERROR: Missing node_id or config")
             return web.json_response({"error": "Missing node_id or config"}, status=400)
         
-        # Get the custom node directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         config_dir = os.path.join(current_dir, "lora_configs")
         
-        print(f"[GRLoraLoader] Config directory: {config_dir}")
+        # print(f"[GRLoraLoader] Config directory: {config_dir}")
         
-        # Create config directory if it doesn't exist
         if not os.path.exists(config_dir):
-            print(f"[GRLoraLoader] Creating config directory...")
+            # print(f"[GRLoraLoader] Creating config directory...")
             os.makedirs(config_dir)
         
-        # Save config to file
-        config_file = os.path.join(config_dir, f"node_{node_id}.json")
-        print(f"[GRLoraLoader] Saving to file: {config_file}")
+        config_file = os.path.join(config_dir, f"GRLoraLoader.json")
+        # print(f"[GRLoraLoader] Saving to file: {config_file}")
         
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
         
-        print(f"[GRLoraLoader] ✓ Configuration saved successfully!")
+        # print(f"[GRLoraLoader] ✓ Configuration saved successfully!")
         return web.json_response({"success": True, "message": "Configuration saved", "file": config_file})
     except Exception as e:
-        print(f"[GRLoraLoader] ✗ ERROR saving configuration: {e}")
+        # print(f"[GRLoraLoader] ✗ ERROR saving configuration: {e}")
         import traceback
         traceback.print_exc()
         return web.json_response({"error": str(e)}, status=500)
 
 
-@server.PromptServer.instance.routes.get("/gr_lora_loader/load_config")
+@server.PromptServer.instance.routes.post("/gr_lora_loader/load_config")
 async def load_lora_stack_config(request):
     """
     Load LoRA stack configuration from a JSON file
     """
     try:
-        node_id = request.query.get("node_id")
+        data = await request.json()
+        node_id = data.get("node_id")
+        config_request = data.get("config")  # optional, for matching save signature
         
-        print(f"[GRLoraLoader] Load request received for node ID: {node_id}")
+        # print(f"[GRLoraLoader] Load request received")
+        # print(f"[GRLoraLoader] Node ID: {node_id}")
+        if config_request:
+            print(f"[GRLoraLoader] (Optional) Received config data: {json.dumps(config_request, indent=2)}")
         
         if not node_id:
-            print(f"[GRLoraLoader] ERROR: Missing node_id")
+            # print(f"[GRLoraLoader] ERROR: Missing node_id")
             return web.json_response({"error": "Missing node_id"}, status=400)
         
-        # Get the custom node directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        config_file = os.path.join(current_dir, "lora_configs", f"node_{node_id}.json")
+        config_file = os.path.join(current_dir, "lora_configs", f"GRLoraLoader.json")
         
-        print(f"[GRLoraLoader] Looking for config file: {config_file}")
+        # print(f"[GRLoraLoader] Looking for config file: {config_file}")
         
         if not os.path.exists(config_file):
-            print(f"[GRLoraLoader] Config file not found, returning empty config")
+            # print(f"[GRLoraLoader] Config file not found, returning empty config")
             return web.json_response({"config": None})
         
-        # Load config from file
         with open(config_file, 'r', encoding='utf-8') as f:
             config = json.load(f)
         
-        print(f"[GRLoraLoader] ✓ Configuration loaded successfully!")
-        print(f"[GRLoraLoader] Config: {json.dumps(config, indent=2)}")
+        # print(f"[GRLoraLoader] ✓ Configuration loaded successfully!")
+        # print(f"[GRLoraLoader] Config: {json.dumps(config, indent=2)}")
         return web.json_response({"config": config})
     except Exception as e:
-        print(f"[GRLoraLoader] ✗ ERROR loading configuration: {e}")
+        # print(f"[GRLoraLoader] ✗ ERROR loading configuration: {e}")
         import traceback
         traceback.print_exc()
         return web.json_response({"error": str(e)}, status=500)
