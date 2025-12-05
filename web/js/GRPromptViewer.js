@@ -433,6 +433,7 @@ app.registerExtension({
     
                             // Refresh file list to show new file
                             const folderWidget = this.widgets.find(w => w.name === "folder");
+                            const fileWidget = this.widgets.find(w => w.name === "file");
                             if (folderWidget) {
                                 // If we created a new folder, update the folder widget options first
                                 if (result.folder_created) {
@@ -448,7 +449,24 @@ app.registerExtension({
                                         console.error("Error refreshing folder list:", error);
                                     }
                                 }
-                                updateFileList(targetFolder);
+                                
+                                // Update file list WITHOUT auto-loading
+                                try {
+                                    const response = await api.fetchApi(`/prompt_viewer/list_files?folder=${encodeURIComponent(targetFolder)}`);
+                                    
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        console.log("Files received:", data.files);
+                                        
+                                        if (fileWidget) {
+                                            fileWidget.options.values = data.files;
+                                            // Set the file widget to the saved file, not the first file
+                                            fileWidget.value = targetFile;
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error("Error updating file list:", error);
+                                }
                             }
     
                             // Mark as unmodified
