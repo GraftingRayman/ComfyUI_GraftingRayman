@@ -33,7 +33,7 @@ Hope this stuff is helpful
 
 # GR Prompt Viewer
 
-<br>UPDATE:</br>
+<b>UPDATE:</b>
 If the prompt has an image with the same name, it will now display the image below the prompt.
 
 A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
