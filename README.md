@@ -33,9 +33,13 @@ Hope this stuff is helpful
 
 # GR Prompt Viewer
 
+<br>UPDATE:</br>
+If the prompt has an image with the same name, it will now display the image below the prompt.
+
 A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
 
-<img width="1218" height="594" alt="image" src="https://github.com/user-attachments/assets/1291dd3f-a799-4a07-bed3-c0f8d566d357" />
+<img width="2000" height="1545" alt="image" src="https://github.com/user-attachments/assets/08778741-3439-4a59-8d93-fca8db49b5d6" />
+
 
 All prompts are saved in the node directory inside a folder called prompts comfyui/custom_nodes/ComfyUI_GraftingRayman/Nodes/prompts
 
