@@ -240,12 +240,98 @@ app.registerExtension({
                                             this.contentWidget.value = this.contentPreview.value;
                                         }
                                     }
+                                    // Clear image display
+                                    clearImageDisplay();
                                 }
                             }
                         }
                     } catch (error) {
                         console.error("Error updating file list:", error);
                     }
+                };
+                
+                // Function to clear image display
+                const clearImageDisplay = () => {
+                    if (this.imageDisplayContainer) {
+                        this.imageDisplayContainer.style.display = "none";
+                        this.imageDisplayContainer.innerHTML = "";
+                    }
+                    if (this.imageWidget) {
+                        this.imageWidget.computeSize = () => [0, 0];
+                    }
+                };
+                
+                // Function to display image
+                const displayImage = (imageDataUrl) => {
+                    if (!this.imageDisplayContainer) {
+                        // Create image display container
+                        this.imageDisplayContainer = document.createElement("div");
+                        this.imageDisplayContainer.style.padding = "10px";
+                        this.imageDisplayContainer.style.textAlign = "center";
+                        this.imageDisplayContainer.style.borderTop = "1px solid #444";
+                        this.imageDisplayContainer.style.marginTop = "10px";
+                        
+                        // Create image widget
+                        this.imageWidget = this.addDOMWidget("image_preview", "div", this.imageDisplayContainer, {
+                            getValue: () => null,
+                            setValue: () => {},
+                        });
+                    }
+                    
+                    this.imageDisplayContainer.style.display = "block";
+                    this.imageDisplayContainer.innerHTML = "";
+                    
+                    const img = document.createElement("img");
+                    img.src = imageDataUrl;
+                    img.style.maxWidth = "100%";
+                    img.style.maxHeight = "400px";
+                    img.style.borderRadius = "4px";
+                    img.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+                    
+                    this.imageDisplayContainer.appendChild(img);
+                    
+                    // Set image widget size
+                    this.imageWidget.computeSize = () => [0, 420];
+                    
+                    console.log("Image displayed");
+                };
+                
+                // Function to check and load associated image
+                const loadAssociatedImage = async (folderName, fileName) => {
+                    if (!fileName || fileName === "No files found" || fileName === "Select folder first") {
+                        clearImageDisplay();
+                        return;
+                    }
+                    
+                    // Get base filename without extension
+                    const baseName = fileName.replace(/\.[^/.]+$/, "");
+                    
+                    // Supported image extensions
+                    const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
+                    
+                    // Try each extension
+                    for (const ext of imageExtensions) {
+                        const imageFileName = baseName + ext;
+                        
+                        try {
+                            const response = await api.fetchApi(`/prompt_viewer/read_image?folder=${encodeURIComponent(folderName)}&filename=${encodeURIComponent(imageFileName)}`);
+                            
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                const imageDataUrl = URL.createObjectURL(blob);
+                                displayImage(imageDataUrl);
+                                console.log("Found associated image:", imageFileName);
+                                return;
+                            }
+                        } catch (error) {
+                            // Continue to next extension
+                            continue;
+                        }
+                    }
+                    
+                    // No image found
+                    clearImageDisplay();
+                    console.log("No associated image found for:", fileName);
                 };
                 
                 // Function to load file content
@@ -269,6 +355,7 @@ app.registerExtension({
                                 this.contentWidget.value = this.contentPreview.value;
                             }
                         }
+                        clearImageDisplay();
                         return;
                     }
                     
@@ -314,6 +401,9 @@ app.registerExtension({
                                 
                                 this.setDirtyCanvas(true, true);
                             }
+                            
+                            // Try to load associated image
+                            loadAssociatedImage(folderName, fileName);
                         } else {
                             const errorText = await response.text();
                             if (this.contentPreview) {
@@ -332,6 +422,7 @@ app.registerExtension({
                                     this.contentWidget.value = this.contentPreview.value;
                                 }
                             }
+                            clearImageDisplay();
                         }
                     } catch (error) {
                         console.error("Error fetching file:", error);
@@ -351,6 +442,7 @@ app.registerExtension({
                                 this.contentWidget.value = this.contentPreview.value;
                             }
                         }
+                        clearImageDisplay();
                     }
                 };
                 
@@ -480,6 +572,9 @@ app.registerExtension({
                                     this.editedWidget.callback(this.editedWidget.value);
                                 }
                             }
+                            
+                            // Try to load associated image for the saved file
+                            loadAssociatedImage(targetFolder, targetFile);
                         } else {
                             const errorText = await response.text();
                             alert("Error saving file: " + errorText);
@@ -517,6 +612,9 @@ app.registerExtension({
                     if (this.contentWidget) {
                         this.contentWidget.value = "";
                     }
+                    
+                    // Clear image display
+                    clearImageDisplay();
                     
                     this.setDirtyCanvas(true, true);
                 };
