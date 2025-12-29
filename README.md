@@ -38,8 +38,7 @@ If the prompt has an image with the same name, it will now display the image bel
 
 A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
 
-<img width="2000" height="1545" alt="image" src="https://github.com/user-attachments/assets/08778741-3439-4a59-8d93-fca8db49b5d6" />
-
+<img width="1936" height="1513" alt="image" src="https://github.com/user-attachments/assets/7f559cd3-0a2f-4e9e-be22-538298df989e" />
 
 All prompts are saved in the node directory inside a folder called prompts comfyui/custom_nodes/ComfyUI_GraftingRayman/Nodes/prompts
 
