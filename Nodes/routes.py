@@ -80,6 +80,61 @@ async def read_prompt_file(request):
         return web.Response(text=f"Error reading file: {str(e)}", status=500)
 
 
+@server.PromptServer.instance.routes.get("/prompt_viewer/read_image")
+async def read_image_file(request):
+    """
+    API endpoint to read image files from the prompts directory
+    """
+    folder = request.query.get("folder", "(root)")
+    filename = request.query.get("filename", "")
+    
+    if not filename:
+        return web.Response(text="No filename provided", status=400)
+    
+    # Get the custom node directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompts_dir = os.path.join(current_dir, "prompts")
+    
+    # Build file path based on folder
+    if folder == "(root)":
+        file_path = os.path.join(prompts_dir, filename)
+    else:
+        file_path = os.path.join(prompts_dir, folder, filename)
+    
+    # Security check: ensure the file is within the prompts directory
+    if not os.path.abspath(file_path).startswith(os.path.abspath(prompts_dir)):
+        return web.Response(text="Invalid file path", status=403)
+    
+    if not os.path.exists(file_path):
+        return web.Response(text="Image not found", status=404)
+    
+    # Check if it's an image file
+    if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')):
+        return web.Response(text="Not an image file", status=400)
+    
+    try:
+        with open(file_path, 'rb') as f:
+            image_data = f.read()
+        
+        # Determine content type based on file extension
+        if filename.lower().endswith('.png'):
+            content_type = 'image/png'
+        elif filename.lower().endswith(('.jpg', '.jpeg')):
+            content_type = 'image/jpeg'
+        elif filename.lower().endswith('.gif'):
+            content_type = 'image/gif'
+        elif filename.lower().endswith('.bmp'):
+            content_type = 'image/bmp'
+        elif filename.lower().endswith('.webp'):
+            content_type = 'image/webp'
+        else:
+            content_type = 'application/octet-stream'
+        
+        return web.Response(body=image_data, content_type=content_type)
+    except Exception as e:
+        return web.Response(text=f"Error reading image: {str(e)}", status=500)
+
+
 @server.PromptServer.instance.routes.post("/prompt_viewer/save")
 async def save_prompt_file(request):
     """
