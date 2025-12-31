@@ -10,12 +10,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "co
 class GRLora:
     def __init__(self):
         self.loaded_loras = {}  # Cache for loaded LoRAs
+        self.incremental_counter = {}  # Track incremental selection per folder
 
     @classmethod
     def INPUT_TYPES(s):
         loras_root = folder_paths.get_folder_paths("loras")[0]  # Get the first loras directory (parent folder)
         subfolders = [name for name in os.listdir(loras_root) if os.path.isdir(os.path.join(loras_root, name))]
-        subfolders.insert(0, "None")  # Add "None" to use the root loras directory
+        subfolders.insert(0, "root")  # Add "root" to use the root loras directory
+        subfolders.insert(0, "None")  # Add "None" to disable random/incremental LoRAs
         
         # Recursively find all LoRA files in the parent folder and include their folder names
         lora_files = []
@@ -31,10 +33,12 @@ class GRLora:
             "required": {
                 "model": ("MODEL",),
                 "clip": ("CLIP",),
-                "subfolder": (subfolders, {"default": "None"}),  # Subfolder input for random LoRAs
-                "num_loras": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),  # Number of LoRAs to load
-                "strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),  # Strength for random LoRAs
+                "incremental": ("BOOLEAN", {"default": False}),  # False = random, True = incremental
+                "subfolder": (subfolders, {"default": "None"}),  # Subfolder input for random/incremental LoRAs
+                "num_loras": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),  # Number of LoRAs to load (for random only)
+                "strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),  # Strength for random/incremental LoRAs
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),  # Seed for random selection
+                "reset_incremental": ("BOOLEAN", {"default": False}),  # Reset incremental counter
                 "enable_style_lora": ("BOOLEAN", {"default": True}),  # Boolean to enable/disable all style LoRAs
                 "style_lora_1": (lora_files, {"default": "None"}),  # Dropdown to select the first style LoRA
                 "style_lora_1_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),  # Weight for the first style LoRA
@@ -50,38 +54,64 @@ class GRLora:
     FUNCTION = "load_lora"
     CATEGORY = "GraftingRayman/LoRA"
 
-    def load_lora(self, model, clip, subfolder, num_loras, strength, seed, enable_style_lora, 
-                  style_lora_1, style_lora_1_strength, style_lora_2, style_lora_2_strength, 
-                  style_lora_3, style_lora_3_strength):
+    def load_lora(self, model, clip, incremental, subfolder, num_loras, strength, seed, 
+                  reset_incremental, enable_style_lora, style_lora_1, style_lora_1_strength, 
+                  style_lora_2, style_lora_2_strength, style_lora_3, style_lora_3_strength):
         loras_root = folder_paths.get_folder_paths("loras")[0]  # Get the first loras directory (parent folder)
         lora_info = ""
         model_lora, clip_lora = model, clip
 
-        # Handle random LoRA selection (search in the specified subfolder)
-        random_loras_root = loras_root
+        # Handle random/incremental LoRA selection (search in the specified folder)
         if subfolder != "None":
-            random_loras_root = os.path.join(loras_root, subfolder)  # Append the subfolder if specified
-        
-        lora_files = [f for f in os.listdir(random_loras_root) if f.endswith((".safetensors", ".ckpt"))]
-        if lora_files and num_loras > 0:
-            random.seed(seed)
-            selected_loras = random.sample(lora_files, min(num_loras, len(lora_files)))
-            weights = [random.random() for _ in selected_loras]
-            total_weight = sum(weights)
-            weights = [w / total_weight for w in weights]  # Normalize to sum to 1.0
-
-            # Add random LoRAs to the info string
-            lora_info += "Random Loras:\n"
-            for lora_name, weight in zip(selected_loras, weights):
-                lora_path = os.path.join(random_loras_root, lora_name)
-                if lora_path in self.loaded_loras:
-                    lora = self.loaded_loras[lora_path]
+            target_folder = loras_root if subfolder == "root" else os.path.join(loras_root, subfolder)
+            
+            lora_files = [f for f in os.listdir(target_folder) if f.endswith((".safetensors", ".ckpt"))]
+            lora_files.sort()  # Sort for consistent ordering
+            
+            if lora_files:
+                # Initialize or reset incremental counter for this folder
+                folder_key = target_folder
+                if folder_key not in self.incremental_counter or reset_incremental:
+                    self.incremental_counter[folder_key] = 0
+                
+                if incremental:
+                    # Incremental mode: select sequentially
+                    selected_loras = []
+                    for i in range(min(num_loras, len(lora_files))):
+                        idx = (self.incremental_counter[folder_key] + i) % len(lora_files)
+                        selected_loras.append(lora_files[idx])
+                    
+                    # Update counter for next run
+                    self.incremental_counter[folder_key] = (self.incremental_counter[folder_key] + num_loras) % len(lora_files)
+                    
+                    # Equal weights for incremental selection
+                    weights = [1.0 / len(selected_loras)] * len(selected_loras)
+                    
+                    selection_type = "Incremental"
                 else:
-                    lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
-                    self.loaded_loras[lora_path] = lora
-                strength_lora = strength * weight
-                model_lora, clip_lora = comfy.sd.load_lora_for_models(model_lora, clip_lora, lora, strength_lora, strength_lora)
-                lora_info += f"{lora_name} {strength_lora:.2f}\n"
+                    # Random mode: select randomly
+                    random.seed(seed)
+                    selected_loras = random.sample(lora_files, min(num_loras, len(lora_files)))
+                    
+                    # Random weights normalized to sum to 1.0
+                    weights = [random.random() for _ in selected_loras]
+                    total_weight = sum(weights)
+                    weights = [w / total_weight for w in weights]
+                    
+                    selection_type = "Random"
+                
+                # Add selected LoRAs to the info string
+                lora_info += f"{selection_type} Loras from {subfolder}:\n"
+                for lora_name, weight in zip(selected_loras, weights):
+                    lora_path = os.path.join(target_folder, lora_name)
+                    if lora_path in self.loaded_loras:
+                        lora = self.loaded_loras[lora_path]
+                    else:
+                        lora = comfy.utils.load_torch_file(lora_path, safe_load=True)
+                        self.loaded_loras[lora_path] = lora
+                    strength_lora = strength * weight
+                    model_lora, clip_lora = comfy.sd.load_lora_for_models(model_lora, clip_lora, lora, strength_lora, strength_lora)
+                    lora_info += f"{lora_name} {strength_lora:.2f}\n"
 
         # Handle style LoRAs (if enabled)
         if enable_style_lora:
@@ -91,7 +121,7 @@ class GRLora:
                 (style_lora_3, style_lora_3_strength),
             ]
             # Add style LoRAs to the info string
-            if lora_info:  # Add an empty line if random LoRAs were added
+            if lora_info:  # Add an empty line if random/incremental LoRAs were added
                 lora_info += "\n"
             lora_info += "Style Loras:\n"
             for lora_name, lora_weight in style_loras:
