@@ -4,10 +4,28 @@ import server
 from aiohttp import web
 import folder_paths
 
+# Global node instance for Moondream model
+_gr_prompt_viewer_instance = None
+
+def get_gr_prompt_viewer_instance():
+    """Get or create the GRPromptViewer node instance for caption generation"""
+    global _gr_prompt_viewer_instance
+    if _gr_prompt_viewer_instance is None:
+        try:
+            from .GRPromptViewer import GRPromptViewer
+            _gr_prompt_viewer_instance = GRPromptViewer()
+            print("✓ GRPromptViewer instance created for caption generation")
+        except Exception as e:
+            print(f"Error creating GRPromptViewer instance: {e}")
+            return None
+    return _gr_prompt_viewer_instance
+
+
 @server.PromptServer.instance.routes.get("/prompt_viewer/list_files")
 async def list_files(request):
     """
     API endpoint to list files in a specific folder
+    Lists both text files AND images (for caption generation workflow)
     """
     folder = request.query.get("folder", "(root)")
     
@@ -29,15 +47,35 @@ async def list_files(request):
         return web.json_response({"files": ["Folder not found"]}, status=404)
     
     try:
-        # Get list of text files in the folder
-        files = [f for f in os.listdir(target_dir) 
-                if os.path.isfile(os.path.join(target_dir, f)) 
-                and f.endswith(('.txt', '.log', '.json', '.csv', '.md'))]
+        # Get list of text files
+        text_files = [f for f in os.listdir(target_dir) 
+                     if os.path.isfile(os.path.join(target_dir, f)) 
+                     and f.endswith(('.txt', '.log', '.json', '.csv', '.md'))]
         
-        if not files:
+        # Get list of image files
+        image_files = [f for f in os.listdir(target_dir) 
+                      if os.path.isfile(os.path.join(target_dir, f)) 
+                      and f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))]
+        
+        # For each image, check if it has a corresponding text file
+        # If not, add it to the list (for caption generation)
+        files_to_show = set(text_files)
+        
+        for img in image_files:
+            # Get base name without extension
+            base_name = os.path.splitext(img)[0]
+            
+            # Check if there's a .txt file with the same base name
+            has_txt = f"{base_name}.txt" in text_files
+            
+            # If no text file exists, add the image to the list
+            if not has_txt:
+                files_to_show.add(img)
+        
+        if not files_to_show:
             files = ["No files found"]
         else:
-            files = sorted(files)
+            files = sorted(list(files_to_show))
         
         return web.json_response({"files": files}, status=200)
     except Exception as e:
@@ -190,6 +228,7 @@ async def save_prompt_file(request):
     except Exception as e:
         return web.Response(text=f"Error saving file: {str(e)}", status=500)
 
+
 @server.PromptServer.instance.routes.get("/prompt_viewer/list_folders")
 async def list_folders(request):
     """
@@ -209,6 +248,128 @@ async def list_folders(request):
                 folders.append(item)
     
     return web.json_response({"folders": sorted(folders)}, status=200)
+
+
+@server.PromptServer.instance.routes.post("/prompt_viewer/generate_caption")
+async def generate_caption(request):
+    """
+    API endpoint to generate a caption for an image using Moondream2
+    """
+    try:
+        data = await request.json()
+    except:
+        return web.Response(text="Invalid JSON", status=400)
+    
+    folder = data.get("folder", "(root)")
+    image_filename = data.get("image_filename", "")
+    
+    if not image_filename:
+        return web.Response(text="No image filename provided", status=400)
+    
+    # Get the custom node directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompts_dir = os.path.join(current_dir, "prompts")
+    
+    # Build file path based on folder
+    if folder == "(root)":
+        image_path = os.path.join(prompts_dir, image_filename)
+    else:
+        image_path = os.path.join(prompts_dir, folder, image_filename)
+    
+    # Security check: ensure the file is within the prompts directory
+    if not os.path.abspath(image_path).startswith(os.path.abspath(prompts_dir)):
+        return web.Response(text="Invalid file path", status=403)
+    
+    if not os.path.exists(image_path):
+        return web.Response(text=f"Image not found: {image_filename}", status=404)
+    
+    # Check if it's an image file
+    if not image_filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')):
+        return web.Response(text="Not an image file", status=400)
+    
+    try:
+        # Get node instance and generate caption
+        node = get_gr_prompt_viewer_instance()
+        if node is None:
+            return web.Response(text="Failed to initialize caption generator", status=500)
+        
+        print(f"Generating caption for: {image_path}")
+        caption = node.generate_caption_for_image(image_path)
+        print(f"Caption generated: {caption[:100]}...")
+        
+        return web.json_response({"caption": caption}, status=200)
+    except Exception as e:
+        print(f"Error generating caption: {e}")
+        import traceback
+        traceback.print_exc()
+        return web.Response(text=f"Error generating caption: {str(e)}", status=500)
+
+@server.PromptServer.instance.routes.post("/prompt_viewer/auto_save_caption")
+async def auto_save_caption(request):
+    """
+    API endpoint to auto-save generated caption with same name as image file
+    """
+    try:
+        data = await request.json()
+    except:
+        return web.Response(text="Invalid JSON", status=400)
+    
+    folder = data.get("folder", "(root)")
+    image_filename = data.get("image_filename", "")
+    caption = data.get("caption", "")
+    
+    if not image_filename:
+        return web.Response(text="No image filename provided", status=400)
+    
+    if not caption or caption.strip() == "":
+        return web.Response(text="No caption provided", status=400)
+    
+    # Get the custom node directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompts_dir = os.path.join(current_dir, "prompts")
+    
+    # Determine target directory
+    if folder == "(root)":
+        target_dir = prompts_dir
+    else:
+        target_dir = os.path.join(prompts_dir, folder)
+    
+    # Security check
+    if not os.path.abspath(target_dir).startswith(os.path.abspath(prompts_dir)):
+        return web.Response(text="Invalid folder", status=403)
+    
+    # Create folder if it doesn't exist
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    
+    # Create text filename from image filename
+    # Remove image extension and add .txt
+    base_name = os.path.splitext(image_filename)[0]
+    txt_filename = f"{base_name}.txt"
+    
+    # Build full path for the text file
+    txt_filepath = os.path.join(target_dir, txt_filename)
+    
+    # Security check again
+    if not os.path.abspath(txt_filepath).startswith(os.path.abspath(prompts_dir)):
+        return web.Response(text="Invalid file path", status=403)
+    
+    try:
+        # Save the caption to the text file
+        with open(txt_filepath, 'w', encoding='utf-8') as f:
+            f.write(caption)
+        
+        print(f"✓ Caption auto-saved: {txt_filename} in {folder}")
+        
+        return web.json_response({
+            "message": "Caption auto-saved successfully",
+            "filename": txt_filename,
+            "folder": folder
+        }, status=200)
+    except Exception as e:
+        print(f"✗ Error auto-saving caption: {e}")
+        return web.Response(text=f"Error auto-saving caption: {str(e)}", status=500)
+
 
 
 @server.PromptServer.instance.routes.get("/dynamic_lora/list_loras")
@@ -346,3 +507,6 @@ async def load_lora_stack_config(request):
         import traceback
         traceback.print_exc()
         return web.json_response({"error": str(e)}, status=500)
+
+
+print("✓ GRPromptViewer routes registered (including caption generation)")

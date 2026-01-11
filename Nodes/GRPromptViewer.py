@@ -1,7 +1,14 @@
 import os
 from datetime import datetime
+import torch
+from PIL import Image
 
 class GRPromptViewer:
+    def __init__(self):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.moondream_model = None
+        self.moondream_tokenizer = None
+    
     @classmethod
     def IS_CHANGED(cls, **kwargs):
         # Always re-evaluate to refresh file list
@@ -26,21 +33,43 @@ class GRPromptViewer:
                 if os.path.isdir(item_path):
                     folders.append(item)
 
-                    # Get files in this folder
+                    # Get text files in this folder
+                    text_files = []
+                    image_files = []
+                    
                     for f in os.listdir(item_path):
-                        if (
-                            os.path.isfile(os.path.join(item_path, f))
-                            and f.endswith(('.txt', '.log', '.json', '.csv', '.md'))
-                        ):
-                            all_files.add(f)
+                        if os.path.isfile(os.path.join(item_path, f)):
+                            if f.endswith(('.txt', '.log', '.json', '.csv', '.md')):
+                                text_files.append(f)
+                                all_files.add(f)
+                            elif f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')):
+                                image_files.append(f)
+                    
+                    # Add images that don't have corresponding text files
+                    for img in image_files:
+                        base_name = os.path.splitext(img)[0]
+                        has_txt = f"{base_name}.txt" in text_files
+                        if not has_txt:
+                            all_files.add(img)
 
             # Also get files in root
+            text_files = []
+            image_files = []
+            
             for f in os.listdir(prompts_dir):
-                if (
-                    os.path.isfile(os.path.join(prompts_dir, f))
-                    and f.endswith(('.txt', '.log', '.json', '.csv', '.md'))
-                ):
-                    all_files.add(f)
+                if os.path.isfile(os.path.join(prompts_dir, f)):
+                    if f.endswith(('.txt', '.log', '.json', '.csv', '.md')):
+                        text_files.append(f)
+                        all_files.add(f)
+                    elif f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')):
+                        image_files.append(f)
+            
+            # Add images that don't have corresponding text files
+            for img in image_files:
+                base_name = os.path.splitext(img)[0]
+                has_txt = f"{base_name}.txt" in text_files
+                if not has_txt:
+                    all_files.add(img)
 
         # If no files found, add placeholder
         if not all_files:
@@ -52,9 +81,9 @@ class GRPromptViewer:
         return {
             "required": {
                 "folder": (sorted(folders),),
-                "file": (sorted(list(all_files)),),  # List all files from all folders
-                "content": ("STRING", {"multiline": True, "default": ""}),  # REMOVED forceInput - now accepts both widget and input
-                "edited": ("BOOLEAN", {"default": False}),  # Moved to required so it's always passed
+                "file": (sorted(list(all_files)),),
+                "content": ("STRING", {"multiline": True, "default": ""}),
+                "edited": ("BOOLEAN", {"default": False}),
             },
             "optional": {},
         }
@@ -162,3 +191,88 @@ class GRPromptViewer:
 
         except Exception as e:
             print(f"Auto-save failed: {str(e)}")
+    
+    def load_moondream_model(self):
+        """Load Moondream2 model (cached)"""
+        if self.moondream_model is not None and self.moondream_tokenizer is not None:
+            print("Using cached Moondream2 model")
+            return self.moondream_tokenizer, self.moondream_model
+        
+        try:
+            print(f"\nLoading Moondream2 model: vikhyatk/moondream2\n")
+            
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            
+            self.moondream_tokenizer = AutoTokenizer.from_pretrained(
+                "vikhyatk/moondream2", 
+                trust_remote_code=True
+            )
+            
+            self.moondream_model = AutoModelForCausalLM.from_pretrained(
+                "vikhyatk/moondream2",
+                trust_remote_code=True,
+                dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+            ).to(self.device)
+            
+            self.moondream_model.eval()
+            print("Model loaded successfully!\n")
+            return self.moondream_tokenizer, self.moondream_model
+            
+        except Exception as e:
+            print(f"Failed to load model: {e}")
+            return None, None
+
+    def generate_caption_for_image(self, image_path, max_length=1024):
+        """Generate caption using Moondream2"""
+        try:
+            tokenizer, model = self.load_moondream_model()
+            
+            if not tokenizer or not model:
+                return "Error: Failed to load Moondream2 model"
+            
+            image = Image.open(image_path).convert("RGB")
+            enc_image = model.encode_image(image)
+            
+            question = "Describe this image in detail."
+            with torch.no_grad():
+                answer = model.answer_question(enc_image, question, tokenizer)
+            
+            caption = answer.strip()
+            
+            # Clean up
+            patterns_to_remove = [
+                question,
+                f"{question}:",
+                f"Question: {question}",
+                f"Q: {question}",
+            ]
+            
+            for pattern in patterns_to_remove:
+                if caption.lower().startswith(pattern.lower()):
+                    caption = caption[len(pattern):].lstrip(" :-")
+                    break
+            
+            if caption.lower().startswith("answer:"):
+                caption = caption[7:].strip()
+            elif caption.lower().startswith("a:"):
+                caption = caption[2:].strip()
+            
+            # Truncate if needed
+            if len(caption) > max_length:
+                caption = caption[:max_length].rsplit(' ', 1)[0] + "..."
+            
+            return caption.strip()
+            
+        except Exception as e:
+            print(f"Error generating caption: {e}")
+            return f"Caption generation failed: {str(e)}"
+
+
+# Node class mapping
+NODE_CLASS_MAPPINGS = {
+    "GRPromptViewer": GRPromptViewer,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "GRPromptViewer": "GR Prompt Viewer",
+}
