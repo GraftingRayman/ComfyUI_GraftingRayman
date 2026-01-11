@@ -36,6 +36,8 @@ Hope this stuff is helpful
 <b>UPDATE:</b>
 If the prompt has an image with the same name, it will now display the image below the prompt.
 
+If there is an image without a prompt, it will ask if you want a prompt generated, if yes it will save it with the same filename as the image.
+
 A node to save, edit and load your prompts, never lose a prompt. View dynamically the contents before using the prompt.
 
 <img width="1936" height="1513" alt="image" src="https://github.com/user-attachments/assets/7f559cd3-0a2f-4e9e-be22-538298df989e" />
