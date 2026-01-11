@@ -51,6 +51,26 @@ All executed prompts are autosaved when it is queued
 <img width="1164" height="528" alt="image" src="https://github.com/user-attachments/assets/0cb21e54-7b89-4e3a-bebf-33cabccb383c" />
 
 
+# GR Menu Hook
+
+This node adds some features that are not needed, but they are wanted
+
+Keeps nodes inside a group, can arrange them in multiple ways.
+
+Also can add all nodes that are not in groups into a node with one click
+
+<img width="404" height="151" alt="image" src="https://github.com/user-attachments/assets/b9548267-1409-46cf-98a1-85c385c206aa" />
+<img width="395" height="143" alt="image" src="https://github.com/user-attachments/assets/bec26850-a0f3-4a2e-84c9-e8b2058aab31" />
+<img width="163" height="32" alt="image" src="https://github.com/user-attachments/assets/13fc08e9-851a-4522-900b-0cd2baae9947" />
+<img width="427" height="32" alt="image" src="https://github.com/user-attachments/assets/38ccccc8-a7ee-4579-b5cc-d3070d93baa9" />
+<img width="427" height="32" alt="image" src="https://github.com/user-attachments/assets/d4ba28b4-770f-4683-919c-95ce78fe32e6" />
+
+
+
+
+
+
+
 # GR Lora Loader
 
 A LoRA loader node, that dynamically updates as LoRA's are added to the node.
