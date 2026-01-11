@@ -63,11 +63,12 @@ Also can add all nodes that are not in groups into a node with one click
 
 <img width="395" height="143" alt="image" src="https://github.com/user-attachments/assets/bec26850-a0f3-4a2e-84c9-e8b2058aab31" />
 
-<img width="163" height="32" alt="image" src="https://github.com/user-attachments/assets/13fc08e9-851a-4522-900b-0cd2baae9947" />
+<img width="1530" height="895" alt="image" src="https://github.com/user-attachments/assets/41139646-3251-4169-9e94-e6e37bed610d" />
 
-<img width="427" height="32" alt="image" src="https://github.com/user-attachments/assets/38ccccc8-a7ee-4579-b5cc-d3070d93baa9" />
+<img width="1308" height="901" alt="image" src="https://github.com/user-attachments/assets/ba757b77-1ed2-4159-9381-6c8575b7526b" />
 
-<img width="427" height="32" alt="image" src="https://github.com/user-attachments/assets/d4ba28b4-770f-4683-919c-95ce78fe32e6" />
+<img width="1302" height="889" alt="image" src="https://github.com/user-attachments/assets/c1c2848b-1d2a-4ec2-97f0-91d62bf195f8" />
+
 
 
 
