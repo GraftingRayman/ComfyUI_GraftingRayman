@@ -217,18 +217,19 @@ function createGroupForUngroupedNodes(canvas) {
             return;
         }
         
+        let GroupClass;
         if (typeof LiteGraph.LGraphGroup === 'undefined') {
             console.error('❌ LiteGraph.LGraphGroup is not defined');
             // Try alternative names
             if (typeof LGraphGroup !== 'undefined') {
                 console.log('⚠️ Found LGraphGroup (without LiteGraph prefix)');
-                var GroupClass = LGraphGroup;
+                GroupClass = LGraphGroup;
             } else {
                 console.error('❌ No group class found');
                 return;
             }
         } else {
-            var GroupClass = LiteGraph.LGraphGroup;
+            GroupClass = LiteGraph.LGraphGroup;
         }
         
         const group = new GroupClass();
@@ -260,7 +261,6 @@ function createGroupForUngroupedNodes(canvas) {
         });
 
         arrangeGrid(ungroupedNodes, group);
-
         
         // Add group to graph
         if (app.graph && typeof app.graph.add === 'function') {
@@ -301,6 +301,180 @@ function createGroupForUngroupedNodes(canvas) {
         
     } catch (error) {
         console.error('❌ Error creating group:', error);
+        console.error('Stack:', error.stack);
+    }
+}
+
+function createGroupForSelectedNodes(canvas) {
+    console.log('📦 Creating group for selected nodes...');
+    
+    if (!canvas) {
+        console.error('❌ No canvas provided');
+        return;
+    }
+    
+    // Try multiple ways to get selected nodes
+    let selectedNodes = [];
+    
+    // Method 1: Check canvas.selected_nodes
+    if (canvas.selected_nodes && canvas.selected_nodes.length > 0) {
+        selectedNodes = canvas.selected_nodes;
+        console.log(`🔍 Found ${selectedNodes.length} selected nodes from canvas.selected_nodes`);
+    }
+    // Method 2: Check app.graph._nodes for nodes with selected flag
+    else {
+        selectedNodes = app.graph._nodes.filter(node => node.flags?.selected === true);
+        console.log(`🔍 Found ${selectedNodes.length} selected nodes from app.graph._nodes flags`);
+    }
+    
+    console.log(`🔍 Total selected nodes found: ${selectedNodes.length}`);
+    
+    if (selectedNodes.length === 0) {
+        console.log('❌ No nodes selected');
+        return;
+    }
+    
+    // Debug: List all selected nodes
+    selectedNodes.forEach((node, i) => {
+        console.log(`   Selected Node ${i}: ${node.type || node.title || 'unknown'} at [${node.pos?.[0]}, ${node.pos?.[1]}]`);
+    });
+    
+    // Calculate bounds for all selected nodes
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    let hasValidNodes = false;
+    
+    selectedNodes.forEach(node => {
+        if (!node.pos) {
+            console.log(`   Skipping node without position: ${node.type || node.title || 'unknown'}`);
+            return;
+        }
+        
+        const w = node.size?.[0] || 200;
+        const h = node.size?.[1] || 100;
+        const x = node.pos[0];
+        const y = node.pos[1];
+        
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + w);
+        maxY = Math.max(maxY, y + h);
+        hasValidNodes = true;
+    });
+    
+    if (!hasValidNodes) {
+        console.error('❌ No selected nodes with valid positions found');
+        return;
+    }
+    
+    // Add padding around the nodes
+    const padding = 40;
+    const groupX = Math.max(0, minX - padding);
+    const groupY = Math.max(0, minY - padding);
+    const groupWidth = Math.max(400, (maxX - minX) + (padding * 2));
+    const groupHeight = Math.max(300, (maxY - minY) + (padding * 2));
+    
+    console.log(`📏 Calculated group bounds:`, {
+        pos: [groupX, groupY],
+        size: [groupWidth, groupHeight],
+        nodeBounds: { minX, minY, maxX, maxY }
+    });
+    
+    try {
+        // Create the group using the correct method
+        console.log('Creating group using LiteGraph.LGraphGroup...');
+        
+        // Check if LiteGraph.LGraphGroup exists
+        if (typeof LiteGraph === 'undefined') {
+            console.error('❌ LiteGraph is not defined');
+            return;
+        }
+        
+        let GroupClass;
+        if (typeof LiteGraph.LGraphGroup === 'undefined') {
+            console.error('❌ LiteGraph.LGraphGroup is not defined');
+            // Try alternative names
+            if (typeof LGraphGroup !== 'undefined') {
+                console.log('⚠️ Found LGraphGroup (without LiteGraph prefix)');
+                GroupClass = LGraphGroup;
+            } else {
+                console.error('❌ No group class found');
+                return;
+            }
+        } else {
+            GroupClass = LiteGraph.LGraphGroup;
+        }
+        
+        const group = new GroupClass();
+        
+        if (!group) {
+            console.error('❌ Failed to create group node');
+            return;
+        }
+        
+        // Set group properties
+        group.pos = [groupX, groupY];
+        group.size = [groupWidth, groupHeight];
+        group.title = "Selected Nodes Group";
+        
+        // Set color - check if LGraphCanvas exists
+        if (typeof LGraphCanvas !== 'undefined' && LGraphCanvas.node_colors && LGraphCanvas.node_colors.pale_yellow) {
+            group.color = LGraphCanvas.node_colors.pale_yellow.color;
+        } else {
+            // Fallback color
+            group.color = "#F0E68C"; // Pale yellow for selected nodes
+        }
+        
+        console.log('Group created:', {
+            type: group.constructor.name,
+            pos: group.pos,
+            size: group.size,
+            title: group.title,
+            color: group.color
+        });
+        
+        // Add group to graph
+        if (app.graph && typeof app.graph.add === 'function') {
+            console.log('Adding group to graph using app.graph.add()...');
+            app.graph.add(group);
+            console.log(`✅ Group added to graph`);
+        } else {
+            console.error('❌ Cannot add group to graph - app.graph.add not found');
+            return;
+        }
+        
+        // Clear selection after grouping
+        if (canvas.clearSelection) {
+            canvas.clearSelection();
+        } else {
+            // Manually clear selection flags
+            selectedNodes.forEach(node => {
+                if (node.flags) {
+                    node.flags.selected = false;
+                }
+            });
+            if (canvas.selected_nodes) {
+                canvas.selected_nodes = [];
+            }
+        }
+        
+        console.log('🔄 Triggering canvas refresh...');
+        app.graph.setDirtyCanvas(true, true);
+        
+        // Force a canvas redraw
+        if (canvas && typeof canvas.draw === 'function') {
+            setTimeout(() => {
+                console.log('Forcing canvas redraw...');
+                canvas.draw(true, true);
+            }, 100);
+        }
+        
+        console.log('✅ Selected nodes group creation complete!');
+        
+    } catch (error) {
+        console.error('❌ Error creating group for selected nodes:', error);
         console.error('Stack:', error.stack);
     }
 }
@@ -1127,6 +1301,608 @@ function arrangeHierarchyVertical(nodes, group) {
     console.log('✅ Vertical hierarchy layout complete');
 }
 
+function arrangeTriangle(nodes, group) {
+    console.log('🔺 Triangle perimeter layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate triangle dimensions based on group size
+    const margin = 80;
+    const triangleHeight = Math.min(group._size[0], group._size[1]) * 0.7 - margin * 2;
+    const triangleBase = triangleHeight * 1.732; // Equilateral triangle: height = √3/2 * base
+    
+    // Calculate triangle vertices (equilateral triangle pointing up)
+    const topVertex = [centerX, centerY - triangleHeight / 2];
+    const leftVertex = [centerX - triangleBase / 2, centerY + triangleHeight / 2];
+    const rightVertex = [centerX + triangleBase / 2, centerY + triangleHeight / 2];
+    
+    // Calculate perimeter of triangle
+    const sideLength = triangleBase;
+    const trianglePerimeter = sideLength * 3;
+    const spacing = trianglePerimeter / nodes.length;
+    
+    console.log(`📏 Triangle perimeter layout:`, {
+        centerX, centerY,
+        triangleHeight, triangleBase,
+        vertices: { top: topVertex, left: leftVertex, right: rightVertex },
+        perimeter: trianglePerimeter,
+        spacing,
+        nodes: nodes.length
+    });
+    
+    let distanceTraveled = 0;
+    const sideLengthPerNode = sideLength / Math.ceil(nodes.length / 3);
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        let x, y;
+        
+        // Determine which side of the triangle we're on
+        const side = Math.floor(distanceTraveled / sideLength);
+        const sidePosition = distanceTraveled % sideLength;
+        const normalizedPos = sidePosition / sideLength;
+        
+        switch(side % 3) {
+            case 0: // Left side (top to left)
+                x = topVertex[0] + (leftVertex[0] - topVertex[0]) * normalizedPos;
+                y = topVertex[1] + (leftVertex[1] - topVertex[1]) * normalizedPos;
+                break;
+            case 1: // Bottom side (left to right)
+                x = leftVertex[0] + (rightVertex[0] - leftVertex[0]) * normalizedPos;
+                y = leftVertex[1] + (rightVertex[1] - leftVertex[1]) * normalizedPos;
+                break;
+            case 2: // Right side (right to top)
+                x = rightVertex[0] + (topVertex[0] - rightVertex[0]) * normalizedPos;
+                y = rightVertex[1] + (topVertex[1] - rightVertex[1]) * normalizedPos;
+                break;
+        }
+        
+        // Center the node on the triangle perimeter
+        x -= width / 2;
+        y -= height / 2;
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x;
+        node.pos[1] = y;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            size: { width, height },
+            side: ['left', 'bottom', 'right'][side % 3],
+            position: normalizedPos.toFixed(2)
+        });
+        
+        // Apply boundary check
+        applyBoundaryCheck(node, bounds, width, height);
+        
+        distanceTraveled += spacing;
+    });
+    
+    console.log('✅ Triangle perimeter layout complete');
+}
+
+function arrangeSquare(nodes, group) {
+    console.log('⬛ Square perimeter layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate square/rectangle dimensions based on group size
+    const margin = 80;
+    const squareWidth = group._size[0] - margin * 2;
+    const squareHeight = group._size[1] - margin * 2 - 30; // Account for title bar
+    
+    // Place nodes along the perimeter (nothing in center)
+    const perimeter = 2 * (squareWidth + squareHeight);
+    const spacing = perimeter / nodes.length;
+    
+    console.log(`📏 Square perimeter layout:`, {
+        centerX, centerY,
+        squareWidth, squareHeight,
+        perimeter, spacing
+    });
+    
+    let distanceTraveled = 0;
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        let x, y;
+        
+        // Determine which side of the square we're on
+        if (distanceTraveled < squareWidth) {
+            // Top side (left to right)
+            x = centerX - squareWidth / 2 + distanceTraveled;
+            y = centerY - squareHeight / 2 - height / 2;
+        } else if (distanceTraveled < squareWidth + squareHeight) {
+            // Right side (top to bottom)
+            x = centerX + squareWidth / 2 - width / 2;
+            y = centerY - squareHeight / 2 + (distanceTraveled - squareWidth);
+        } else if (distanceTraveled < 2 * squareWidth + squareHeight) {
+            // Bottom side (right to left)
+            x = centerX + squareWidth / 2 - (distanceTraveled - squareWidth - squareHeight);
+            y = centerY + squareHeight / 2 - height / 2;
+        } else {
+            // Left side (bottom to top)
+            x = centerX - squareWidth / 2 - width / 2;
+            y = centerY + squareHeight / 2 - (distanceTraveled - 2 * squareWidth - squareHeight);
+        }
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x;
+        node.pos[1] = y;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            side: distanceTraveled < squareWidth ? "top" : 
+                  distanceTraveled < squareWidth + squareHeight ? "right" :
+                  distanceTraveled < 2 * squareWidth + squareHeight ? "bottom" : "left"
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+        distanceTraveled += spacing;
+    });
+    
+    console.log('✅ Square perimeter layout complete');
+}
+
+function arrangeDiamond(nodes, group) {
+    console.log('🔷 Diamond layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate diamond dimensions based on group size
+    const margin = 100;
+    const diamondWidth = Math.min(group._size[0], group._size[1]) - margin * 2;
+    const diamondHeight = diamondWidth;
+    
+    // Calculate points along diamond perimeter
+    const diamondPerimeter = 4 * Math.sqrt(2) * (diamondWidth / 2);
+    const spacing = diamondPerimeter / nodes.length;
+    
+    console.log(`📏 Diamond layout:`, {
+        centerX, centerY,
+        diamondWidth, diamondHeight,
+        perimeter: diamondPerimeter,
+        spacing
+    });
+    
+    let distanceTraveled = 0;
+    const halfWidth = diamondWidth / 2;
+    const quarterPerimeter = diamondPerimeter / 4;
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        let x, y;
+        const segment = Math.floor(distanceTraveled / quarterPerimeter);
+        const segmentPos = distanceTraveled % quarterPerimeter;
+        const normalizedPos = segmentPos / quarterPerimeter;
+        
+        switch(segment) {
+            case 0: // Top right quadrant
+                x = centerX + normalizedPos * halfWidth;
+                y = centerY - (1 - normalizedPos) * halfWidth;
+                break;
+            case 1: // Bottom right quadrant
+                x = centerX + (1 - normalizedPos) * halfWidth;
+                y = centerY + normalizedPos * halfWidth;
+                break;
+            case 2: // Bottom left quadrant
+                x = centerX - normalizedPos * halfWidth;
+                y = centerY + (1 - normalizedPos) * halfWidth;
+                break;
+            case 3: // Top left quadrant
+                x = centerX - (1 - normalizedPos) * halfWidth;
+                y = centerY - normalizedPos * halfWidth;
+                break;
+        }
+        
+        // Center the node on the diamond point
+        x -= width / 2;
+        y -= height / 2;
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x;
+        node.pos[1] = y;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            quadrant: segment
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+        distanceTraveled += spacing;
+    });
+    
+    console.log('✅ Diamond layout complete');
+}
+
+function arrangeFillGroup(nodes, group) {
+    console.log('📦 Fill group layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    
+    // Sort nodes by area (largest first for better packing)
+    const sortedNodes = nodes.slice().sort((a, b) => {
+        const aArea = (a.size?.[0] || 200) * (a.size?.[1] || 100);
+        const bArea = (b.size?.[0] || 200) * (b.size?.[1] || 100);
+        return bArea - aArea; // Largest first
+    });
+    
+    console.log(`📏 Fill group layout: ${sortedNodes.length} nodes in ${bounds.availableWidth}x${bounds.availableHeight} area`);
+    
+    const placedNodes = [];
+    let currentX = bounds.startX;
+    let currentY = bounds.startY;
+    let rowHeight = 0;
+    let rowStartY = currentY;
+    
+    // Add some padding between nodes
+    const horizontalPadding = 20;
+    const verticalPadding = 20;
+    
+    sortedNodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        // Check if node fits in current row
+        if (currentX + width > bounds.groupRight) {
+            // Move to next row
+            currentX = bounds.startX;
+            currentY = rowStartY + rowHeight + verticalPadding;
+            rowStartY = currentY;
+            rowHeight = 0;
+            
+            console.log(`   ↪️ Moving to next row at Y=${currentY}`);
+        }
+        
+        // Check if we need to move to a new column (if node is taller than available space)
+        if (currentY + height > bounds.groupBottom) {
+            console.log(`   ⚠️ Node ${i} doesn't fit in remaining vertical space, placing at start`);
+            currentX = bounds.startX;
+            currentY = bounds.startY;
+            rowStartY = currentY;
+            rowHeight = 0;
+        }
+        
+        // Place the node
+        const oldPos = [...node.pos];
+        node.pos[0] = currentX;
+        node.pos[1] = currentY;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            size: { width, height },
+            row: `X=${currentX}, Y=${currentY}`
+        });
+        
+        placedNodes.push({
+            node,
+            x: currentX,
+            y: currentY,
+            width,
+            height
+        });
+        
+        // Update current position for next node
+        currentX += width + horizontalPadding;
+        rowHeight = Math.max(rowHeight, height);
+        
+        // Apply boundary check
+        applyBoundaryCheck(node, bounds, width, height);
+    });
+    
+    // Optional: Try to compact the layout by moving nodes up
+    if (placedNodes.length > 1) {
+        console.log('   Compacting layout...');
+        
+        // Sort by Y position, then X
+        placedNodes.sort((a, b) => {
+            if (a.y !== b.y) return a.y - b.y;
+            return a.x - b.x;
+        });
+        
+        // Group by rows (similar Y positions)
+        const rows = [];
+        let currentRow = [];
+        let currentRowY = placedNodes[0].y;
+        const rowTolerance = 10; // Nodes within 10px Y difference are considered same row
+        
+        placedNodes.forEach(placedNode => {
+            if (Math.abs(placedNode.y - currentRowY) > rowTolerance) {
+                if (currentRow.length > 0) {
+                    rows.push([...currentRow]);
+                }
+                currentRow = [placedNode];
+                currentRowY = placedNode.y;
+            } else {
+                currentRow.push(placedNode);
+            }
+        });
+        
+        if (currentRow.length > 0) {
+            rows.push(currentRow);
+        }
+        
+        // Compact each row
+        rows.forEach((row, rowIndex) => {
+            row.sort((a, b) => a.x - b.x);
+            
+            // Start from the beginning of the row
+            let compactX = bounds.startX;
+            
+            row.forEach(placedNode => {
+                const node = placedNode.node;
+                const width = placedNode.width;
+                
+                // Only move if we can save space
+                if (node.pos[0] > compactX + 5) { // Only move if more than 5px difference
+                    const oldX = node.pos[0];
+                    node.pos[0] = compactX;
+                    console.log(`     Compacted ${node.type || node.title}: X ${oldX} → ${compactX}`);
+                }
+                
+                compactX += width + horizontalPadding;
+            });
+        });
+    }
+    
+    console.log('✅ Fill group layout complete');
+}
+
+function arrangeHeart(nodes, group) {
+    console.log('❤️ Heart shape layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate heart dimensions
+    const heartSize = Math.min(group._size[0], group._size[1]) * 0.4;
+    const spacing = (2 * Math.PI * heartSize) / nodes.length;
+    
+    console.log(`📏 Heart layout:`, {
+        centerX, centerY,
+        heartSize,
+        spacing
+    });
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        // Parametric heart equation
+        const t = (i / nodes.length) * 2 * Math.PI;
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+        
+        // Scale and position
+        const scaledX = centerX + x * heartSize / 20;
+        const scaledY = centerY - y * heartSize / 20; // Negative because canvas Y increases downward
+        
+        // Center node
+        const oldPos = [...node.pos];
+        node.pos[0] = scaledX - width / 2;
+        node.pos[1] = scaledY - height / 2;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            t: (t * 180 / Math.PI).toFixed(1) + '°'
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+    });
+    
+    console.log('✅ Heart shape layout complete');
+}
+
+function arrangeStar(nodes, group) {
+    console.log('⭐ Star shape layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate star dimensions
+    const starSize = Math.min(group._size[0], group._size[1]) * 0.35;
+    const points = 5; // 5-pointed star
+    const spacing = (2 * Math.PI) / nodes.length;
+    
+    console.log(`📏 Star layout:`, {
+        centerX, centerY,
+        starSize,
+        points,
+        spacing
+    });
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        // Parametric star equation
+        const angle = (i / nodes.length) * 2 * Math.PI;
+        const radius = starSize * (1 + 0.3 * Math.sin(points * angle)); // Creates star shape
+        
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x - width / 2;
+        node.pos[1] = y - height / 2;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            angle: (angle * 180 / Math.PI).toFixed(1) + '°',
+            radius: radius.toFixed(1)
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+    });
+    
+    console.log('✅ Star shape layout complete');
+}
+
+function arrangeSpiral(nodes, group) {
+    console.log('🌀 Spiral layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate spiral dimensions
+    const maxRadius = Math.min(group._size[0], group._size[1]) * 0.4;
+    const rotations = 3; // Number of full rotations
+    const spacing = (2 * Math.PI * rotations) / nodes.length;
+    
+    console.log(`📏 Spiral layout:`, {
+        centerX, centerY,
+        maxRadius,
+        rotations,
+        spacing
+    });
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        // Archimedean spiral: r = a + bθ
+        const angle = (i / nodes.length) * 2 * Math.PI * rotations;
+        const radius = maxRadius * (angle / (2 * Math.PI * rotations)); // Increase radius with angle
+        
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x - width / 2;
+        node.pos[1] = y - height / 2;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            angle: (angle * 180 / Math.PI).toFixed(1) + '°',
+            radius: radius.toFixed(1)
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+    });
+    
+    console.log('✅ Spiral layout complete');
+}
+
+function arrangeWave(nodes, group) {
+    console.log('🌊 Wave layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate wave dimensions
+    const waveWidth = group._size[0] * 0.7;
+    const waveHeight = group._size[1] * 0.3;
+    const waves = 2; // Number of wave cycles
+    
+    console.log(`📏 Wave layout:`, {
+        centerX, centerY,
+        waveWidth, waveHeight,
+        waves
+    });
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        // Sine wave pattern
+        const x = centerX - waveWidth/2 + (i / (nodes.length - 1)) * waveWidth;
+        const y = centerY + waveHeight * Math.sin((i / nodes.length) * 2 * Math.PI * waves);
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x - width / 2;
+        node.pos[1] = y - height / 2;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            position: (i / nodes.length).toFixed(2)
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+    });
+    
+    console.log('✅ Wave layout complete');
+}
+
+function arrangeFlower(nodes, group) {
+    console.log('🌼 Flower layout starting...');
+    
+    const bounds = calculateLayoutBounds(group);
+    const centerX = group._pos[0] + group._size[0] / 2;
+    const centerY = group._pos[1] + group._size[1] / 2;
+    
+    // Calculate flower dimensions
+    const flowerSize = Math.min(group._size[0], group._size[1]) * 0.35;
+    const petals = 8; // Number of petals
+    const spacing = (2 * Math.PI) / nodes.length;
+    
+    console.log(`📏 Flower layout:`, {
+        centerX, centerY,
+        flowerSize,
+        petals,
+        spacing
+    });
+    
+    nodes.forEach((node, i) => {
+        const width = node.size?.[0] || 200;
+        const height = node.size?.[1] || 100;
+        
+        // Rose curve/polar flower equation
+        const angle = (i / nodes.length) * 2 * Math.PI;
+        const radius = flowerSize * Math.abs(Math.sin(petals * angle / 2));
+        
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const oldPos = [...node.pos];
+        node.pos[0] = x - width / 2;
+        node.pos[1] = y - height / 2;
+        
+        console.log(`   Node ${i}:`, {
+            type: node.type || node.title,
+            oldPos,
+            newPos: node.pos,
+            angle: (angle * 180 / Math.PI).toFixed(1) + '°',
+            radius: radius.toFixed(1)
+        });
+        
+        applyBoundaryCheck(node, bounds, width, height);
+    });
+    
+    console.log('✅ Flower layout complete');
+}
+
 function arrangeGroup(group, layout) {
     console.log(`🎯 arrangeGroup called with layout: ${layout}`);
     console.log(`📦 Group info:`, {
@@ -1173,6 +1949,33 @@ function arrangeGroup(group, layout) {
             break;
         case "hierarchy-vertical":
             arrangeHierarchyVertical(nodes, group);
+            break;
+        case "triangle":
+            arrangeTriangle(nodes, group);
+            break;
+        case "square":
+            arrangeSquare(nodes, group);
+            break;
+        case "diamond":
+            arrangeDiamond(nodes, group);
+            break;
+        case "fill-group":
+            arrangeFillGroup(nodes, group);
+            break;
+        case "heart":
+            arrangeHeart(nodes, group);
+            break;
+        case "star":
+            arrangeStar(nodes, group);
+            break;
+        case "spiral":
+            arrangeSpiral(nodes, group);
+            break;
+        case "wave":
+            arrangeWave(nodes, group);
+            break;
+        case "flower":
+            arrangeFlower(nodes, group);
             break;
         default:
             console.error(`❌ Unknown layout: ${layout}`);
@@ -1297,6 +2100,33 @@ function arrangeUngroupedNodes(canvas, layout) {
         case "hierarchy-vertical":
             arrangeHierarchyVertical(ungroupedNodes, virtualGroup);
             break;
+        case "triangle":
+            arrangeTriangle(ungroupedNodes, virtualGroup);
+            break;
+        case "square":
+            arrangeSquare(ungroupedNodes, virtualGroup);
+            break;
+        case "diamond":
+            arrangeDiamond(ungroupedNodes, virtualGroup);
+            break;
+        case "fill-group":
+            arrangeFillGroup(ungroupedNodes, virtualGroup);
+            break;
+        case "heart":
+            arrangeHeart(ungroupedNodes, virtualGroup);
+            break;
+        case "star":
+            arrangeStar(ungroupedNodes, virtualGroup);
+            break;
+        case "spiral":
+            arrangeSpiral(ungroupedNodes, virtualGroup);
+            break;
+        case "wave":
+            arrangeWave(ungroupedNodes, virtualGroup);
+            break;
+        case "flower":
+            arrangeFlower(ungroupedNodes, virtualGroup);
+            break;
         default:
             console.error(`❌ Unknown layout: ${layout}`);
             return;
@@ -1340,6 +2170,7 @@ function arrangeUngroupedNodes(canvas, layout) {
     app.graph.setDirtyCanvas(true, true);
 }
 
+// Update the menu setup to have all layouts in a single organized menu
 app.registerExtension({
     name: "Comfy.GroupArrangeMenu",
 
@@ -1352,6 +2183,29 @@ app.registerExtension({
             const options = original ? original.call(this) : [];
             const group = getGroupUnderMouse(this);
             
+            // Enhanced selected nodes detection
+            let selectedNodes = [];
+            let hasSelectedNodes = false;
+            
+            // Try multiple methods to detect selected nodes
+            if (this.selected_nodes && this.selected_nodes.length > 0) {
+                selectedNodes = this.selected_nodes;
+                hasSelectedNodes = true;
+                console.log(`📊 Menu: Found ${selectedNodes.length} selected nodes in canvas.selected_nodes`);
+            } else if (app.graph && app.graph._nodes) {
+                // Check node flags
+                selectedNodes = app.graph._nodes.filter(node => node.flags?.selected === true);
+                hasSelectedNodes = selectedNodes.length > 0;
+                console.log(`📊 Menu: Found ${selectedNodes.length} selected nodes via node.flags`);
+            }
+            
+            console.log("📊 Menu context check:", {
+                group: group ? "Yes" : "No",
+                hasSelectedNodes,
+                selectedCount: selectedNodes.length,
+                canvasType: this.constructor.name
+            });
+            
             // Only show "Arrange Ungrouped Nodes" when NOT inside a group
             if (!group) {
                 options.push(null);
@@ -1359,23 +2213,45 @@ app.registerExtension({
                     content: "📐 Arrange Ungrouped Nodes",
                     submenu: {
                         options: [
-                            { content: "Grid", callback: () => arrangeUngroupedNodes(this, "grid") },
-                            { content: "Tight Grid (max 20px spacing)", callback: () => arrangeUngroupedNodes(this, "tight-grid") },
-                            { content: "Horizontal", callback: () => arrangeUngroupedNodes(this, "horizontal") },
-                            { content: "Vertical", callback: () => arrangeUngroupedNodes(this, "vertical") },
-                            { content: "Circular", callback: () => arrangeUngroupedNodes(this, "circular") },
+                            { content: "⊞ Grid", callback: () => arrangeUngroupedNodes(this, "grid") },
+                            { content: "⩩ Tight Grid (max 20px spacing)", callback: () => arrangeUngroupedNodes(this, "tight-grid") },
+                            { content: "─ Horizontal", callback: () => arrangeUngroupedNodes(this, "horizontal") },
+                            { content: "┃ Vertical", callback: () => arrangeUngroupedNodes(this, "vertical") },
+                            { content: "⭕️ Circular", callback: () => arrangeUngroupedNodes(this, "circular") },
+                            { content: "△ Triangle", callback: () => arrangeUngroupedNodes(this, "triangle") },
+                            { content: "☐ Square", callback: () => arrangeUngroupedNodes(this, "square") },
+                            { content: "💎 Diamond", callback: () => arrangeUngroupedNodes(this, "diamond") },
                             null,
-                            { content: "Hierarchy (Horizontal)", callback: () => arrangeUngroupedNodes(this, "hierarchy-horizontal") },
-                            { content: "Hierarchy (Vertical)", callback: () => arrangeUngroupedNodes(this, "hierarchy-vertical") }
+                            { content: "❤️ Heart", callback: () => arrangeUngroupedNodes(this, "heart") },
+                            { content: "⭐ Star", callback: () => arrangeUngroupedNodes(this, "star") },
+                            { content: "🌀 Spiral", callback: () => arrangeUngroupedNodes(this, "spiral") },
+                            { content: "🌊 Wave", callback: () => arrangeUngroupedNodes(this, "wave") },
+                            { content: "🌼 Flower", callback: () => arrangeUngroupedNodes(this, "flower") },
+                            null,
+                            { content: "Fill Group (L→R, T→B)", callback: () => arrangeUngroupedNodes(this, "fill-group") },
+                            null,
+                            { content: "↔ Hierarchy (Horizontal)", callback: () => arrangeUngroupedNodes(this, "hierarchy-horizontal") },
+                            { content: "↕ Hierarchy (Vertical)", callback: () => arrangeUngroupedNodes(this, "hierarchy-vertical") }
                         ]
                     }
                 });
                 
-                // Add new option to create group for ungrouped nodes
+                // Add grouping options
                 options.push({
                     content: "📦 Group All Ungrouped Nodes",
                     callback: () => createGroupForUngroupedNodes(this)
                 });
+                
+                // Add option to group selected nodes (if any are selected)
+                if (hasSelectedNodes) {
+                    console.log(`📊 Adding menu option for ${selectedNodes.length} selected nodes`);
+                    options.push({
+                        content: `📦 Group Selected Nodes (${selectedNodes.length})`,
+                        callback: () => createGroupForSelectedNodes(this)
+                    });
+                } else {
+                    console.log('📊 No selected nodes found, not adding "Group Selected Nodes" option');
+                }
             }
             
             // Only show "Arrange This Group" when inside a group
@@ -1385,14 +2261,25 @@ app.registerExtension({
                     content: "📐 Arrange This Group",
                     submenu: {
                         options: [
-                            { content: "Grid", callback: () => arrangeGroup(group, "grid") },
-                            { content: "Tight Grid (max 20px spacing)", callback: () => arrangeGroup(group, "tight-grid") },
-                            { content: "Horizontal", callback: () => arrangeGroup(group, "horizontal") },
-                            { content: "Vertical", callback: () => arrangeGroup(group, "vertical") },
-                            { content: "Circular", callback: () => arrangeGroup(group, "circular") },
+                            { content: "⊞ Grid", callback: () => arrangeGroup(group, "grid") },
+                            { content: "⩩ Tight Grid (max 20px spacing)", callback: () => arrangeGroup(group, "tight-grid") },
+                            { content: "─ Horizontal", callback: () => arrangeGroup(group, "horizontal") },
+                            { content: "┃ Vertical", callback: () => arrangeGroup(group, "vertical") },
+                            { content: "⭕️ Circular", callback: () => arrangeGroup(group, "circular") },
+                            { content: "△ Triangle", callback: () => arrangeGroup(group, "triangle") },
+                            { content: "☐ Square", callback: () => arrangeGroup(group, "square") },
+                            { content: "💎 Diamond", callback: () => arrangeGroup(group, "diamond") },
                             null,
-                            { content: "Hierarchy (Horizontal)", callback: () => arrangeGroup(group, "hierarchy-horizontal") },
-                            { content: "Hierarchy (Vertical)", callback: () => arrangeGroup(group, "hierarchy-vertical") }
+                            { content: "❤️ Heart", callback: () => arrangeGroup(group, "heart") },
+                            { content: "⭐ Star", callback: () => arrangeGroup(group, "star") },
+                            { content: "🌀 Spiral", callback: () => arrangeGroup(group, "spiral") },
+                            { content: "🌊 Wave", callback: () => arrangeGroup(group, "wave") },
+                            { content: "🌼 Flower", callback: () => arrangeGroup(group, "flower") },
+                            null,
+                            { content: "Fill Group (L→R, T→B)", callback: () => arrangeGroup(group, "fill-group") },
+                            null,
+                            { content: "↔ Hierarchy (Horizontal)", callback: () => arrangeGroup(group, "hierarchy-horizontal") },
+                            { content: "↕ Hierarchy (Vertical)", callback: () => arrangeGroup(group, "hierarchy-vertical") }
                         ]
                     }
                 });
