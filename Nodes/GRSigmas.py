@@ -30,6 +30,77 @@ class PresetType(Enum):
     HIGH_CONTRAST = "high_contrast"
     LOW_CONTRAST = "low_contrast"
 
+class GRSigmaPresets:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "preset": ([
+                    "Ultra Lock (0.0 only) – No change, structure frozen",
+                    "Micro Detail (0.1 → 0.0) – Texture polish only",
+                    "Low Motion (0.2 → 0.0) – Subtle motion, strong lock",
+                    "Img2Img Safe (0.3 → 0.0) – Classic stable img2img",
+                    "Balanced I2V (0.5 → 0.0) – Controlled motion",
+                    "Stylised Motion (0.7 → 0.0) – Artistic movement",
+                    "Your Manual Preset (0.909375, 0.725, 0.421875, 0.0)",
+                    "Mid-Sigma Focus (1.0 → 0.2 → 0.0) – Structure bias",
+                    "High Detail Tail (0.6 → 0.3 → 0.1 → 0.0)",
+                    "Experimental Wide (1.2 → 0.8 → 0.4 → 0.0)",
+                ],)
+            }
+        }
+
+    RETURN_TYPES = ("SIGMAS",)
+    RETURN_NAMES = ("sigmas",)
+    FUNCTION = "get_sigmas"
+    CATEGORY = "sampling/sigmas"
+
+    def get_sigmas(self, preset):
+        presets = {
+            "Ultra Lock (0.0 only) – No change, structure frozen":
+                [0.0],
+
+            "Micro Detail (0.1 → 0.0) – Texture polish only":
+                [0.1, 0.0],
+
+            "Low Motion (0.2 → 0.0) – Subtle motion, strong lock":
+                [0.2, 0.0],
+
+            "Img2Img Safe (0.3 → 0.0) – Classic stable img2img":
+                [0.3, 0.0],
+
+            "Balanced I2V (0.5 → 0.0) – Controlled motion":
+                [0.5, 0.25, 0.0],
+
+            "Stylised Motion (0.7 → 0.0) – Artistic movement":
+                [0.7, 0.4, 0.2, 0.0],
+
+            "Your Manual Preset (0.909375, 0.725, 0.421875, 0.0)":
+                [0.909375, 0.725, 0.421875, 0.0],
+
+            "Mid-Sigma Focus (1.0 → 0.2 → 0.0) – Structure bias":
+                [1.0, 0.6, 0.2, 0.0],
+
+            "High Detail Tail (0.6 → 0.3 → 0.1 → 0.0)":
+                [0.6, 0.3, 0.1, 0.0],
+
+            "Experimental Wide (1.2 → 0.8 → 0.4 → 0.0)":
+                [1.2, 0.8, 0.4, 0.0],
+        }
+
+        sigmas = torch.tensor(presets[preset], dtype=torch.float32)
+        return (sigmas,)
+
+
+NODE_CLASS_MAPPINGS = {
+    "GR Sigma Presets": GRSigmaPresets
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "GR Sigma Presets": "Sigma Presets (Manual)"
+}
+
+
 class GRSigmas:
     @classmethod
     def INPUT_TYPES(cls):
