@@ -142,6 +142,194 @@ function applyBoundaryCheck(node, bounds, nodeWidth, nodeHeight) {
     }
 }
 
+function getUniqueGroupName(baseName) {
+    // Get all existing group titles
+    const existingTitles = new Set();
+    if (app.graph && app.graph._groups) {
+        app.graph._groups.forEach(group => {
+            if (group.title) {
+                existingTitles.add(group.title);
+            }
+        });
+    }
+    
+    // Check if base name already exists
+    if (!existingTitles.has(baseName)) {
+        return baseName;
+    }
+    
+    // Add date and time suffix
+    const now = new Date();
+    const dateStr = now.toISOString()
+        .replace(/T/, '_')
+        .replace(/\..+/, '')
+        .replace(/:/g, '-');
+    
+    let newName = `${baseName}_${dateStr}`;
+    
+    // If still exists, add a number
+    let counter = 1;
+    while (existingTitles.has(newName)) {
+        newName = `${baseName}_${dateStr}_${counter}`;
+        counter++;
+    }
+    
+    return newName;
+}
+
+function importWorkflowIntoGroup(mousePos, targetGroup = null) {
+    console.log('📥 Import workflow into group starting...');
+    console.log('🎯 Target group:', targetGroup ? `"${targetGroup.title}"` : 'New group');
+    
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+
+    input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+
+            const nodes = data.nodes || [];
+            const links = data.links || [];
+
+            const nodeMap = {};
+            
+            // Determine import position
+            let importOffsetX, importOffsetY;
+            
+            if (targetGroup) {
+                // Import into existing group - center within the group
+                importOffsetX = targetGroup._pos[0] + (targetGroup._size[0] / 2) - 300; // Center offset
+                importOffsetY = targetGroup._pos[1] + (targetGroup._size[1] / 2) - 200;
+            } else {
+                // Import as new group - use mouse position
+                importOffsetX = mousePos?.[0] ?? 300;
+                importOffsetY = mousePos?.[1] ?? 300;
+            }
+
+            console.log(`📥 Importing ${nodes.length} nodes and ${links.length} links`);
+            console.log(`📍 Import position: [${importOffsetX}, ${importOffsetY}]`);
+
+            // Create nodes
+            for (const n of nodes) {
+                const node = LiteGraph.createNode(n.type);
+                if (!node) {
+                    console.warn(`⚠️ Could not create node of type: ${n.type}`);
+                    continue;
+                }
+
+                node.configure(n);
+                node.pos = [
+                    (n.pos?.[0] || 0) + importOffsetX,
+                    (n.pos?.[1] || 0) + importOffsetY
+                ];
+
+                app.graph.add(node);
+                nodeMap[n.id] = node;
+                console.log(`   Created node: ${n.type || n.title} at [${node.pos[0]}, ${node.pos[1]}]`);
+            }
+
+            // Reconnect links
+            let connectionsMade = 0;
+            for (const l of links) {
+                const from = nodeMap[l[1]];
+                const to = nodeMap[l[3]];
+                if (!from || !to) {
+                    console.warn(`⚠️ Could not connect link: from ${l[1]} to ${l[3]}`);
+                    continue;
+                }
+
+                from.connect(l[2], to, l[4]);
+                connectionsMade++;
+            }
+            console.log(`   Connected ${connectionsMade} links`);
+
+            const importedNodes = Object.values(nodeMap);
+            if (importedNodes.length > 0) {
+                let targetGroupForNodes;
+                
+                if (targetGroup) {
+                    // Use existing group
+                    targetGroupForNodes = targetGroup;
+                    console.log(`✅ Imported ${importedNodes.length} nodes into existing group "${targetGroup.title}"`);
+                } else {
+                    // Create new group
+                    let GroupClass;
+                    if (typeof LiteGraph.LGraphGroup === 'undefined') {
+                        if (typeof LGraphGroup !== 'undefined') {
+                            GroupClass = LGraphGroup;
+                        } else {
+                            console.error('❌ No group class found');
+                            return;
+                        }
+                    } else {
+                        GroupClass = LiteGraph.LGraphGroup;
+                    }
+                    
+                    // Generate unique group name from filename
+                    const baseName = file.name.replace(".json", "").replace(/_/g, " ") || "Imported Workflow";
+                    const uniqueGroupName = getUniqueGroupName(baseName);
+                    
+                    const group = new GroupClass();
+                    group.title = uniqueGroupName;
+                    
+                    // Calculate group bounds around imported nodes
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    importedNodes.forEach(node => {
+                        if (!node.pos) return;
+                        const w = node.size?.[0] || 200;
+                        const h = node.size?.[1] || 100;
+                        minX = Math.min(minX, node.pos[0]);
+                        minY = Math.min(minY, node.pos[1]);
+                        maxX = Math.max(maxX, node.pos[0] + w);
+                        maxY = Math.max(maxY, node.pos[1] + h);
+                    });
+                    
+                    const padding = 40;
+                    group.pos = [
+                        Math.max(0, minX - padding),
+                        Math.max(0, minY - padding)
+                    ];
+                    group.size = [
+                        Math.max(400, (maxX - minX) + padding * 2),
+                        Math.max(300, (maxY - minY) + padding * 2)
+                    ];
+                    
+                    // Set color
+                    if (typeof LGraphCanvas !== 'undefined' && LGraphCanvas.node_colors && LGraphCanvas.node_colors.pale_blue) {
+                        group.color = LGraphCanvas.node_colors.pale_blue.color;
+                    } else {
+                        group.color = "#6495ED";
+                    }
+                    
+                    app.graph.add(group);
+                    targetGroupForNodes = group;
+                    console.log(`✅ Created new group "${group.title}" with ${importedNodes.length} nodes`);
+                }
+                
+                // Apply a grid layout to the imported nodes
+                setTimeout(() => {
+                    console.log('📐 Auto-arranging imported nodes in grid layout...');
+                    arrangeGrid(importedNodes, targetGroupForNodes);
+                    app.graph.setDirtyCanvas(true, true);
+                }, 100);
+            }
+
+            app.graph.setDirtyCanvas(true, true);
+            console.log('✅ Workflow import complete!');
+            
+        } catch (error) {
+            console.error('❌ Error importing workflow:', error);
+        }
+    };
+
+    input.click();
+}
+
 function createGroupForUngroupedNodes(canvas) {
     console.log('📦 Creating group for ungrouped nodes...');
     console.log('📊 Canvas object:', canvas ? 'Valid' : 'NULL');
@@ -2170,7 +2358,7 @@ function arrangeUngroupedNodes(canvas, layout) {
     app.graph.setDirtyCanvas(true, true);
 }
 
-// Update the menu setup to have all layouts in a single organized menu
+// Main extension registration with both features integrated
 app.registerExtension({
     name: "Comfy.GroupArrangeMenu",
 
@@ -2204,6 +2392,23 @@ app.registerExtension({
                 hasSelectedNodes,
                 selectedCount: selectedNodes.length,
                 canvasType: this.constructor.name
+            });
+            
+            // Determine import option text based on context
+            const importOptionText = group 
+                ? `📥 Import Workflow into "${group.title}"` 
+                : "📥 Import Workflow into Group";
+            
+            // Add Import Workflow option (always visible)
+            options.push(null);
+            options.push({
+                content: importOptionText,
+                callback: (_, __, event) => {
+                    const pos = this.convertEventToCanvasOffset(event);
+                    // If we're right-clicking over a group, import into that group
+                    const targetGroup = group || null;
+                    importWorkflowIntoGroup(pos, targetGroup);
+                }
             });
             
             // Only show "Arrange Ungrouped Nodes" when NOT inside a group
