@@ -502,32 +502,20 @@ class GRSigmas:
     def generate_zimage_sigmas(self, total_steps):
         """Generate exact Z-Image Turbo sigmas for any number of steps"""
         if total_steps >= 9:
-            sigmas1 = [0.991, 0.98, 0.92]
-            sigmas2 = [0.935, 0.90, 0.875, 0.750, 0.0000]
-            sigmas3 = [0.6582, 0.4556, 0.2000, 0.0000]
+            sigmas = [0.991, 0.98, 0.92, 0.935, 0.90, 0.875, 0.750, 0.6582, 0.4556, 0.2000, 0.0000]
         elif total_steps == 8:
-            sigmas1 = [0.991, 0.98, 0.92]
-            sigmas2 = [0.935, 0.90, 0.875, 0.750, 0.0000]
-            sigmas3 = [0.6582, 0.3019, 0.0000]
+            sigmas = [0.991, 0.98, 0.92, 0.935, 0.90, 0.875, 0.750, 0.6582, 0.3019, 0.0000]
         elif total_steps == 7:
-            sigmas1 = [0.991, 0.98, 0.92]
-            sigmas2 = [0.9350, 0.8916, 0.7600, 0.0000]
-            sigmas3 = [0.6582, 0.3019, 0.0000]
+            sigmas = [0.991, 0.98, 0.92, 0.9350, 0.8916, 0.7600, 0.6582, 0.3019, 0.0000]
         elif total_steps == 6:
-            sigmas1 = [0.991, 0.980, 0.920]
-            sigmas2 = [0.942, 0.780, 0.000]
-            sigmas3 = [0.6582, 0.3019, 0.0000]
+            sigmas = [0.991, 0.980, 0.920, 0.942, 0.780, 0.6582, 0.3019, 0.0000]
         elif total_steps == 5:
-            sigmas1 = [0.991, 0.980, 0.920]
-            sigmas2 = [0.942, 0.780, 0.000]
-            sigmas3 = [0.6200, 0.0000]
+            sigmas = [0.991, 0.980, 0.920, 0.942, 0.780, 0.6200, 0.0000]
         elif total_steps <= 4:
-            sigmas1 = [0.991, 0.980, 0.920]
-            sigmas2 = [0.942, 0.000]
-            sigmas3 = [0.790, 0.000]
+            sigmas = [0.991, 0.980, 0.920, 0.942, 0.790, 0.0000]
         
         # Concatenate all sigmas and remove duplicates
-        all_sigmas = sigmas1 + sigmas2 + sigmas3
+        all_sigmas = sigmas
         # Remove the extra 0.0000 at the end if it exists
         while len(all_sigmas) > total_steps + 1:
             all_sigmas.pop()
