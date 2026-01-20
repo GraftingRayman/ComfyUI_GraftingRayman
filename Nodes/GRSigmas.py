@@ -29,6 +29,7 @@ class PresetType(Enum):
     MID_CENTRIC = "mid_centric"
     HIGH_CONTRAST = "high_contrast"
     LOW_CONTRAST = "low_contrast"
+    ZIMAGE = "zimage"  # Added ZImage preset
 
 class GRSigmaPresets:
     @classmethod
@@ -90,15 +91,6 @@ class GRSigmaPresets:
 
         sigmas = torch.tensor(presets[preset], dtype=torch.float32)
         return (sigmas,)
-
-
-NODE_CLASS_MAPPINGS = {
-    "GR Sigma Presets": GRSigmaPresets
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "GR Sigma Presets": "Sigma Presets (Manual)"
-}
 
 
 class GRSigmas:
@@ -223,18 +215,18 @@ class GRSigmas:
                 "detail_exponent": 0.8,
             },
             PresetType.PORTRAIT.value: {
-            "comp_thresh": 0.80,
-            "mid_thresh": 0.40,
-            "comp_steps": 10,
-            "comp_curve": CurveType.COSINE.value,
-            "comp_exponent": 1.5,
-            "mid_steps": 10,
-            "mid_curve": CurveType.LINEAR.value,
-            "mid_exponent": 1.0,
-            "detail_steps": 4,
-            "detail_curve": CurveType.LOG.value,
-            "detail_exponent": 0.7,
-        },
+                "comp_thresh": 0.80,
+                "mid_thresh": 0.40,
+                "comp_steps": 10,
+                "comp_curve": CurveType.COSINE.value,
+                "comp_exponent": 1.5,
+                "mid_steps": 10,
+                "mid_curve": CurveType.LINEAR.value,
+                "mid_exponent": 1.0,
+                "detail_steps": 4,
+                "detail_curve": CurveType.LOG.value,
+                "detail_exponent": 0.7,
+            },
             PresetType.LANDSCAPE.value: {
                 "comp_thresh": 0.70,
                 "mid_thresh": 0.35,
@@ -351,6 +343,20 @@ class GRSigmas:
                 "detail_steps": 6,
                 "detail_curve": CurveType.LOG.value,
                 "detail_exponent": 0.5,
+            },
+            # ZIMAGE PRESET - tuned for Z-Image Turbo model
+            PresetType.ZIMAGE.value: {
+                "comp_thresh": 0.92,  # Very high threshold to match Z-Image's high initial sigma
+                "mid_thresh": 0.75,   # Lower threshold for middle zone
+                "comp_steps": 2,      # First zone: 0.991 to 0.92 (quick drop)
+                "comp_curve": CurveType.EXP.value,
+                "comp_exponent": 3.0, # Steep initial drop
+                "mid_steps": 4,       # Second zone: 0.935 to 0.750
+                "mid_curve": CurveType.POLY.value,
+                "mid_exponent": 2.0,  # Moderate curve
+                "detail_steps": 3,    # Third zone: 0.6582 to 0.2000
+                "detail_curve": CurveType.LOG.value,
+                "detail_exponent": 0.5, # Gentle finish
             }
         }
         return presets.get(preset, {})
@@ -373,6 +379,7 @@ class GRSigmas:
             PresetType.MID_CENTRIC.value: (0.25, 0.60, 0.15),
             PresetType.HIGH_CONTRAST.value: (0.35, 0.35, 0.30),
             PresetType.LOW_CONTRAST.value: (0.35, 0.40, 0.25),
+            PresetType.ZIMAGE.value: (0.22, 0.45, 0.33),  # 2/9, 4/9, 3/9 ratio for Z-Image's 9 steps
         }
         
         comp_ratio, mid_ratio, detail_ratio = distributions.get(preset, (0.35, 0.40, 0.25))
@@ -492,6 +499,41 @@ class GRSigmas:
             }
         return None
 
+    def generate_zimage_sigmas(self, total_steps):
+        """Generate exact Z-Image Turbo sigmas for any number of steps"""
+        if total_steps >= 9:
+            sigmas1 = [0.991, 0.98, 0.92]
+            sigmas2 = [0.935, 0.90, 0.875, 0.750, 0.0000]
+            sigmas3 = [0.6582, 0.4556, 0.2000, 0.0000]
+        elif total_steps == 8:
+            sigmas1 = [0.991, 0.98, 0.92]
+            sigmas2 = [0.935, 0.90, 0.875, 0.750, 0.0000]
+            sigmas3 = [0.6582, 0.3019, 0.0000]
+        elif total_steps == 7:
+            sigmas1 = [0.991, 0.98, 0.92]
+            sigmas2 = [0.9350, 0.8916, 0.7600, 0.0000]
+            sigmas3 = [0.6582, 0.3019, 0.0000]
+        elif total_steps == 6:
+            sigmas1 = [0.991, 0.980, 0.920]
+            sigmas2 = [0.942, 0.780, 0.000]
+            sigmas3 = [0.6582, 0.3019, 0.0000]
+        elif total_steps == 5:
+            sigmas1 = [0.991, 0.980, 0.920]
+            sigmas2 = [0.942, 0.780, 0.000]
+            sigmas3 = [0.6200, 0.0000]
+        elif total_steps <= 4:
+            sigmas1 = [0.991, 0.980, 0.920]
+            sigmas2 = [0.942, 0.000]
+            sigmas3 = [0.790, 0.000]
+        
+        # Concatenate all sigmas and remove duplicates
+        all_sigmas = sigmas1 + sigmas2 + sigmas3
+        # Remove the extra 0.0000 at the end if it exists
+        while len(all_sigmas) > total_steps + 1:
+            all_sigmas.pop()
+        
+        return np.array(all_sigmas)
+
     def generate(self, preset, overall_max, overall_min, auto_distribute, total_steps,
                 comp_thresh, mid_thresh, comp_steps, comp_curve, comp_exponent,
                 mid_steps, mid_curve, mid_exponent, detail_steps, detail_curve, detail_exponent,
@@ -516,44 +558,55 @@ class GRSigmas:
             # Convert to tensor
             sigma_tensor = torch.tensor(sigmas, dtype=torch.float32)
         else:
-            # Proceed with normal generation if no sigmas input or couldn't parse
-            if preset != PresetType.CUSTOM.value:
-                preset_params = self.apply_preset(preset)
-                comp_thresh = preset_params.get("comp_thresh", comp_thresh)
-                mid_thresh = preset_params.get("mid_thresh", mid_thresh)
-                comp_steps = preset_params.get("comp_steps", comp_steps)
-                comp_curve = preset_params.get("comp_curve", comp_curve)
-                comp_exponent = preset_params.get("comp_exponent", comp_exponent)
-                mid_steps = preset_params.get("mid_steps", mid_steps)
-                mid_curve = preset_params.get("mid_curve", mid_curve)
-                mid_exponent = preset_params.get("mid_exponent", mid_exponent)
-                detail_steps = preset_params.get("detail_steps", detail_steps)
-                detail_curve = preset_params.get("detail_curve", detail_curve)
-                detail_exponent = preset_params.get("detail_exponent", detail_exponent)
-            
-            if auto_distribute:
-                comp_steps, mid_steps, detail_steps = self.auto_distribute_steps(total_steps, preset)
-            
-            self.validate_inputs(overall_max, overall_min, comp_thresh, mid_thresh)
-            
-            comp_min = max(overall_max * comp_thresh, mid_thresh * 1.1)
-            mid_min = max(overall_max * mid_thresh, overall_min * 1.1)
-            
-            comp_sig = self.make_segment(comp_steps, comp_curve, overall_max, comp_min, comp_exponent)
-            mid_sig = self.make_segment(mid_steps, mid_curve, comp_min, mid_min, mid_exponent)
-            detail_sig = self.make_segment(detail_steps, detail_curve, mid_min, overall_min, detail_exponent)
-            
-            sigmas = np.concatenate([comp_sig, mid_sig, detail_sig])
-            transition_points = [0, comp_steps, comp_steps + mid_steps, len(sigmas)]
-            
-            if zone_transition == "smooth":
-                sigmas = self.smooth_transition(sigmas, transition_points)
-            
-            for i in range(1, len(sigmas)):
-                if sigmas[i] >= sigmas[i-1]:
-                    sigmas[i] = sigmas[i-1] - 1e-6
-            
-            sigma_tensor = torch.tensor(sigmas, dtype=torch.float32)
+            # Z-Image special handling - generate exact Z-Image sigmas
+            if preset == PresetType.ZIMAGE.value:
+                sigmas = self.generate_zimage_sigmas(total_steps)
+                sigma_tensor = torch.tensor(sigmas, dtype=torch.float32)
+                
+                # Set up transition points based on Z-Image's 3-stage structure
+                comp_steps = 3  # sigmas1 length
+                mid_steps = 5   # sigmas2 length
+                detail_steps = len(sigmas) - comp_steps - mid_steps + 1
+                transition_points = [0, comp_steps, comp_steps + mid_steps - 1, len(sigmas)]
+            else:
+                # Proceed with normal generation if no sigmas input or couldn't parse
+                if preset != PresetType.CUSTOM.value:
+                    preset_params = self.apply_preset(preset)
+                    comp_thresh = preset_params.get("comp_thresh", comp_thresh)
+                    mid_thresh = preset_params.get("mid_thresh", mid_thresh)
+                    comp_steps = preset_params.get("comp_steps", comp_steps)
+                    comp_curve = preset_params.get("comp_curve", comp_curve)
+                    comp_exponent = preset_params.get("comp_exponent", comp_exponent)
+                    mid_steps = preset_params.get("mid_steps", mid_steps)
+                    mid_curve = preset_params.get("mid_curve", mid_curve)
+                    mid_exponent = preset_params.get("mid_exponent", mid_exponent)
+                    detail_steps = preset_params.get("detail_steps", detail_steps)
+                    detail_curve = preset_params.get("detail_curve", detail_curve)
+                    detail_exponent = preset_params.get("detail_exponent", detail_exponent)
+                
+                if auto_distribute:
+                    comp_steps, mid_steps, detail_steps = self.auto_distribute_steps(total_steps, preset)
+                
+                self.validate_inputs(overall_max, overall_min, comp_thresh, mid_thresh)
+                
+                comp_min = max(overall_max * comp_thresh, mid_thresh * 1.1)
+                mid_min = max(overall_max * mid_thresh, overall_min * 1.1)
+                
+                comp_sig = self.make_segment(comp_steps, comp_curve, overall_max, comp_min, comp_exponent)
+                mid_sig = self.make_segment(mid_steps, mid_curve, comp_min, mid_min, mid_exponent)
+                detail_sig = self.make_segment(detail_steps, detail_curve, mid_min, overall_min, detail_exponent)
+                
+                sigmas = np.concatenate([comp_sig, mid_sig, detail_sig])
+                transition_points = [0, comp_steps, comp_steps + mid_steps, len(sigmas)]
+                
+                if zone_transition == "smooth":
+                    sigmas = self.smooth_transition(sigmas, transition_points)
+                
+                for i in range(1, len(sigmas)):
+                    if sigmas[i] >= sigmas[i-1]:
+                        sigmas[i] = sigmas[i-1] - 1e-6
+                
+                sigma_tensor = torch.tensor(sigmas, dtype=torch.float32)
         
         # Generate graph
         graph_tensor = self.generate_graph(sigmas, transition_points, overall_max, overall_min) if show_graph else torch.zeros((1, 1, 1, 3))
@@ -588,7 +641,10 @@ class GRSigmas:
             debug_text += f"Total Steps: {len(sigma_tensor)}\n"
             debug_text += f"Global Range: {overall_max:.3f}→{overall_min:.3f}\n"
             debug_text += f"Zones: Comp({comp_steps}) Mid({mid_steps}) Detail({detail_steps})\n"
-            debug_text += f"Curves: Comp({comp_curve}) Mid({mid_curve}) Detail({detail_curve})\n"
+            if preset != PresetType.ZIMAGE.value:
+                debug_text += f"Curves: Comp({comp_curve}) Mid({mid_curve}) Detail({detail_curve})\n"
+            else:
+                debug_text += "Curves: Z-Image Turbo (3-stage denoising)\n"
             debug_text += "----------------------------\n"
             debug_text += "\n".join([f"{i:02d}: {s:.6f}" for i, s in enumerate(sigma_tensor)])
         
@@ -629,3 +685,13 @@ class GRSigmas:
         print(f"Max Sigma: {sigma_tensor.max():.4f}")
         print("=" * 60)
 
+
+NODE_CLASS_MAPPINGS = {
+    "GR Sigma Presets": GRSigmaPresets,
+    "GR Sigmas": GRSigmas
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "GR Sigma Presets": "Sigma Presets (Manual)",
+    "GR Sigmas": "GR Sigma Generator"
+}
