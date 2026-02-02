@@ -453,7 +453,7 @@ async def save_lora_stack_config(request):
             # print(f"[GRLoraLoader] Creating config directory...")
             os.makedirs(config_dir)
         
-        config_file = os.path.join(config_dir, f"GRLoraLoader.json")
+        config_file = os.path.join(config_dir, f"GRLoraLoader_{node_id}.json")
         # print(f"[GRLoraLoader] Saving to file: {config_file}")
         
         with open(config_file, 'w', encoding='utf-8') as f:
@@ -468,27 +468,23 @@ async def save_lora_stack_config(request):
         return web.json_response({"error": str(e)}, status=500)
 
 
-@server.PromptServer.instance.routes.post("/gr_lora_loader/load_config")
+@server.PromptServer.instance.routes.get("/gr_lora_loader/load_config")
 async def load_lora_stack_config(request):
     """
     Load LoRA stack configuration from a JSON file
     """
     try:
-        data = await request.json()
-        node_id = data.get("node_id")
-        config_request = data.get("config")  # optional, for matching save signature
+        node_id = request.query.get("node_id")
         
         # print(f"[GRLoraLoader] Load request received")
         # print(f"[GRLoraLoader] Node ID: {node_id}")
-        if config_request:
-            print(f"[GRLoraLoader] (Optional) Received config data: {json.dumps(config_request, indent=2)}")
         
         if not node_id:
             # print(f"[GRLoraLoader] ERROR: Missing node_id")
             return web.json_response({"error": "Missing node_id"}, status=400)
         
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        config_file = os.path.join(current_dir, "lora_configs", f"GRLoraLoader.json")
+        config_file = os.path.join(current_dir, "lora_configs", f"GRLoraLoader_{node_id}.json")
         
         # print(f"[GRLoraLoader] Looking for config file: {config_file}")
         
