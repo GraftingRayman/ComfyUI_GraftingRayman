@@ -2,6 +2,8 @@ import os
 from datetime import datetime
 import torch
 from PIL import Image
+import numpy as np
+import torchvision.transforms as T
 
 class GRPromptViewer:
     def __init__(self):
@@ -78,39 +80,104 @@ class GRPromptViewer:
             # Add "No files found" to the list so it's always valid
             all_files.add("No files found")
 
+        # Always include the Random sentinel so ComfyUI considers it a valid value
+        all_files.add("\U0001f3b2 Random")
+
+        # Sort remaining files, but Random will be inserted first by JS
+        sorted_files = ["\U0001f3b2 Random"] + sorted(
+            [f for f in all_files if f != "\U0001f3b2 Random"]
+        )
+
         return {
             "required": {
                 "folder": (sorted(folders),),
-                "file": (sorted(list(all_files)),),
+                "file": (sorted_files,),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "content": ("STRING", {"multiline": True, "default": ""}),
                 "edited": ("BOOLEAN", {"default": False}),
             },
             "optional": {},
         }
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("content",)
+    # ADD IMAGE OUTPUT TYPE
+    RETURN_TYPES = ("STRING", "IMAGE")
+    RETURN_NAMES = ("content", "image")
     FUNCTION = "read_file"
     CATEGORY = "Custom"
     OUTPUT_NODE = True
 
-    def read_file(self, folder, file, content="", edited=False):
+    RANDOM_SENTINEL = "\U0001f3b2 Random"
+
+    def _get_files_in_folder(self, folder):
+        """Return a sorted list of valid prompt files (text + orphan images) in the given folder."""
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompts_dir = os.path.join(current_dir, "prompts")
+
+        if folder == "(root)":
+            target_dir = prompts_dir
+        else:
+            target_dir = os.path.join(prompts_dir, folder)
+
+        if not os.path.exists(target_dir):
+            return []
+
+        text_files = [f for f in os.listdir(target_dir)
+                      if os.path.isfile(os.path.join(target_dir, f))
+                      and f.endswith(('.txt', '.log', '.json', '.csv', '.md'))]
+
+        image_files = [f for f in os.listdir(target_dir)
+                       if os.path.isfile(os.path.join(target_dir, f))
+                       and f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))]
+
+        files_set = set(text_files)
+        for img in image_files:
+            base_name = os.path.splitext(img)[0]
+            if f"{base_name}.txt" not in text_files:
+                files_set.add(img)
+
+        return sorted(files_set)
+
+    def read_file(self, folder, file, seed=0, content="", edited=False):
         """
-        Read and return file content
-
-        Logic:
-        1. If content input is connected (has content AND edited=False) → use connected content
-        2. If content exists and edited=True → use edited content from preview
-        3. Otherwise → return empty/no content message
-
-        Note: File reading from disk only happens in JS when file selection changes
+        Read and return file content with optional image output.
+        When file == RANDOM_SENTINEL the seed is used to deterministically
+        pick a file from the folder on every execution.
         """
 
         print(f"=== GRPromptViewer.read_file called ===")
         print(f"folder: {folder}")
         print(f"file: {file}")
+        print(f"seed: {seed}")
         print(f"content: {'None' if content is None else f'length={len(content)}'}")
         print(f"edited flag: {edited} (type: {type(edited)})")
+
+        # --- RANDOM MODE: resolve actual file from seed ---
+        random_mode_active = (file == self.RANDOM_SENTINEL)
+        if random_mode_active:
+            available = self._get_files_in_folder(folder)
+            if available:
+                # Use seed to pick deterministically; seed changes -> different file
+                chosen = available[seed % len(available)]
+                print(f"Random mode: seed={seed} -> picked '{chosen}' from {len(available)} files")
+                file = chosen
+            else:
+                file = "No files found"
+                print("Random mode: no files available in folder")
+
+        # In random mode, always read the resolved file from disk so the
+        # seed drives the output regardless of the cached content widget.
+        if random_mode_active and file not in ("No files found", "Select folder first", ""):
+            _cur_dir = os.path.dirname(os.path.abspath(__file__))
+            _prm_dir = os.path.join(_cur_dir, "prompts")
+            _rnd_path = os.path.join(_prm_dir, file) if folder == "(root)" else os.path.join(_prm_dir, folder, file)
+            if not file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')):
+                try:
+                    if os.path.exists(_rnd_path) and os.path.abspath(_rnd_path).startswith(os.path.abspath(_prm_dir)):
+                        with open(_rnd_path, 'r', encoding='utf-8') as _fh:
+                            content = _fh.read()
+                        print(f"Random mode: loaded content from disk ({len(content)} chars)")
+                except Exception as _e:
+                    print(f"Random mode: failed to read file from disk: {_e}")
 
         # Convert edited to boolean
         edited_bool = edited in [True, "true", "True", "1", 1]
@@ -142,12 +209,84 @@ class GRPromptViewer:
         else:
             print(f"Auto-save skipped (edited: {edited_bool}, meaningful: {has_meaningful_content})")
 
-        print(f"Final content length: {len(final_content)}")
+        # TRY TO LOAD THE CURRENT IMAGE FOR OUTPUT
+        image_output = None
+        
+        # Get current directory and prompts directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompts_dir = os.path.join(current_dir, "prompts")
+        
+        # Build file path based on folder
+        if folder == "(root)":
+            file_path = os.path.join(prompts_dir, file)
+        else:
+            file_path = os.path.join(prompts_dir, folder, file)
+        
+        # Check if this is an image file
+        if file and file != "No files found" and file != "Select folder first":
+            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp')):
+                # This is an image file - try to load it
+                try:
+                    if os.path.exists(file_path) and os.path.abspath(file_path).startswith(os.path.abspath(prompts_dir)):
+                        image = Image.open(file_path).convert("RGB")
+                        
+                        # Convert to tensor in the format ComfyUI expects
+                        image_np = np.array(image).astype(np.float32) / 255.0
+                        image_tensor = torch.from_numpy(image_np)[None, ...]  # Add batch dimension
+                        
+                        image_output = image_tensor
+                        print(f"✓ Loaded image: {file}, shape: {image_tensor.shape}")
+                    else:
+                        print(f"✗ Image file not found or invalid path: {file_path}")
+                        # Create empty image tensor
+                        image_output = torch.zeros((1, 64, 64, 3))
+                except Exception as e:
+                    print(f"✗ Error loading image {file}: {e}")
+                    # Create empty image tensor
+                    image_output = torch.zeros((1, 64, 64, 3))
+            else:
+                # This is a text file - check if there's a corresponding image
+                base_name = os.path.splitext(file)[0]
+                image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp']
+                
+                for ext in image_extensions:
+                    image_file = base_name + ext
+                    if folder == "(root)":
+                        image_path = os.path.join(prompts_dir, image_file)
+                    else:
+                        image_path = os.path.join(prompts_dir, folder, image_file)
+                    
+                    if os.path.exists(image_path) and os.path.abspath(image_path).startswith(os.path.abspath(prompts_dir)):
+                        try:
+                            image = Image.open(image_path).convert("RGB")
+                            
+                            # Convert to tensor in the format ComfyUI expects
+                            image_np = np.array(image).astype(np.float32) / 255.0
+                            image_tensor = torch.from_numpy(image_np)[None, ...]  # Add batch dimension
+                            
+                            image_output = image_tensor
+                            print(f"✓ Loaded associated image: {image_file}, shape: {image_tensor.shape}")
+                            break
+                        except Exception as e:
+                            print(f"✗ Error loading associated image {image_file}: {e}")
+                            continue
+                
+                if image_output is None:
+                    # No image found, create empty tensor
+                    image_output = torch.zeros((1, 64, 64, 3))
+                    print(f"✗ No associated image found for text file: {file}")
+        else:
+            # No valid file selected, create empty tensor
+            image_output = torch.zeros((1, 64, 64, 3))
+            print(f"✗ No file selected or invalid file name")
 
-        # Return both as output AND send to UI for display
+        print(f"Final content length: {len(final_content)}")
+        print(f"Image output type: {type(image_output)}, shape: {image_output.shape if hasattr(image_output, 'shape') else 'No shape'}")
+
+        # Return both content and image
         return {
             "ui": {"text": [final_content]},
-            "result": (final_content,),
+            "result": (final_content, image_output),
         }
 
     def _auto_save(self, content):

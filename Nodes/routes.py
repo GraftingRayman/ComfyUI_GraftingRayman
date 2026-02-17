@@ -75,7 +75,7 @@ async def list_files(request):
         if not files_to_show:
             files = ["No files found"]
         else:
-            files = sorted(list(files_to_show))
+            files = ["\U0001f3b2 Random"] + sorted(list(files_to_show))
         
         return web.json_response({"files": files}, status=200)
     except Exception as e:
@@ -372,7 +372,55 @@ async def auto_save_caption(request):
 
 
 
-@server.PromptServer.instance.routes.get("/dynamic_lora/list_loras")
+@server.PromptServer.instance.routes.get("/prompt_viewer/random_resolve")
+async def random_resolve(request):
+    """
+    Return the filename that would be selected for a given folder + seed.
+    Used by the frontend to load the associated image preview after execution.
+    """
+    folder = request.query.get("folder", "(root)")
+    try:
+        seed = int(request.query.get("seed", "0"))
+    except ValueError:
+        seed = 0
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    prompts_dir = os.path.join(current_dir, "prompts")
+
+    if folder == "(root)":
+        target_dir = prompts_dir
+    else:
+        target_dir = os.path.join(prompts_dir, folder)
+
+    if not os.path.abspath(target_dir).startswith(os.path.abspath(prompts_dir)):
+        return web.json_response({"file": None, "error": "Invalid folder"}, status=403)
+
+    if not os.path.exists(target_dir):
+        return web.json_response({"file": None}, status=200)
+
+    text_files = [f for f in os.listdir(target_dir)
+                  if os.path.isfile(os.path.join(target_dir, f))
+                  and f.endswith(('.txt', '.log', '.json', '.csv', '.md'))]
+
+    image_files = [f for f in os.listdir(target_dir)
+                   if os.path.isfile(os.path.join(target_dir, f))
+                   and f.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'))]
+
+    files_set = set(text_files)
+    for img in image_files:
+        base_name = os.path.splitext(img)[0]
+        if f"{base_name}.txt" not in text_files:
+            files_set.add(img)
+
+    available = sorted(files_set)
+    if not available:
+        return web.json_response({"file": None}, status=200)
+
+    chosen = available[seed % len(available)]
+    return web.json_response({"file": chosen, "total": len(available)}, status=200)
+
+
+
 async def dynamic_lora_list(request):
     """
     Return JSON list of LoRA paths found under models/lora (recursive).
