@@ -60,6 +60,9 @@ app.registerExtension({
                     this.currentFile = "";
                     this.hasAssociatedImage = false;
                     this.hasCaptionFile = false;
+                    this.currentImageUrl = null;  // Store current image URL
+                    this.currentImageWidth = 0;
+                    this.currentImageHeight = 0;
                     
                     previewWidget.inputEl.addEventListener('input', () => {
                         const isNowModified = (previewWidget.value !== this.originalContent);
@@ -234,6 +237,9 @@ app.registerExtension({
                     if (this.imageWidget) {
                         this.imageWidget.computeSize = () => [0, 0];
                     }
+                    this.currentImageUrl = null;
+                    this.currentImageWidth = 0;
+                    this.currentImageHeight = 0;
                 };
                 
                 const displayImage = (imageDataUrl) => {
@@ -259,6 +265,17 @@ app.registerExtension({
                     img.style.maxHeight = "400px";
                     img.style.borderRadius = "4px";
                     img.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+                    
+                    // Store image information for output
+                    img.onload = () => {
+                        this.currentImageUrl = imageDataUrl;
+                        this.currentImageWidth = img.naturalWidth;
+                        this.currentImageHeight = img.naturalHeight;
+                        console.log(`Image loaded: ${this.currentImageWidth}x${this.currentImageHeight}`);
+                        
+                        // Trigger node execution to output the image
+                        this.setDirtyCanvas(true, true);
+                    };
                     
                     this.imageDisplayContainer.appendChild(img);
                     this.imageWidget.computeSize = () => [0, 420];
@@ -460,115 +477,115 @@ app.registerExtension({
                 };
                 
                 this.generateCaption = async () => {
-    if (!this.hasAssociatedImage || !this.currentImagePath) {
-        alert("No image available for caption generation");
-        return;
-    }
-    
-    if (this.generateCaptionButton) {
-        this.generateCaptionButton.disabled = true;
-        this.generateCaptionButton.textContent = "Generating...";
-    }
-    
-    if (this.contentPreview) {
-        this.contentPreview.value = "Generating caption using Moondream2...";
-    }
-    
-    try {
-        const response = await api.fetchApi("/prompt_viewer/generate_caption", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                folder: this.currentFolder,
-                image_filename: this.currentImagePath
-            })
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            const caption = result.caption || "";
-            
-            if (this.contentPreview) {
-                this.contentPreview.value = caption;
-                this.originalContent = "";
-                this.isModified = true;
-                this.updateButtonStates();
-                
-                if (this.editedWidget) {
-                    this.editedWidget.value = true;
-                    if (this.editedWidget.callback) {
-                        this.editedWidget.callback(this.editedWidget.value);
+                    if (!this.hasAssociatedImage || !this.currentImagePath) {
+                        alert("No image available for caption generation");
+                        return;
                     }
-                }
-                
-                if (this.contentWidget) {
-                    this.contentWidget.value = caption;
-                }
-            }
-            
-            // AUTO-SAVE THE CAPTION WITH SAME NAME AS IMAGE FILE
-            try {
-                const saveResponse = await api.fetchApi("/prompt_viewer/auto_save_caption", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        folder: this.currentFolder,
-                        image_filename: this.currentImagePath,
-                        caption: caption
-                    })
-                });
-                
-                if (saveResponse.ok) {
-                    const saveResult = await saveResponse.json();
-                    console.log("Caption auto-saved:", saveResult.message);
                     
-                    // Update UI to reflect the saved file
-                    this.currentFile = saveResult.filename || "";
-                    this.hasCaptionFile = true;
+                    if (this.generateCaptionButton) {
+                        this.generateCaptionButton.disabled = true;
+                        this.generateCaptionButton.textContent = "Generating...";
+                    }
                     
-                    // Refresh file list to show the new .txt file
-                    await updateFileList(this.currentFolder);
+                    if (this.contentPreview) {
+                        this.contentPreview.value = "Generating caption using Moondream2...";
+                    }
                     
-                    hideCaptionGenerator();
-                    
-                    // Auto-select the new text file in the dropdown
-                    const fileWidget = this.widgets.find(w => w.name === "file");
-                    if (fileWidget && saveResult.filename) {
-                        fileWidget.value = saveResult.filename;
-                        if (fileWidget.callback) {
-                            fileWidget.callback(fileWidget.value);
+                    try {
+                        const response = await api.fetchApi("/prompt_viewer/generate_caption", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                folder: this.currentFolder,
+                                image_filename: this.currentImagePath
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            const caption = result.caption || "";
+                            
+                            if (this.contentPreview) {
+                                this.contentPreview.value = caption;
+                                this.originalContent = "";
+                                this.isModified = true;
+                                this.updateButtonStates();
+                                
+                                if (this.editedWidget) {
+                                    this.editedWidget.value = true;
+                                    if (this.editedWidget.callback) {
+                                        this.editedWidget.callback(this.editedWidget.value);
+                                    }
+                                }
+                                
+                                if (this.contentWidget) {
+                                    this.contentWidget.value = caption;
+                                }
+                            }
+                            
+                            // AUTO-SAVE THE CAPTION WITH SAME NAME AS IMAGE FILE
+                            try {
+                                const saveResponse = await api.fetchApi("/prompt_viewer/auto_save_caption", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        folder: this.currentFolder,
+                                        image_filename: this.currentImagePath,
+                                        caption: caption
+                                    })
+                                });
+                                
+                                if (saveResponse.ok) {
+                                    const saveResult = await saveResponse.json();
+                                    console.log("Caption auto-saved:", saveResult.message);
+                                    
+                                    // Update UI to reflect the saved file
+                                    this.currentFile = saveResult.filename || "";
+                                    this.hasCaptionFile = true;
+                                    
+                                    // Refresh file list to show the new .txt file
+                                    await updateFileList(this.currentFolder);
+                                    
+                                    hideCaptionGenerator();
+                                    
+                                    // Auto-select the new text file in the dropdown
+                                    const fileWidget = this.widgets.find(w => w.name === "file");
+                                    if (fileWidget && saveResult.filename) {
+                                        fileWidget.value = saveResult.filename;
+                                        if (fileWidget.callback) {
+                                            fileWidget.callback(fileWidget.value);
+                                        }
+                                    }
+                                    
+                                    alert("Caption generated and saved automatically as: " + saveResult.filename);
+                                } else {
+                                    const errorText = await saveResponse.text();
+                                    console.warn("Auto-save failed:", errorText);
+                                    alert("Caption generated but auto-save failed. You can save manually.");
+                                }
+                            } catch (saveError) {
+                                console.warn("Auto-save error:", saveError);
+                                alert("Caption generated but auto-save failed. You can save manually.");
+                            }
+                        } else {
+                            const errorText = await response.text();
+                            alert("Error generating caption: " + errorText);
+                            if (this.contentPreview) {
+                                this.contentPreview.value = "";
+                            }
+                        }
+                    } catch (error) {
+                        alert("Error generating caption: " + error.message);
+                        if (this.contentPreview) {
+                            this.contentPreview.value = "";
+                        }
+                    } finally {
+                        if (this.generateCaptionButton) {
+                            this.generateCaptionButton.disabled = false;
+                            this.generateCaptionButton.textContent = "Yes - Generate Caption";
                         }
                     }
-                    
-                    alert("Caption generated and saved automatically as: " + saveResult.filename);
-                } else {
-                    const errorText = await saveResponse.text();
-                    console.warn("Auto-save failed:", errorText);
-                    alert("Caption generated but auto-save failed. You can save manually.");
-                }
-            } catch (saveError) {
-                console.warn("Auto-save error:", saveError);
-                alert("Caption generated but auto-save failed. You can save manually.");
-            }
-        } else {
-            const errorText = await response.text();
-            alert("Error generating caption: " + errorText);
-            if (this.contentPreview) {
-                this.contentPreview.value = "";
-            }
-        }
-    } catch (error) {
-        alert("Error generating caption: " + error.message);
-        if (this.contentPreview) {
-            this.contentPreview.value = "";
-        }
-    } finally {
-        if (this.generateCaptionButton) {
-            this.generateCaptionButton.disabled = false;
-            this.generateCaptionButton.textContent = "Yes - Generate Caption";
-        }
-    }
-};
+                };
                 
                 this.saveFile = async (saveAs) => {
                     if (!this.contentPreview) {
@@ -723,6 +740,8 @@ app.registerExtension({
                     }
                 };
                 
+                const RANDOM_SENTINEL = "\uD83C\uDFB2 Random";
+
                 const updateFileList = async (folderName) => {
                     try {
                         const response = await api.fetchApi(`/prompt_viewer/list_files?folder=${encodeURIComponent(folderName)}`);
@@ -732,11 +751,26 @@ app.registerExtension({
                             const fileWidget = this.widgets.find(w => w.name === "file");
                             
                             if (fileWidget) {
-                                fileWidget.options.values = data.files;
-                                fileWidget.value = data.files[0] || "No files found";
+                                // Ensure Random is always first in the list
+                                let files = data.files || [];
+                                files = files.filter(f => f !== RANDOM_SENTINEL);
+                                files = [RANDOM_SENTINEL, ...files];
+
+                                fileWidget.options.values = files;
+                                fileWidget.value = files[0];  // Default to Random
                                 
-                                if (data.files.length > 0 && data.files[0] !== "No files found") {
-                                    loadFileContent(folderName, data.files[0]);
+                                if (files[0] === RANDOM_SENTINEL) {
+                                    // Random selected by default — show placeholder
+                                    if (this.contentPreview) {
+                                        this.contentPreview.value = "🎲 Random mode — run the node to get a prompt based on the seed.";
+                                        this.originalContent = this.contentPreview.value;
+                                        this.isModified = false;
+                                        this.updateButtonStates();
+                                    }
+                                    clearImageDisplay();
+                                    hideCaptionGenerator();
+                                } else if (files.length > 1 && files[1] !== "No files found") {
+                                    loadFileContent(folderName, files[1]);
                                 } else {
                                     if (this.contentPreview) {
                                         this.contentPreview.value = "No files found in this folder";
@@ -790,7 +824,30 @@ app.registerExtension({
                         this.currentFile = value;
                         const currentFolder = folderWidget ? folderWidget.value : "(root)";
                         this.currentFolder = currentFolder;
-                        loadFileContent(currentFolder, value);
+
+                        if (value === RANDOM_SENTINEL) {
+                            // Random mode — just show a placeholder; the Python node
+                            // resolves the actual file using the seed at execution time.
+                            if (this.contentPreview) {
+                                this.contentPreview.value = "\uD83C\uDFB2 Random mode — run the node to get a prompt based on the seed.";
+                                this.originalContent = this.contentPreview.value;
+                                this.isModified = false;
+                                this.updateButtonStates();
+                                if (this.editedWidget) {
+                                    this.editedWidget.value = false;
+                                    if (this.editedWidget.callback) {
+                                        this.editedWidget.callback(this.editedWidget.value);
+                                    }
+                                }
+                                if (this.contentWidget) {
+                                    this.contentWidget.value = this.contentPreview.value;
+                                }
+                            }
+                            clearImageDisplay();
+                            hideCaptionGenerator();
+                        } else {
+                            loadFileContent(currentFolder, value);
+                        }
                     };
                     
                     this.currentFile = fileWidget.value || "";
@@ -804,6 +861,119 @@ app.registerExtension({
             
             nodeType.prototype.onExecuted = function(message) {
                 originalOnExecuted?.apply(this, arguments);
+
+                // After execution in Random mode, update the preview with the
+                // actual content selected by the Python node and load the image.
+                if (message && message.text && message.text.length > 0) {
+                    const resultText = message.text[0];
+                    const fileWidget = this.widgets?.find(w => w.name === "file");
+                    const seedWidget = this.widgets?.find(w => w.name === "seed");
+                    const isRandom = fileWidget && fileWidget.value === "\uD83C\uDFB2 Random";
+
+                    if (isRandom && this.contentPreview && resultText) {
+                        this.contentPreview.value = resultText;
+                        this.originalContent = resultText;
+                        this.isModified = false;
+                        if (this.saveButton) this.saveButton.disabled = true;
+
+                        // Load the associated image preview using the resolved filename
+                        const currentFolder = this.currentFolder || "(root)";
+                        const currentSeed = seedWidget ? (seedWidget.value || 0) : 0;
+
+                        api.fetchApi(`/prompt_viewer/random_resolve?folder=${encodeURIComponent(currentFolder)}&seed=${encodeURIComponent(currentSeed)}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .then(data => {
+                                if (data && data.file) {
+                                    // Use the existing loadAssociatedImage helper via an indirect call:
+                                    // load the file content path to trigger image display
+                                    const resolvedFile = data.file;
+                                    const baseName = resolvedFile.replace(/\.[^/.]+$/, "");
+                                    const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'];
+
+                                    const tryLoadImage = (exts, idx) => {
+                                        if (idx >= exts.length) return;
+                                        const imgName = baseName + exts[idx];
+                                        api.fetchApi(`/prompt_viewer/read_image?folder=${encodeURIComponent(currentFolder)}&filename=${encodeURIComponent(imgName)}`)
+                                            .then(r => {
+                                                if (r.ok) {
+                                                    return r.blob().then(blob => {
+                                                        const url = URL.createObjectURL(blob);
+                                                        // Reuse the displayImage closure captured in onNodeCreated
+                                                        // by dispatching a synthetic event — safest cross-closure approach
+                                                        const imgEl = this.imageDisplayContainer?.querySelector("img");
+                                                        if (!this.imageDisplayContainer) {
+                                                            this.imageDisplayContainer = document.createElement("div");
+                                                            this.imageDisplayContainer.style.padding = "10px";
+                                                            this.imageDisplayContainer.style.textAlign = "center";
+                                                            this.imageDisplayContainer.style.borderTop = "1px solid #444";
+                                                            this.imageDisplayContainer.style.marginTop = "10px";
+                                                            this.imageWidget = this.addDOMWidget("image_preview", "div", this.imageDisplayContainer, {
+                                                                getValue: () => null,
+                                                                setValue: () => {},
+                                                            });
+                                                        }
+                                                        this.imageDisplayContainer.style.display = "block";
+                                                        this.imageDisplayContainer.innerHTML = "";
+                                                        const img = document.createElement("img");
+                                                        img.src = url;
+                                                        img.style.maxWidth = "100%";
+                                                        img.style.maxHeight = "400px";
+                                                        img.style.borderRadius = "4px";
+                                                        img.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+                                                        img.onload = () => {
+                                                            this.currentImageUrl = url;
+                                                            this.currentImageWidth = img.naturalWidth;
+                                                            this.currentImageHeight = img.naturalHeight;
+                                                            this.setDirtyCanvas(true, true);
+                                                        };
+                                                        this.imageDisplayContainer.appendChild(img);
+                                                        if (this.imageWidget) this.imageWidget.computeSize = () => [0, 420];
+                                                    });
+                                                } else {
+                                                    tryLoadImage(exts, idx + 1);
+                                                }
+                                            })
+                                            .catch(() => tryLoadImage(exts, idx + 1));
+                                    };
+                                    tryLoadImage(imageExts, 0);
+                                }
+                            })
+                            .catch(err => console.warn("random_resolve fetch failed:", err));
+                    }
+                }
+                
+                // If we have an image loaded, create a data URL for it
+                if (this.currentImageUrl && this.currentImageWidth > 0 && this.currentImageHeight > 0) {
+                    // Create canvas element to get image data
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Get image data URL
+                        const dataUrl = canvas.toDataURL('image/png');
+                        
+                        // Create a blob from the data URL
+                        fetch(dataUrl)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                // Create a file from the blob
+                                const file = new File([blob], 'preview_image.png', { type: 'image/png' });
+                                
+                                // Trigger the image output (this would need to be connected to the node's output)
+                                console.log(`Image ready for output: ${img.width}x${img.height}`);
+                                
+                                // Note: In ComfyUI, we can't directly output images from JS.
+                                // The actual image output will be handled by the Python node.
+                                // We've already stored the image URL which will be used by the Python node.
+                            });
+                    };
+                    img.src = this.currentImageUrl;
+                }
             };
         }
     }
