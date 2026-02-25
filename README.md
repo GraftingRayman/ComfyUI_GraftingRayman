@@ -31,6 +31,21 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 Hope this stuff is helpful
 
 
+# Image Loader Ultimate
+
+Could this be the Ultimate Image Loader
+
+Load an image, rotate it, flip it, crop it all in one place
+
+If you have set the crop, it will keep the crip area whether you rotate it or flip it as many times as you like
+
+<img width="1191" height="846" alt="image" src="https://github.com/user-attachments/assets/014181c5-61f9-4aca-8d75-7d68348dc5ec" />
+
+<img width="1380" height="816" alt="image" src="https://github.com/user-attachments/assets/e1957dbf-fc1d-42f6-a9b1-053786951aea" />
+
+
+Great for all your video generations where having extra content makes the output look silly
+
 # GR Prompt Viewer
 
 <b>UPDATE:</b>
