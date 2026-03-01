@@ -30,6 +30,29 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 
 Hope this stuff is helpful
 
+# GR Sigma Preset Selector
+
+Select preset sigmas for your generations, change your Comp, Mid and Detail amounts in the graph.
+
+<img width="812" height="720" alt="image" src="https://github.com/user-attachments/assets/65639d1b-6168-4520-98cd-2fdabb2db403" />
+
+Use the preset steps for the model selected or auto scale to manual steps
+
+<img width="816" height="720" alt="image" src="https://github.com/user-attachments/assets/4a66b216-d451-4d8a-aa93-66bceb1bec3a" />
+
+Move the vertical bars for Comp, Mid and Detail to select your desired ranges
+
+<img width="810" height="714" alt="image" src="https://github.com/user-attachments/assets/894483c3-3627-4af7-88c0-18b885252144" />
+
+Change the position of each step individually
+
+<img width="810" height="708" alt="image" src="https://github.com/user-attachments/assets/ab72f163-e7d6-455c-8526-012a029058d4" />
+
+Loads of presets already defined to suit all image types
+
+<img width="846" height="960" alt="image" src="https://github.com/user-attachments/assets/da12a78f-59a6-4101-898d-2866b17298ee" />
+
+
 
 # Image Loader Ultimate
 
