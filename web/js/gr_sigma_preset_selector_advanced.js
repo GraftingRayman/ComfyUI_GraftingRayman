@@ -440,6 +440,11 @@ app.registerExtension({
             const p=this.widgets?.find(w=>w.name==="preset");
             return `${p?.value}`;
         };
+        // Write _activeShape back to the hidden curve_shape widget so Python receives it
+        nodeType.prototype._syncShapeWidget = function () {
+            const w = this.widgets?.find(w => w.name === "curve_shape");
+            if (w) w.value = this._activeShape;
+        };
         nodeType.prototype._freshSigmas = function () {
             const p=this.widgets?.find(w=>w.name==="preset");
             return getSigmas(p?.value??"balanced");
@@ -457,6 +462,7 @@ app.registerExtension({
                 this._dividers  = this._freshDividers();
                 this._undoStack = [];
                 this._activeShape = "preset";
+                this._syncShapeWidget?.();
                 this._hoveredDot = this._hoveredDiv = -1;
             }
         };
@@ -515,8 +521,8 @@ app.registerExtension({
             const gy=this._graphY(), L=graphLayout(this,gy,this._sigmas);
             const btn=hitBtn(pos,L);
             if (btn){
-                if (btn.type==="shape"){ this._activeShape=btn.id; }
-                if (btn.type==="reset"){ this._pushUndo(); this._rawSigmas=this._freshSigmas(); this._sigmas=[...this._rawSigmas]; this._activeShape="preset"; this._dividers=this._freshDividers(); }
+                if (btn.type==="shape"){ this._activeShape=btn.id; this._syncShapeWidget(); }
+                if (btn.type==="reset"){ this._pushUndo(); this._rawSigmas=this._freshSigmas(); this._sigmas=[...this._rawSigmas]; this._activeShape="preset"; this._syncShapeWidget(); this._dividers=this._freshDividers(); }
                 if (btn.type==="copy"){ const cs=deriveDisplaySigmas(this._rawSigmas??this._sigmas,this._activeShape).map((s,i)=>{ const raw=(this._rawSigmas??this._sigmas)[i]??s; return (this._sigmas[i]!==raw)?this._sigmas[i]:s; }); navigator.clipboard?.writeText("["+cs.map(v=>v.toFixed(5)).join(", ")+"]").catch(()=>{}); this._copyFlash=40; }
                 if (btn.type==="mirror") this._mirrorMode=!this._mirrorMode;
                 this.setDirtyCanvas(true,true); return true;
