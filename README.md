@@ -30,6 +30,10 @@ If you use these, follow my YouTube channel where I create ComfyUI workflows fro
 
 Hope this stuff is helpful
 
+# GR Live Group Controller
+
+
+
 # GR Sigma Preset Selector
 
 Select preset sigmas for your generations, change your Comp, Mid and Detail amounts in the graph.
