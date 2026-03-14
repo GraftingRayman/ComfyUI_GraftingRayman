@@ -140,7 +140,7 @@ function goBack() {
   canvas.setDirty(true, true);
 }
 
-window.addEventListener("keydown", (e) => {
+window.addEventListener("keyup", (e) => {
   if (e.altKey && !e.ctrlKey && !e.shiftKey && e.key === "b") {
     e.preventDefault();
     goBack();
