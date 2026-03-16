@@ -34,7 +34,7 @@ Hope this stuff is helpful
 
 This is a node created out of frustration, have been using "Fast Group Muter" for ages but it got tedious so had to improve it and here we are
 
-
+https://github.com/GraftingRayman/ComfyUI_GraftingRayman/blob/main/Assets/grlivegroupcontroller.jpg?raw=true
 
 1: Click here to add a new Header Section
 
