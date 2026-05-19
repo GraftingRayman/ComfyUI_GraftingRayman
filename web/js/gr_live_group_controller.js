@@ -4,8 +4,6 @@ import { api } from "/scripts/api.js";
 // ─── constants ───────────────────────────────────────────────────────────────
 const NODE_TYPE   = "GRLiveGroupController";
 const WIDGET_NAME = "groupControls";
-const SAVE_URL    = "/gr_lgc/save";
-const LOAD_URL    = "/gr_lgc/load";
 
 const COLOR = {
   ENABLED_BG:    "#2a7a3b",
@@ -45,23 +43,8 @@ const GOTO_W   = 22;
 const COUNT_W  = 32;
 
 // ─── save / load ─────────────────────────────────────────────────────────────
-
-async function saveState(data) {
-  try {
-    await fetch(SAVE_URL, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify(data),
-    });
-  } catch (e) { console.warn("[GR] save failed:", e); }
-}
-
-async function loadState() {
-  try {
-    const res = await fetch(LOAD_URL);
-    return await res.json();
-  } catch (e) { console.warn("[GR] load failed:", e); return null; }
-}
+// State is embedded in the workflow JSON via node properties (onSerialize /
+// onConfigure).
 
 function buildSaveData(items, enabledGroups) {
   return {
@@ -397,10 +380,12 @@ function buildWidget(node) {
   }
 
   function save() {
-    saveState(buildSaveData(
+    const data = buildSaveData(
       state.items,
       state.items.filter((it) => it.kind === "group" && it.enabled).map((it) => it.title)
-    ));
+    );
+    node.properties = node.properties ?? {};
+    node.properties.lgcState = data;
   }
 
   const widget = node.addCustomWidget({
@@ -840,31 +825,59 @@ app.registerExtension({
   async beforeRegisterNodeDef(nodeType, nodeData) {
     if (nodeData.name !== NODE_TYPE) return;
 
+    // ── node created fresh (no saved workflow data yet) ──────────────────────
     const onNodeCreated = nodeType.prototype.onNodeCreated;
     nodeType.prototype.onNodeCreated = function () {
       onNodeCreated?.apply(this, arguments);
       const node = this;
       buildWidget(node);
       node.setSize([MIN_W + 20, 200]);
+      // Stamp with null so onConfigure knows this is a fresh node with no saved state.
+      node.properties = node.properties ?? {};
+      node.properties.lgcState = null;
+    };
 
-      loadState().then((data) => {
-        if (!data?.items?.length && !data?.order?.length) return;
-        let attempts = 0;
-        const apply = () => {
-          const state = node.__lgcState;
-          if (!state) return;
-          if (getGroups().length === 0 && attempts++ < 20) { setTimeout(apply, 100); return; }
-          // Support legacy format (just order array)
-          if (!data.items && data.order) {
-            data = {
-              items: data.order.map((t) => ({ kind: "group", title: t })),
-              enabledGroups: data.enabledGroups,
-            };
-          }
-          applyLoadedState(state, data);
-        };
-        setTimeout(apply, 100);
-      });
+    // ── called by ComfyUI when loading a workflow (deserialise) ──────────────
+    // This is the canonical place to restore per-workflow state.
+    const onConfigure = nodeType.prototype.onConfigure;
+    nodeType.prototype.onConfigure = function (info) {
+      onConfigure?.apply(this, arguments);
+      const node = this;
+
+      // Ensure the widget exists (onConfigure can fire before onNodeCreated
+      // in some ComfyUI versions).
+      if (!node.__lgcState) buildWidget(node);
+
+      const data = info?.properties?.lgcState ?? node.properties?.lgcState ?? null;
+      if (!data?.items?.length) return;
+
+      let attempts = 0;
+      const apply = () => {
+        const state = node.__lgcState;
+        if (!state) return;
+        if (getGroups().length === 0 && attempts++ < 20) { setTimeout(apply, 100); return; }
+        applyLoadedState(state, data);
+      };
+      setTimeout(apply, 100);
+    };
+
+    // ── called by ComfyUI when serialising the workflow (save / export) ──────
+    // Return value is merged into the node's serialised representation.
+    const onSerialize = nodeType.prototype.onSerialize;
+    nodeType.prototype.onSerialize = function (o) {
+      onSerialize?.apply(this, arguments);
+      const node = this;
+      const state = node.__lgcState;
+      if (!state) return;
+      const data = buildSaveData(
+        state.items,
+        state.items.filter((it) => it.kind === "group" && it.enabled).map((it) => it.title)
+      );
+      // Store in both places so older readers still see it.
+      o.properties = o.properties ?? {};
+      o.properties.lgcState = data;
+      node.properties = node.properties ?? {};
+      node.properties.lgcState = data;
     };
   },
 });
