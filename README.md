@@ -1,8 +1,12 @@
 Welcome to my page. I create nodes that I need to make my life easier, most of the stuff I do is based on Image Generation and Manipulation. If I find something lacking I try to create something that helps me or shortens the time required to complete the task at hand. This is by no means an extensive list, more to follow though.
 
-If you would like to make a donation to my efforts use the QR code
+If you would like to support my efforts use the QR code
 
 ![QR code](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/a65f6614-94d3-46e2-8d4e-f60e98d44d6f)
+
+Or 
+
+https://ko-fi.com/graftingrayman
 
 
 # Installation:
