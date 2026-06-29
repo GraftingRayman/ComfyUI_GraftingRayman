@@ -8,6 +8,9 @@ Or
 
 https://ko-fi.com/graftingrayman
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)]([https://ko-fi.com/J5N221K0D5](https://ko-fi.com/graftingrayman))
+
+
 
 # Installation:
 
