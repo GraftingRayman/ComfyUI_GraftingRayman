@@ -2,12 +2,6 @@ Welcome to my page. I create nodes that I need to make my life easier, most of t
 
 If you would like to support my efforts use the QR code
 
-![QR code](https://github.com/GraftingRayman/ComfyUI_GraftingRayman/assets/156515434/a65f6614-94d3-46e2-8d4e-f60e98d44d6f)
-
-Or 
-
-https://ko-fi.com/graftingrayman
-
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)]([https://ko-fi.com/J5N221K0D5](https://ko-fi.com/graftingrayman))
 
 
